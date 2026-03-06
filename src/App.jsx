@@ -3,6 +3,76 @@ import { supabase } from "./supabase";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const COLORS = ["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#98D8C8","#F7DC6F","#FFB347","#87CEEB"];
+
+// Each theme: bg color, surface, border, text color, and an SVG pattern for the background
+const THEMES = [
+  {
+    id:"default", label:"Oscuro", emoji:"🌑",
+    bg:"#0f0f13", surface:"#131318", border:"#1e1e2a", text:"#e8e8f0",
+    pattern:null
+  },
+  {
+    id:"kids", label:"Infantil", emoji:"🎈",
+    bg:"#1a0a2e", surface:"#2a1a3e", border:"#3a2a4e", text:"#ffe8ff",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><circle cx='20' cy='20' r='8' fill='%23ff6b9d22'/><circle cx='60' cy='10' r='5' fill='%23ffd93d22'/><circle cx='100' cy='25' r='7' fill='%236bcbff22'/><circle cx='10' cy='60' r='6' fill='%23a8ff7822'/><circle cx='50' cy='55' r='10' fill='%23ff6b9d18'/><circle cx='90' cy='50' r='5' fill='%23ffd93d22'/><circle cx='30' cy='90' r='7' fill='%236bcbff22'/><circle cx='70' cy='85' r='9' fill='%23ff6b9d18'/><circle cx='110' cy='75' r='6' fill='%23a8ff7822'/><text x='15' y='45' font-size='12' opacity='.15'>⭐</text><text x='55' y='100' font-size='10' opacity='.15'>🌙</text><text x='95' y='110' font-size='11' opacity='.12'>✨</text></svg>`
+  },
+  {
+    id:"literary", label:"Literario", emoji:"📚",
+    bg:"#1a1510", surface:"#251e16", border:"#35291e", text:"#f0e6d0",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><line x1='0' y1='10' x2='80' y2='10' stroke='%23c8a96e18' stroke-width='1'/><line x1='0' y1='20' x2='80' y2='20' stroke='%23c8a96e12' stroke-width='1'/><line x1='0' y1='30' x2='80' y2='30' stroke='%23c8a96e18' stroke-width='1'/><line x1='0' y1='40' x2='80' y2='40' stroke='%23c8a96e12' stroke-width='1'/><line x1='0' y1='50' x2='80' y2='50' stroke='%23c8a96e18' stroke-width='1'/><line x1='0' y1='60' x2='80' y2='60' stroke='%23c8a96e12' stroke-width='1'/><line x1='0' y1='70' x2='80' y2='70' stroke='%23c8a96e18' stroke-width='1'/><line x1='0' y1='80' x2='80' y2='80' stroke='%23c8a96e12' stroke-width='1'/><line x1='20' y1='0' x2='20' y2='80' stroke='%23c8a96e08' stroke-width='1'/></svg>`
+  },
+  {
+    id:"countryside", label:"Campestre", emoji:"🌾",
+    bg:"#0f1a08", surface:"#162610", border:"#253d18", text:"#e8f5d0",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><path d='M10 80 Q15 60 20 80' stroke='%2378a83a25' stroke-width='2' fill='none'/><path d='M25 75 Q30 50 35 75' stroke='%2378a83a20' stroke-width='2' fill='none'/><path d='M50 85 Q55 55 60 85' stroke='%2378a83a25' stroke-width='2' fill='none'/><path d='M70 78 Q75 58 80 78' stroke='%2378a83a20' stroke-width='2' fill='none'/><path d='M85 82 Q90 65 95 82' stroke='%2378a83a22' stroke-width='2' fill='none'/><circle cx='30' cy='20' r='12' fill='%2378a83a10'/><circle cx='70' cy='30' r='8' fill='%2378a83a10'/><circle cx='15' cy='35' r='6' fill='%2378a83a08'/></svg>`
+  },
+  {
+    id:"ocean", label:"Marino", emoji:"🌊",
+    bg:"#050e1a", surface:"#0a1828", border:"#102030", text:"#d0f0ff",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='60'><path d='M0 30 Q25 10 50 30 Q75 50 100 30 Q125 10 150 30 Q175 50 200 30' stroke='%231a6fa830' stroke-width='2' fill='none'/><path d='M0 45 Q25 25 50 45 Q75 65 100 45 Q125 25 150 45 Q175 65 200 45' stroke='%231a6fa820' stroke-width='1.5' fill='none'/><path d='M0 15 Q25 0 50 15 Q75 30 100 15 Q125 0 150 15 Q175 30 200 15' stroke='%231a6fa818' stroke-width='1' fill='none'/></svg>`
+  },
+  {
+    id:"cosmos", label:"Cosmos", emoji:"🔭",
+    bg:"#02020f", surface:"#07071a", border:"#0f0f28", text:"#e0e8ff",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><circle cx='15' cy='20' r='1' fill='%23ffffff60'/><circle cx='45' cy='8' r='1.5' fill='%23ffffff40'/><circle cx='80' cy='15' r='1' fill='%23ffffff55'/><circle cx='120' cy='5' r='1' fill='%23ffffff50'/><circle cx='140' cy='25' r='1.5' fill='%23ffffff35'/><circle cx='5' cy='50' r='1' fill='%23ffffff45'/><circle cx='35' cy='45' r='2' fill='%23ffffff30'/><circle cx='65' cy='55' r='1' fill='%23ffffff55'/><circle cx='100' cy='40' r='1.5' fill='%23ffffff40'/><circle cx='130' cy='60' r='1' fill='%23ffffff50'/><circle cx='20' cy='80' r='1' fill='%23ffffff45'/><circle cx='55' cy='85' r='1.5' fill='%23ffffff35'/><circle cx='90' cy='75' r='1' fill='%23ffffff55'/><circle cx='125' cy='90' r='2' fill='%23ffffff30'/><circle cx='145' cy='80' r='1' fill='%23ffffff45'/><circle cx='10' cy='110' r='1.5' fill='%23ffffff40'/><circle cx='40' cy='120' r='1' fill='%23ffffff50'/><circle cx='75' cy='105' r='1' fill='%23ffffff45'/><circle cx='110' cy='115' r='1.5' fill='%23ffffff35'/><circle cx='140' cy='125' r='1' fill='%23ffffff55'/><circle cx='25' cy='140' r='1' fill='%23ffffff40'/><circle cx='60' cy='145' r='2' fill='%23ffffff30'/><circle cx='95' cy='135' r='1' fill='%23ffffff50'/><circle cx='130' cy='148' r='1.5' fill='%23ffffff40'/></svg>`
+  },
+  {
+    id:"nordic", label:"Nórdico", emoji:"🌨️",
+    bg:"#0d1520", surface:"#152030", border:"#1e3040", text:"#dce8f5",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><line x1='40' y1='5' x2='40' y2='35' stroke='%23a0c8f025' stroke-width='1'/><line x1='25' y1='12' x2='55' y2='28' stroke='%23a0c8f025' stroke-width='1'/><line x1='25' y1='28' x2='55' y2='12' stroke='%23a0c8f025' stroke-width='1'/><circle cx='40' cy='20' r='3' fill='%23a0c8f030'/><line x1='0' y1='60' x2='30' y2='60' stroke='%23a0c8f015' stroke-width='1'/><line x1='5' y1='50' x2='25' y2='70' stroke='%23a0c8f015' stroke-width='1'/><line x1='5' y1='70' x2='25' y2='50' stroke='%23a0c8f015' stroke-width='1'/><circle cx='15' cy='60' r='2' fill='%23a0c8f020'/><line x1='55' y1='55' x2='75' y2='55' stroke='%23a0c8f018' stroke-width='1'/><circle cx='65' cy='55' r='2' fill='%23a0c8f022'/></svg>`
+  },
+  {
+    id:"retro", label:"Retro", emoji:"📺",
+    bg:"#1a1208", surface:"#251c10", border:"#3a2c18", text:"#f5e8c0",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect x='5' y='5' width='20' height='20' rx='2' fill='none' stroke='%23d4a83a18' stroke-width='1'/><rect x='35' y='5' width='20' height='20' rx='2' fill='none' stroke='%23d4a83a12' stroke-width='1'/><rect x='5' y='35' width='20' height='20' rx='2' fill='none' stroke='%23d4a83a12' stroke-width='1'/><rect x='35' y='35' width='20' height='20' rx='2' fill='none' stroke='%23d4a83a18' stroke-width='1'/><circle cx='15' cy='15' r='4' fill='%23d4a83a10'/><circle cx='45' cy='45' r='4' fill='%23d4a83a10'/></svg>`
+  },
+  {
+    id:"zen", label:"Zen", emoji:"🍃",
+    bg:"#0f1510", surface:"#181e18", border:"#252e25", text:"#e0ead8",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><circle cx='60' cy='60' r='40' fill='none' stroke='%2388aa6615' stroke-width='1'/><circle cx='60' cy='60' r='25' fill='none' stroke='%2388aa6612' stroke-width='1'/><circle cx='60' cy='60' r='10' fill='none' stroke='%2388aa6618' stroke-width='1'/><line x1='20' y1='60' x2='100' y2='60' stroke='%2388aa6610' stroke-width='1'/><line x1='60' y1='20' x2='60' y2='100' stroke='%2388aa6610' stroke-width='1'/></svg>`
+  },
+  {
+    id:"urban", label:"Urbano", emoji:"🏙️",
+    bg:"#0a0a0a", surface:"#141414", border:"#222222", text:"#e0e0e0",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='80' height='120'><rect x='5' y='40' width='15' height='80' fill='none' stroke='%23ffffff08' stroke-width='1'/><rect x='25' y='20' width='15' height='100' fill='none' stroke='%23ffffff08' stroke-width='1'/><rect x='45' y='50' width='10' height='70' fill='none' stroke='%23ffffff06' stroke-width='1'/><rect x='60' y='30' width='18' height='90' fill='none' stroke='%23ffffff08' stroke-width='1'/><rect x='8' y='55' width='3' height='3' fill='%23ffffff10'/><rect x='28' y='35' width='3' height='3' fill='%23ffffff10'/><rect x='28' y='45' width='3' height='3' fill='%23ffffff08'/><rect x='63' y='45' width='3' height='3' fill='%23ffffff10'/><rect x='63' y='55' width='3' height='3' fill='%23ffffff08'/></svg>`
+  },
+  {
+    id:"pastel", label:"Pastel", emoji:"🎨",
+    bg:"#f8f0f8", surface:"#ffffff", border:"#e8d8e8", text:"#3a2a3a",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><circle cx='20' cy='20' r='15' fill='%23ffb3c615'/><circle cx='60' cy='15' r='10' fill='%23b3d4ff15'/><circle cx='90' cy='30' r='12' fill='%23b3ffcc15'/><circle cx='10' cy='60' r='8' fill='%23ffd9b315'/><circle cx='50' cy='55' r='18' fill='%23e8b3ff12'/><circle cx='85' cy='65' r='10' fill='%23ffb3c612'/><circle cx='30' cy='85' r='12' fill='%23b3d4ff12'/><circle cx='70' cy='88' r='8' fill='%23b3ffcc15'/></svg>`
+  },
+  {
+    id:"light", label:"Claro", emoji:"☀️",
+    bg:"#f5f5f0", surface:"#ffffff", border:"#e0e0d8", text:"#1a1a1a",
+    pattern:null
+  },
+];
+function getTheme(id){ return THEMES.find(t=>t.id===id) || THEMES[0]; }
+function themeBgStyle(t){
+  if(!t.pattern) return {background:t.bg};
+  const svg = `url("data:image/svg+xml,${t.pattern}")`;
+  return {background:t.bg, backgroundImage:svg, backgroundRepeat:"repeat"};
+}
 const CATEGORIES = [
   { id:"work",     label:"Trabajo",   color:"#FF6B6B" },
   { id:"personal", label:"Personal",  color:"#4ECDC4" },
@@ -64,11 +134,17 @@ async function getMyGroups(userId) {
   return (data || []).map(r => r.groups).filter(Boolean);
 }
 async function getGroupMembers(groupId) {
-  const { data } = await supabase
+  const { data: members } = await supabase
     .from("group_members")
-    .select("user_id, profiles(id, display_name, color, avatar)")
+    .select("user_id")
     .eq("group_id", groupId);
-  return (data || []).map(r => r.profiles).filter(Boolean);
+  if (!members || members.length === 0) return [];
+  const ids = members.map(m => m.user_id);
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, display_name, color, avatar")
+    .in("id", ids);
+  return profiles || [];
 }
 async function getGroupEvents(groupId) {
   const { data } = await supabase.from("events").select("data").eq("group_id", groupId).single();
@@ -144,6 +220,10 @@ export default function App() {
   const [activeGroup,  setActiveGroup] = useState(null);
   const [groupMembers, setGroupMembers]= useState([]);
   const [showGroupPanel, setShowGroupPanel] = useState(false);
+  const [showThemePanel, setShowThemePanel] = useState(false);
+
+  const theme = getTheme(profile?.theme);
+  const T = theme; // shorthand
 
   // Group create/join
   const [groupAction,   setGroupAction]   = useState(null); // "create"|"join"
@@ -204,6 +284,12 @@ export default function App() {
   async function signOut() {
     await supabase.auth.signOut();
     setGroups([]); setActiveGroup(null); setEvents([]);
+  }
+
+  async function saveTheme(themeId) {
+    const updated = { ...profile, theme: themeId };
+    await upsertProfile(updated);
+    setProfile(updated);
   }
 
   // ── Profile setup ────────────────────────────────────────────────────────
@@ -624,11 +710,11 @@ export default function App() {
   );
 
   return (
-    <div style={{height:"100vh",background:"#0f0f13",fontFamily:"DM Sans,'Segoe UI',sans-serif",color:"#e8e8f0",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{height:"100vh",...themeBgStyle(T),fontFamily:"DM Sans,'Segoe UI',sans-serif",color:T.text,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{BASE_CSS}</style>
 
       {/* ── TOP HEADER ── */}
-      <header style={{padding:"10px 16px",borderBottom:"1px solid #1e1e2a",display:"flex",alignItems:"center",gap:10,background:"#0f0f13",flexShrink:0,zIndex:10}}>
+      <header style={{padding:"10px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:10,background:T.gradient?"#0f0f13":T.bg,flexShrink:0,zIndex:10}}>
         <div onClick={()=>setScreen("groups")} className="clickable" style={{flex:1,display:"flex",alignItems:"center",gap:8,minWidth:0}}>
           <div style={{width:30,height:30,borderRadius:8,background:"#FF6B6B22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>📅</div>
           <div style={{minWidth:0}}>
@@ -652,17 +738,36 @@ export default function App() {
 
       {/* Profile panel */}
       {showGroupPanel&&(
-        <div className="panel-anim" style={{background:"#0d0d11",borderBottom:"1px solid #1e1e2a",padding:"12px 16px",display:"flex",gap:10,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",flexShrink:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:34,height:34,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff"}}>{profile?.avatar}</div>
-            <div>
-              <div style={{fontSize:13,fontWeight:600,color:"#e8e8f0"}}>{profile?.display_name}</div>
-              <div style={{fontSize:11,color:"#555",marginTop:1}}>{authUser?.email}</div>
+        <div className="panel-anim" style={{background:T.gradient?"#0d0d11":T.surface,borderBottom:`1px solid ${T.border}`,padding:"14px 16px",flexShrink:0}}>
+          {/* User info + actions */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:34,height:34,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff"}}>{profile?.avatar}</div>
+              <div>
+                <div style={{fontSize:13,fontWeight:600,color:T.text}}>{profile?.display_name}</div>
+                <div style={{fontSize:11,color:"#555",marginTop:1}}>{authUser?.email}</div>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              <button onClick={()=>{setScreen("groups");setShowGroupPanel(false);}} style={{background:T.gradient?"#ffffff14":"#1e1e2a",color:"#aaa",border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 12px",fontSize:12}}>Mis agendas</button>
+              <button onClick={signOut} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"6px 12px",fontSize:12}}>Cerrar sesión</button>
             </div>
           </div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <button onClick={()=>{setScreen("groups");setShowGroupPanel(false);}} style={{background:"#1e1e2a",color:"#aaa",border:"1px solid #2a2a3a",borderRadius:8,padding:"6px 12px",fontSize:12}}>Mis agendas</button>
-            <button onClick={signOut} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"6px 12px",fontSize:12}}>Cerrar sesión</button>
+          {/* Theme selector */}
+          <div>
+            <div style={{fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🎨 Tema personal</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {THEMES.map(t=>{
+                const active=profile?.theme===t.id||(!profile?.theme&&t.id==="default");
+                return (
+                  <div key={t.id} onClick={()=>saveTheme(t.id)} title={t.label}
+                    style={{width:48,height:48,borderRadius:10,cursor:"pointer",border:active?"2px solid #FF6B6B":"2px solid transparent",boxShadow:active?"0 0 0 2px #FF6B6B44":"none",flexShrink:0,position:"relative",overflow:"hidden",...themeBgStyle(t),display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{fontSize:18,filter:"drop-shadow(0 1px 2px #0008)"}}>{t.emoji}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{fontSize:11,color:"#888",marginTop:8}}>Tema actual: <span style={{color:"#FF6B6B",fontWeight:600}}>{getTheme(profile?.theme).label}</span></div>
           </div>
         </div>
       )}
