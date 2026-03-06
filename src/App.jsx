@@ -501,42 +501,158 @@ export default function App() {
     </div>
   );
 
+  const Filters = () => (
+    <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
+      <span style={{fontSize:9,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>Ver:</span>
+      {[["all","Todos"],...groupMembers.map(m=>[m.id,m.display_name])].map(([id,label])=>{
+        const m=groupMembers.find(x=>x.id===id); const on=filterUser===id;
+        return <div key={id} onClick={()=>setFilterUser(id)} style={{padding:"2px 9px",borderRadius:20,fontSize:10,cursor:"pointer",background:on?(m?m.color+"33":"#2a2a3a"):"transparent",color:on?(m?m.color:"#fff"):"#555",border:`1px solid ${on?"#3a3a4a":"#1e1e2a"}`}}>{label}</div>;
+      })}
+      <div style={{width:1,height:12,background:"#2a2a3a",margin:"0 2px"}}/>
+      {CATEGORIES.map(c=>(
+        <div key={c.id} onClick={()=>setFilterCat(filterCat===c.id?"all":c.id)} style={{padding:"2px 9px",borderRadius:20,fontSize:10,cursor:"pointer",background:filterCat===c.id?c.color+"33":"transparent",color:filterCat===c.id?c.color:"#555",border:`1px solid ${filterCat===c.id?c.color+"44":"#1e1e2a"}`}}>{c.label}</div>
+      ))}
+    </div>
+  );
+
+  const CalendarContent = () => (
+    <div>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+        <button onClick={prevMonth} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>‹</button>
+        <span style={{fontFamily:"Fraunces,serif",fontSize:16,fontWeight:600,color:"#fff",flex:1,textAlign:"center"}}>{MONTHS_ES[currentMonth]} {currentYear}</span>
+        <button onClick={nextMonth} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>›</button>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:3}}>
+        {DAYS_ES.map(d=><div key={d} style={{textAlign:"center",fontSize:9,fontWeight:600,color:"#555",textTransform:"uppercase",letterSpacing:1,padding:"4px 0"}}>{d}</div>)}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
+        {Array.from({length:firstDay}).map((_,i)=><div key={`e${i}`}/>)}
+        {Array.from({length:daysInMonth}).map((_,i)=>{
+          const day=i+1;
+          const dateStr=`${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+          const dayEvs=eventsForDate(dateStr);
+          const isToday=dateStr===fmt(today); const isSelected=dateStr===selectedDate;
+          return (
+            <div key={day} className="day-cell" onClick={()=>{setSelectedDate(dateStr);setView("day");}}
+              style={{minHeight:68,padding:"5px 4px",borderRadius:8,background:isSelected?"#1a1a28":"#131318",border:isSelected?"1px solid #2a2a3a":"1px solid #1a1a22",boxShadow:isToday?"inset 0 0 0 1.5px #FF6B6B55":"none"}}>
+              <div style={{fontSize:11,fontWeight:isToday?700:400,color:isToday?"#FF6B6B":"#e8e8f0",marginBottom:2,display:"flex",justifyContent:"space-between"}}>
+                {day}{dayEvs.length>0&&<span style={{fontSize:8,color:"#555"}}>{dayEvs.length}</span>}
+              </div>
+              {dayEvs.slice(0,2).map(ev=><EventChip key={ev.id} ev={ev}/>)}
+              {dayEvs.length>2&&<div style={{fontSize:8,color:"#555"}}>+{dayEvs.length-2}</div>}
+              <div onClick={e=>{e.stopPropagation();openNew(dateStr);}} style={{fontSize:10,color:"#2a2a3a",textAlign:"right",cursor:"pointer",marginTop:2}}>+</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const AgendaContent = () => (
+    <div>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+        <button onClick={prevMonth} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>‹</button>
+        <span style={{fontFamily:"Fraunces,serif",fontSize:16,fontWeight:600,color:"#fff",flex:1,textAlign:"center"}}>{MONTHS_ES[currentMonth]} {currentYear}</span>
+        <button onClick={nextMonth} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>›</button>
+      </div>
+      {agendaDates.length===0&&<div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>No hay eventos este mes<div style={{marginTop:14}}><button onClick={()=>openNew(null)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"7px 18px",cursor:"pointer",fontSize:12}}>+ Crear evento</button></div></div>}
+      {agendaDates.map(dateStr=>{
+        const d=parse(dateStr); const isToday=dateStr===fmt(today);
+        return (
+          <div key={dateStr} style={{marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+              <div style={{width:32,height:32,borderRadius:8,background:isToday?"#FF6B6B":"#1a1a22",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{fontSize:12,fontWeight:700,color:"#fff",lineHeight:1}}>{d.getDate()}</span>
+                <span style={{fontSize:8,color:isToday?"#ffb3b3":"#555",textTransform:"uppercase"}}>{DAYS_ES[d.getDay()]}</span>
+              </div>
+              <div style={{flex:1,height:1,background:"#1e1e2a"}}/>
+            </div>
+            {eventsForDate(dateStr).map(ev=>(
+              <div key={ev.id} className="agenda-event" onClick={()=>openEdit(ev)}
+                style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start",borderLeft:`3px solid ${cat(ev.category).color}`,marginBottom:5}}>
+                <div style={{color:"#888",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>{ev.time}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:600,fontSize:13,color:"#e8e8f0",display:"flex",alignItems:"center",gap:5}}>
+                    {ev.title}{ev.recurring&&<span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4}}>↻</span>}
+                  </div>
+                  {ev.notes&&<div style={{fontSize:11,color:"#666",marginTop:2}}>{ev.notes}</div>}
+                  <div style={{display:"flex",gap:4,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
+                    <span style={{fontSize:9,padding:"1px 6px",borderRadius:20,background:cat(ev.category).color+"22",color:cat(ev.category).color}}>{cat(ev.category).label}</span>
+                    {ev.attendees?.map(uid=><div key={uid} title={member(uid).display_name} style={{width:13,height:13,borderRadius:"50%",background:member(uid).color,fontSize:6,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>{member(uid).avatar}</div>)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const DayContent = () => (
+    <div>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+        <button onClick={()=>{const d=parse(selectedDate);d.setDate(d.getDate()-1);setSelectedDate(fmt(d));}} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>‹</button>
+        <div style={{flex:1,textAlign:"center"}}>
+          <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"#fff"}}>{parse(selectedDate).getDate()} de {MONTHS_ES[parse(selectedDate).getMonth()]}</div>
+          <div style={{fontSize:11,color:"#555"}}>{DAYS_FULL[parse(selectedDate).getDay()]}</div>
+        </div>
+        <button onClick={()=>{const d=parse(selectedDate);d.setDate(d.getDate()+1);setSelectedDate(fmt(d));}} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>›</button>
+      </div>
+      {selectedDayEvents.length===0&&<div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>Sin eventos<div style={{marginTop:14}}><button onClick={()=>openNew(selectedDate)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"7px 18px",cursor:"pointer",fontSize:12}}>+ Agregar</button></div></div>}
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {selectedDayEvents.map(ev=>(
+          <div key={ev.id} onClick={()=>openEdit(ev)} style={{background:"#131318",borderRadius:12,padding:"12px 16px",cursor:"pointer",border:"1px solid #1e1e2a",borderLeft:`4px solid ${cat(ev.category).color}`}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{fontSize:16,fontWeight:700,color:cat(ev.category).color,fontFamily:"Fraunces,serif"}}>{ev.time}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:600,color:"#e8e8f0",display:"flex",alignItems:"center",gap:6}}>
+                  {ev.title}{ev.recurring&&<span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4,fontWeight:400}}>↻</span>}
+                </div>
+                <div style={{fontSize:11,color:cat(ev.category).color,marginTop:1}}>{cat(ev.category).label}</div>
+              </div>
+              <div style={{display:"flex",gap:3}}>
+                {ev.attendees?.map(uid=><div key={uid} title={member(uid).display_name} style={{width:20,height:20,borderRadius:"50%",background:member(uid).color,fontSize:7,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>{member(uid).avatar}</div>)}
+              </div>
+            </div>
+            {ev.notes&&<div style={{fontSize:12,color:"#666",marginTop:7,paddingTop:7,borderTop:"1px solid #1e1e2a"}}>{ev.notes}</div>}
+          </div>
+        ))}
+      </div>
+      <button onClick={()=>openNew(selectedDate)} style={{marginTop:12,width:"100%",padding:"11px",borderRadius:10,background:"transparent",border:"1px dashed #2a2a3a",color:"#555",cursor:"pointer",fontSize:13}}>+ Agregar evento</button>
+    </div>
+  );
+
   return (
-    <div style={{minHeight:"100vh",background:"#0f0f13",fontFamily:"DM Sans,'Segoe UI',sans-serif",color:"#e8e8f0",display:"flex",flexDirection:"column"}}>
+    <div style={{height:"100vh",background:"#0f0f13",fontFamily:"DM Sans,'Segoe UI',sans-serif",color:"#e8e8f0",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{BASE_CSS}</style>
 
-      {/* Header */}
-      <header style={{padding:"10px 16px",borderBottom:"1px solid #1e1e2a",display:"flex",alignItems:"center",gap:10,background:"#0f0f13",position:"sticky",top:0,zIndex:10}}>
-        {/* Group selector */}
+      {/* ── TOP HEADER ── */}
+      <header style={{padding:"10px 16px",borderBottom:"1px solid #1e1e2a",display:"flex",alignItems:"center",gap:10,background:"#0f0f13",flexShrink:0,zIndex:10}}>
         <div onClick={()=>setScreen("groups")} className="clickable" style={{flex:1,display:"flex",alignItems:"center",gap:8,minWidth:0}}>
           <div style={{width:30,height:30,borderRadius:8,background:"#FF6B6B22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>📅</div>
           <div style={{minWidth:0}}>
-            <div style={{fontFamily:"Fraunces,serif",fontSize:15,fontWeight:600,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{activeGroup?.name || "Zoegenda"}</div>
-            <div style={{fontSize:9,color:"#555"}}>código: {activeGroup?.code} · {groupMembers.length} miembro{groupMembers.length!==1?"s":""}</div>
+            <div style={{fontFamily:"Fraunces,serif",fontSize:15,fontWeight:600,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{activeGroup?.name||"Zoegenda"}</div>
+            <div style={{fontSize:9,color:"#555"}}>código: <span style={{color:"#FF6B6B",fontWeight:700,letterSpacing:1}}>{activeGroup?.code}</span> · {groupMembers.length} miembro{groupMembers.length!==1?"s":""}</div>
           </div>
           <span style={{color:"#333",fontSize:12,flexShrink:0}}>▼</span>
         </div>
-
-        {/* Members strip */}
         <div style={{display:"flex",alignItems:"center",flexShrink:0}}>
-          {groupMembers.slice(0,5).map((m,i)=>(
+          {groupMembers.slice(0,4).map((m,i)=>(
             <div key={m.id} title={m.display_name} style={{width:24,height:24,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",border:m.id===authUser?.id?"2px solid #fff":"2px solid #0f0f13",marginLeft:i===0?0:-5,opacity:m.id===authUser?.id?1:.65,zIndex:m.id===authUser?.id?2:1}}>{m.avatar}</div>
           ))}
-          {groupMembers.length>5&&<div style={{fontSize:9,color:"#555",marginLeft:5}}>+{groupMembers.length-5}</div>}
+          {groupMembers.length>4&&<div style={{fontSize:9,color:"#555",marginLeft:4}}>+{groupMembers.length-4}</div>}
         </div>
-
-        {/* Profile button */}
         <div onClick={()=>setShowGroupPanel(p=>!p)} className="clickable" style={{display:"flex",alignItems:"center",gap:6,background:showGroupPanel?"#1e1e2a":"#131318",border:`1px solid ${showGroupPanel?"#3a3a4a":"#2a2a3a"}`,borderRadius:20,padding:"4px 10px 4px 4px",flexShrink:0}}>
           <div style={{width:22,height:22,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff"}}>{profile?.avatar}</div>
-          <span style={{fontSize:11,color:"#ccc",fontWeight:500,maxWidth:60,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.display_name}</span>
+          <span style={{fontSize:11,color:"#ccc",fontWeight:500,maxWidth:55,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.display_name}</span>
         </div>
-
         <button onClick={()=>openNew(null)} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:9,padding:"7px 12px",fontSize:12,fontWeight:700,flexShrink:0}}>+ Nuevo</button>
       </header>
 
       {/* Profile panel */}
       {showGroupPanel&&(
-        <div className="panel-anim" style={{background:"#0d0d11",borderBottom:"1px solid #1e1e2a",padding:"12px 16px",display:"flex",gap:10,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
+        <div className="panel-anim" style={{background:"#0d0d11",borderBottom:"1px solid #1e1e2a",padding:"12px 16px",display:"flex",gap:10,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <div style={{width:34,height:34,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff"}}>{profile?.avatar}</div>
             <div>
@@ -551,160 +667,88 @@ export default function App() {
         </div>
       )}
 
-      {/* Group code banner */}
-      <div style={{padding:"6px 16px",background:"#131318",borderBottom:"1px solid #1e1e2a",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <span style={{fontSize:10,color:"#555"}}>Compartí este código para invitar personas: <span style={{color:"#FF6B6B",fontWeight:700,letterSpacing:2}}>{activeGroup?.code}</span></span>
-        <button onClick={()=>navigator.clipboard?.writeText(activeGroup?.code)} style={{background:"transparent",border:"none",color:"#555",fontSize:10,padding:"2px 6px"}}>Copiar</button>
-      </div>
+      {/* ── BODY: sidebar + content ── */}
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
 
-      {/* Tabs */}
-      <div style={{padding:"8px 16px 0",display:"flex",gap:4}}>
-        {[["calendar","📅 Mes"],["agenda","📋 Agenda"],["day","🗓 Día"]].map(([v,label])=>(
-          <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#666",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:view===v?600:400,border:view===v?"1px solid #2a2a3a":"1px solid transparent"}}>{label}</button>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div style={{padding:"8px 16px",display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
-        <span style={{fontSize:9,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>Ver:</span>
-        {[["all","Todos"],...groupMembers.map(m=>[m.id,m.display_name])].map(([id,label])=>{
-          const m=groupMembers.find(x=>x.id===id); const on=filterUser===id;
-          return <div key={id} onClick={()=>setFilterUser(id)} style={{padding:"2px 9px",borderRadius:20,fontSize:10,cursor:"pointer",background:on?(m?m.color+"33":"#2a2a3a"):"transparent",color:on?(m?m.color:"#fff"):"#555",border:`1px solid ${on?"#3a3a4a":"#1e1e2a"}`}}>{label}</div>;
-        })}
-        <div style={{width:1,height:12,background:"#2a2a3a",margin:"0 2px"}}/>
-        {CATEGORIES.map(c=>(
-          <div key={c.id} onClick={()=>setFilterCat(filterCat===c.id?"all":c.id)} style={{padding:"2px 9px",borderRadius:20,fontSize:10,cursor:"pointer",background:filterCat===c.id?c.color+"33":"transparent",color:filterCat===c.id?c.color:"#555",border:`1px solid ${filterCat===c.id?c.color+"44":"#1e1e2a"}`}}>{c.label}</div>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div style={{flex:1,padding:"0 16px 24px",overflow:"auto"}}>
-
-        {/* CALENDAR */}
-        {view==="calendar"&&(
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-              <button onClick={prevMonth} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>‹</button>
-              <span style={{fontFamily:"Fraunces,serif",fontSize:16,fontWeight:600,color:"#fff",flex:1,textAlign:"center"}}>{MONTHS_ES[currentMonth]} {currentYear}</span>
-              <button onClick={nextMonth} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>›</button>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:3}}>
-              {DAYS_ES.map(d=><div key={d} style={{textAlign:"center",fontSize:9,fontWeight:600,color:"#555",textTransform:"uppercase",letterSpacing:1,padding:"4px 0"}}>{d}</div>)}
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
-              {Array.from({length:firstDay}).map((_,i)=><div key={`e${i}`}/>)}
-              {Array.from({length:daysInMonth}).map((_,i)=>{
-                const day=i+1;
-                const dateStr=`${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-                const dayEvs=eventsForDate(dateStr);
-                const isToday=dateStr===fmt(today); const isSelected=dateStr===selectedDate;
-                return (
-                  <div key={day} className="day-cell" onClick={()=>{setSelectedDate(dateStr);setView("day");}}
-                    style={{minHeight:68,padding:"5px 4px",borderRadius:8,background:isSelected?"#1a1a28":"#131318",border:isSelected?"1px solid #2a2a3a":"1px solid #1a1a22",boxShadow:isToday?"inset 0 0 0 1.5px #FF6B6B55":"none"}}>
-                    <div style={{fontSize:11,fontWeight:isToday?700:400,color:isToday?"#FF6B6B":"#e8e8f0",marginBottom:2,display:"flex",justifyContent:"space-between"}}>
-                      {day}{dayEvs.length>0&&<span style={{fontSize:8,color:"#555"}}>{dayEvs.length}</span>}
-                    </div>
-                    {dayEvs.slice(0,2).map(ev=><EventChip key={ev.id} ev={ev}/>)}
-                    {dayEvs.length>2&&<div style={{fontSize:8,color:"#555"}}>+{dayEvs.length-2}</div>}
-                    <div onClick={e=>{e.stopPropagation();openNew(dateStr);}} style={{fontSize:10,color:"#2a2a3a",textAlign:"right",cursor:"pointer",marginTop:2}}>+</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* AGENDA */}
-        {view==="agenda"&&(
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-              <button onClick={prevMonth} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>‹</button>
-              <span style={{fontFamily:"Fraunces,serif",fontSize:16,fontWeight:600,color:"#fff",flex:1,textAlign:"center"}}>{MONTHS_ES[currentMonth]} {currentYear}</span>
-              <button onClick={nextMonth} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>›</button>
-            </div>
-            {agendaDates.length===0&&<div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>No hay eventos este mes<div style={{marginTop:14}}><button onClick={()=>openNew(null)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"7px 18px",cursor:"pointer",fontSize:12}}>+ Crear evento</button></div></div>}
-            {agendaDates.map(dateStr=>{
-              const d=parse(dateStr); const isToday=dateStr===fmt(today);
-              return (
-                <div key={dateStr} style={{marginBottom:16}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-                    <div style={{width:32,height:32,borderRadius:8,background:isToday?"#FF6B6B":"#1a1a22",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      <span style={{fontSize:12,fontWeight:700,color:"#fff",lineHeight:1}}>{d.getDate()}</span>
-                      <span style={{fontSize:8,color:isToday?"#ffb3b3":"#555",textTransform:"uppercase"}}>{DAYS_ES[d.getDay()]}</span>
-                    </div>
-                    <div style={{flex:1,height:1,background:"#1e1e2a"}}/>
-                  </div>
-                  {eventsForDate(dateStr).map(ev=>(
-                    <div key={ev.id} className="agenda-event" onClick={()=>openEdit(ev)}
-                      style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start",borderLeft:`3px solid ${cat(ev.category).color}`,marginBottom:5}}>
-                      <div style={{color:"#888",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>{ev.time}</div>
-                      <div style={{flex:1}}>
-                        <div style={{fontWeight:600,fontSize:13,color:"#e8e8f0",display:"flex",alignItems:"center",gap:5}}>
-                          {ev.title}{ev.recurring&&<span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4}}>↻</span>}
-                        </div>
-                        {ev.notes&&<div style={{fontSize:11,color:"#666",marginTop:2}}>{ev.notes}</div>}
-                        <div style={{display:"flex",gap:4,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
-                          <span style={{fontSize:9,padding:"1px 6px",borderRadius:20,background:cat(ev.category).color+"22",color:cat(ev.category).color}}>{cat(ev.category).label}</span>
-                          {ev.attendees?.map(uid=><div key={uid} title={member(uid).display_name} style={{width:13,height:13,borderRadius:"50%",background:member(uid).color,fontSize:6,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>{member(uid).avatar}</div>)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
+        {/* SIDEBAR (desktop only) */}
+        <aside className="sidebar" style={{width:220,flexShrink:0,background:"#0a0a0e",borderRight:"1px solid #1e1e2a",display:"flex",flexDirection:"column",padding:"16px 12px",gap:4,overflowY:"auto"}}>
+          <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingLeft:8}}>Vistas</div>
+          {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"]].map(([v,icon,label])=>(
+            <button key={v} onClick={()=>setView(v)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:8,border:"none",background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#555",fontSize:13,fontWeight:view===v?600:400,textAlign:"left",width:"100%"}}>
+              <span style={{fontSize:15}}>{icon}</span>{label}
+            </button>
+          ))}
+          <div style={{height:1,background:"#1e1e2a",margin:"10px 0"}}/>
+          <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingLeft:8}}>Filtros</div>
+          <div style={{display:"flex",flexDirection:"column",gap:3}}>
+            {[["all","Todos",null],...groupMembers.map(m=>[m.id,m.display_name,m])].map(([id,label,m])=>{
+              const on=filterUser===id;
+              return <div key={id} onClick={()=>setFilterUser(id)} style={{padding:"6px 10px",borderRadius:8,fontSize:12,cursor:"pointer",background:on?(m?m.color+"22":"#1e1e2a"):"transparent",color:on?(m?m.color:"#fff"):"#555",display:"flex",alignItems:"center",gap:7}}>
+                {m&&<div style={{width:10,height:10,borderRadius:"50%",background:m.color,flexShrink:0}}/>}{label}
+              </div>;
             })}
           </div>
-        )}
-
-        {/* DAY */}
-        {view==="day"&&(
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-              <button onClick={()=>{const d=parse(selectedDate);d.setDate(d.getDate()-1);setSelectedDate(fmt(d));}} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>‹</button>
-              <div style={{flex:1,textAlign:"center"}}>
-                <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"#fff"}}>{parse(selectedDate).getDate()} de {MONTHS_ES[parse(selectedDate).getMonth()]}</div>
-                <div style={{fontSize:11,color:"#555"}}>{DAYS_FULL[parse(selectedDate).getDay()]}</div>
+          <div style={{height:1,background:"#1e1e2a",margin:"6px 0"}}/>
+          <div style={{display:"flex",flexDirection:"column",gap:3}}>
+            {CATEGORIES.map(c=>(
+              <div key={c.id} onClick={()=>setFilterCat(filterCat===c.id?"all":c.id)} style={{padding:"6px 10px",borderRadius:8,fontSize:12,cursor:"pointer",background:filterCat===c.id?c.color+"22":"transparent",color:filterCat===c.id?c.color:"#555",display:"flex",alignItems:"center",gap:7}}>
+                <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>{c.label}
               </div>
-              <button onClick={()=>{const d=parse(selectedDate);d.setDate(d.getDate()+1);setSelectedDate(fmt(d));}} style={{background:"#1a1a22",color:"#aaa",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>›</button>
-            </div>
-            {selectedDayEvents.length===0&&<div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>Sin eventos<div style={{marginTop:14}}><button onClick={()=>openNew(selectedDate)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"7px 18px",cursor:"pointer",fontSize:12}}>+ Agregar</button></div></div>}
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {selectedDayEvents.map(ev=>(
-                <div key={ev.id} onClick={()=>openEdit(ev)} style={{background:"#131318",borderRadius:12,padding:"12px 16px",cursor:"pointer",border:"1px solid #1e1e2a",borderLeft:`4px solid ${cat(ev.category).color}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{fontSize:16,fontWeight:700,color:cat(ev.category).color,fontFamily:"Fraunces,serif"}}>{ev.time}</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:14,fontWeight:600,color:"#e8e8f0",display:"flex",alignItems:"center",gap:6}}>
-                        {ev.title}{ev.recurring&&<span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4,fontWeight:400}}>↻</span>}
-                      </div>
-                      <div style={{fontSize:11,color:cat(ev.category).color,marginTop:1}}>{cat(ev.category).label}</div>
-                    </div>
-                    <div style={{display:"flex",gap:3}}>
-                      {ev.attendees?.map(uid=><div key={uid} title={member(uid).display_name} style={{width:20,height:20,borderRadius:"50%",background:member(uid).color,fontSize:7,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>{member(uid).avatar}</div>)}
-                    </div>
-                  </div>
-                  {ev.notes&&<div style={{fontSize:12,color:"#666",marginTop:7,paddingTop:7,borderTop:"1px solid #1e1e2a"}}>{ev.notes}</div>}
-                </div>
-              ))}
-            </div>
-            <button onClick={()=>openNew(selectedDate)} style={{marginTop:12,width:"100%",padding:"11px",borderRadius:10,background:"transparent",border:"1px dashed #2a2a3a",color:"#555",cursor:"pointer",fontSize:13,border:"1px dashed #2a2a3a"}}>+ Agregar evento</button>
+            ))}
           </div>
-        )}
+          <div style={{flex:1}}/>
+          <button onClick={()=>openNew(null)} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,marginTop:8}}>+ Nuevo evento</button>
+        </aside>
+
+        {/* MAIN CONTENT */}
+        <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
+          {/* Mobile filters bar */}
+          <div className="desktop-filters" style={{padding:"8px 16px",borderBottom:"1px solid #1a1a22",flexShrink:0,overflowX:"auto"}}>
+            <Filters/>
+          </div>
+
+          {/* Scrollable content */}
+          <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
+            {view==="calendar"&&<CalendarContent/>}
+            {view==="agenda"&&<AgendaContent/>}
+            {view==="day"&&<DayContent/>}
+          </div>
+        </main>
       </div>
 
-      {/* Event Modal */}
+      {/* ── BOTTOM NAV (mobile only) ── */}
+      <nav className="bottom-nav">
+        {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"]].map(([v,icon,label])=>(
+          <button key={v} className="bottom-nav-item" onClick={()=>setView(v)} style={{color:view===v?"#FF6B6B":"#555"}}>
+            <span>{icon}</span>
+            <span style={{fontSize:9,fontWeight:view===v?700:400}}>{label}</span>
+          </button>
+        ))}
+        <button className="bottom-nav-item" onClick={()=>openNew(null)} style={{color:"#FF6B6B"}}>
+          <span style={{width:32,height:32,borderRadius:"50%",background:"#FF6B6B",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:20,fontWeight:300,marginBottom:2}}>+</span>
+          <span style={{fontSize:9,fontWeight:600,color:"#FF6B6B"}}>Nuevo</span>
+        </button>
+        <button className="bottom-nav-item" onClick={()=>setScreen("groups")} style={{color:"#555"}}>
+          <span>🗂️</span>
+          <span style={{fontSize:9}}>Grupos</span>
+        </button>
+        <button className="bottom-nav-item" onClick={()=>setShowGroupPanel(p=>!p)} style={{color:"#555"}}>
+          <span style={{width:24,height:24,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{profile?.avatar}</span>
+          <span style={{fontSize:9}}>Perfil</span>
+        </button>
+      </nav>
+
+      {/* ── EVENT MODAL ── */}
       {showEventModal&&editingEvent&&(
         <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)closeModal();}}
           style={{position:"fixed",inset:0,background:"#000000d0",zIndex:100,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-          <div className="modal-box" style={{background:"#131318",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:520,padding:20,border:"1px solid #2a2a3a",maxHeight:"92vh",overflow:"auto"}}>
+          <div className="modal-box" style={{background:"#131318",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,padding:20,border:"1px solid #2a2a3a",maxHeight:"92vh",overflow:"auto"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
               <h2 style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"#fff"}}>{editingEvent.id?"Editar evento":"Nuevo evento"}</h2>
               <button onClick={closeModal} style={{background:"#1e1e2a",border:"none",color:"#aaa",width:26,height:26,borderRadius:"50%",fontSize:14}}>×</button>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               <input value={editingEvent.title} onChange={e=>setEditingEvent(ev=>({...ev,title:e.target.value}))} placeholder="Título del evento" style={inp}/>
-
-              {/* Recurring */}
               <div style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"9px 12px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setEditingEvent(ev=>({...ev,recurring:!ev.recurring}))}>
                   <div>
@@ -730,7 +774,6 @@ export default function App() {
                   </div>
                 )}
               </div>
-
               <div style={{display:"flex",gap:8}}>
                 <div style={{flex:1}}>
                   <label style={lbl}>{editingEvent.recurring?"Fecha inicio":"Fecha"}</label>
@@ -741,14 +784,12 @@ export default function App() {
                   <input type="time" value={editingEvent.time} onChange={e=>setEditingEvent(ev=>({...ev,time:e.target.value}))} style={inp}/>
                 </div>
               </div>
-
               <div>
                 <label style={lbl}>Categoría</label>
                 <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
                   {CATEGORIES.map(c=><div key={c.id} onClick={()=>setEditingEvent(ev=>({...ev,category:c.id,color:c.color}))} style={{padding:"4px 9px",borderRadius:20,fontSize:11,cursor:"pointer",background:editingEvent.category===c.id?c.color+"33":"#1a1a22",color:editingEvent.category===c.id?c.color:"#666",border:`1px solid ${editingEvent.category===c.id?c.color+"44":"#2a2a3a"}`,fontWeight:editingEvent.category===c.id?600:400}}>{c.label}</div>)}
                 </div>
               </div>
-
               <div>
                 <label style={lbl}>Participantes</label>
                 <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
@@ -760,12 +801,10 @@ export default function App() {
                   ))}
                 </div>
               </div>
-
               <div>
                 <label style={lbl}>Notas</label>
                 <textarea value={editingEvent.notes} onChange={e=>setEditingEvent(ev=>({...ev,notes:e.target.value}))} placeholder="Detalles adicionales..." rows={2} style={{...inp,resize:"none"}}/>
               </div>
-
               <div style={{display:"flex",gap:8}}>
                 {editingEvent.id&&<button onClick={()=>{if(editingEvent.recurring)setDeleteDialog({baseId:editingEvent.id,isBase:true});else confirmDelete(editingEvent.id,null,null);}} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:10,padding:"9px 12px",fontSize:12,fontWeight:600}}>Eliminar</button>}
                 <button onClick={saveEvent} style={{flex:1,background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"10px",fontSize:14,fontWeight:700}}>{editingEvent.id?"Guardar":"Crear evento"}</button>
