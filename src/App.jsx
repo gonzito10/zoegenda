@@ -702,13 +702,18 @@ export default function App() {
 
         {/* MAIN CONTENT */}
         <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
-          {/* Mobile tabs - portrait only */}
-          <div className="mobile-tabs" style={{padding:"8px 16px 0",gap:4,flexShrink:0}}>
-            {[["calendar","📅 Mes"],["agenda","📋 Agenda"],["day","🗓 Día"]].map(([v,label])=>(
-              <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#666",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:view===v?600:400,border:view===v?"1px solid #2a2a3a":"1px solid transparent"}}>
-                {label}
-              </button>
-            ))}
+          {/* Mobile tabs + filters - portrait only */}
+          <div className="mobile-tabs" style={{flexDirection:"column",flexShrink:0}}>
+            <div style={{padding:"8px 16px 0",display:"flex",gap:4}}>
+              {[["calendar","📅 Mes"],["agenda","📋 Agenda"],["day","🗓 Día"]].map(([v,label])=>(
+                <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#666",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:view===v?600:400,border:view===v?"1px solid #2a2a3a":"1px solid transparent"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div style={{padding:"6px 16px 6px",borderBottom:"1px solid #1a1a22",overflowX:"auto"}}>
+              <Filters/>
+            </div>
           </div>
           {/* Desktop filters bar */}
           <div className="desktop-filters" style={{padding:"8px 16px",borderBottom:"1px solid #1a1a22",flexShrink:0,overflowX:"auto"}}>
