@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Zoegenda</title>
     <meta name="description" content="Agenda compartida en tiempo real" />
     <link rel="icon" href="/icon.svg" />
@@ -16,15 +16,30 @@
       * { box-sizing: border-box; margin: 0; padding: 0; }
       html, body { height: 100%; background: #0f0f13; overflow-x: hidden; }
       #root { height: 100%; }
+
+      /* Portrait mobile: sin sidebar, sin bottom nav, con tabs arriba */
       .sidebar { display: none !important; }
-      .bottom-nav { display: flex !important; }
+      .bottom-nav { display: none !important; }
       .desktop-filters { display: none !important; }
-      @media (min-width: 768px) {
+      .mobile-tabs { display: flex !important; }
+
+      /* Landscape mobile y tablet+: sidebar visible, bottom nav oculto */
+      @media (min-width: 768px), (orientation: landscape) {
         .sidebar { display: flex !important; }
         .bottom-nav { display: none !important; }
         .desktop-filters { display: flex !important; }
+        .mobile-tabs { display: none !important; }
       }
-      @media (max-width: 480px) {
+
+      /* Desktop grande siempre sidebar */
+      @media (min-width: 1024px) {
+        .sidebar { display: flex !important; }
+        .bottom-nav { display: none !important; }
+        .desktop-filters { display: flex !important; }
+        .mobile-tabs { display: none !important; }
+      }
+
+      @media (max-width: 480px) and (orientation: portrait) {
         .day-cell { min-height: 52px !important; padding: 3px 2px !important; }
       }
       @media (min-width: 768px) {
