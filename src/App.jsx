@@ -720,21 +720,13 @@ export default function App() {
       <nav className="bottom-nav">
         {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"]].map(([v,icon,label])=>(
           <button key={v} className="bottom-nav-item" onClick={()=>setView(v)} style={{color:view===v?"#FF6B6B":"#555"}}>
-            <span>{icon}</span>
+            <span style={{fontSize:20}}>{icon}</span>
             <span style={{fontSize:9,fontWeight:view===v?700:400}}>{label}</span>
           </button>
         ))}
-        <button className="bottom-nav-item" onClick={()=>openNew(null)} style={{color:"#FF6B6B"}}>
-          <span style={{width:32,height:32,borderRadius:"50%",background:"#FF6B6B",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:20,fontWeight:300,marginBottom:2}}>+</span>
+        <button className="bottom-nav-item" onClick={()=>openNew(null)}>
+          <span style={{width:36,height:36,borderRadius:"50%",background:"#FF6B6B",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:24,lineHeight:1}}>+</span>
           <span style={{fontSize:9,fontWeight:600,color:"#FF6B6B"}}>Nuevo</span>
-        </button>
-        <button className="bottom-nav-item" onClick={()=>setScreen("groups")} style={{color:"#555"}}>
-          <span>🗂️</span>
-          <span style={{fontSize:9}}>Grupos</span>
-        </button>
-        <button className="bottom-nav-item" onClick={()=>setShowGroupPanel(p=>!p)} style={{color:"#555"}}>
-          <span style={{width:24,height:24,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{profile?.avatar}</span>
-          <span style={{fontSize:9}}>Perfil</span>
         </button>
       </nav>
 
