@@ -97,9 +97,24 @@ function expandRecurring(ev, rangeStart, rangeEnd) {
   if (!ev.recurring) return [];
   const rStart = parse(rangeStart), rEnd = parse(rangeEnd);
   const origin = parse(ev.date);
-  const endDate = ev.recurringEnd ? parse(ev.recurringEnd) : new Date(rEnd.getFullYear()+2,0,1);
   const exceptions = ev.exceptions || [];
   const instances = [];
+
+  // Yearly (birthdays)
+  if (ev.recurringYearly) {
+    let year = rStart.getFullYear();
+    while (year <= rEnd.getFullYear() + 1) {
+      const d = new Date(year, origin.getMonth(), origin.getDate());
+      const ds = fmt(d);
+      if (d >= rStart && d <= rEnd && !exceptions.includes(ds))
+        instances.push({...ev, id:`${ev.id}_${ds}`, date:ds, _recurringBase:ev.id, _virtual:true});
+      year++;
+    }
+    return instances;
+  }
+
+  // Weekly
+  const endDate = ev.recurringEnd ? parse(ev.recurringEnd) : new Date(rEnd.getFullYear()+2,0,1);
   (ev.recurringDays||[]).forEach(dow => {
     let d = new Date(origin);
     d.setDate(d.getDate() + (dow - d.getDay() + 7) % 7);
@@ -426,6 +441,11 @@ export default function App() {
   async function saveEvent() {
     if (!editingEvent.title.trim()) return;
     const toSave = {...editingEvent};
+    if (toSave.category === "birthday") {
+      toSave.recurring = true;
+      toSave.recurringYearly = true;
+      toSave.recurringDays = [];
+    }
     delete toSave._editingVirtualDate;
     if (!toSave.recurring) { toSave.recurringDays=[]; toSave.recurringEnd=""; }
     if (toSave.recurring && !toSave.recurringDays?.length) toSave.recurringDays=[parse(toSave.date).getDay()];
@@ -927,31 +947,41 @@ export default function App() {
                   <input value={editingEvent.birthdayPerson||""} onChange={e=>setEditingEvent(ev=>({...ev,birthdayPerson:e.target.value,title:e.target.value?`Cumpleaños de ${e.target.value}`:ev.title}))} placeholder="Ej: María" style={inp}/>
                 </div>
               )}
-              <div style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"9px 12px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setEditingEvent(ev=>({...ev,recurring:!ev.recurring}))}>
+              {editingEvent.category==="birthday" ? (
+                <div style={{background:"#FFB34711",border:"1px solid #FFB34733",borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:16}}>🎂</span>
                   <div>
-                    <div style={{fontSize:13,fontWeight:600,color:"#e8e8f0"}}>↻ Evento rutinario</div>
-                    <div style={{fontSize:11,color:"#555",marginTop:1}}>Se repite semanalmente</div>
-                  </div>
-                  <div style={{width:36,height:20,borderRadius:10,background:editingEvent.recurring?"#FF6B6B":"#2a2a3a",position:"relative",transition:"background .2s",flexShrink:0}}>
-                    <div style={{width:14,height:14,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:editingEvent.recurring?18:3,transition:"left .2s"}}/>
+                    <div style={{fontSize:13,fontWeight:600,color:"#FFB347"}}>Se repite cada año</div>
+                    <div style={{fontSize:11,color:"#7a6020",marginTop:1}}>El cumpleaños se agrega automáticamente para siempre</div>
                   </div>
                 </div>
-                {editingEvent.recurring&&(
-                  <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #1e1e2a"}}>
-                    <label style={lbl}>Días de la semana</label>
-                    <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
-                      {DAYS_ES.map((d,i)=>{
-                        const on=editingEvent.recurringDays?.includes(i);
-                        return <div key={i} className="dow-pill" onClick={()=>toggleRecurringDay(i)} style={{padding:"4px 9px",borderRadius:8,fontSize:11,fontWeight:on?700:400,background:on?"#FF6B6B33":"#1a1a22",color:on?"#FF6B6B":"#555",border:`1px solid ${on?"#FF6B6B44":"#2a2a3a"}`}}>{d}</div>;
-                      })}
+              ) : (
+                <div style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"9px 12px"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setEditingEvent(ev=>({...ev,recurring:!ev.recurring}))}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:600,color:"#e8e8f0"}}>↻ Evento rutinario</div>
+                      <div style={{fontSize:11,color:"#555",marginTop:1}}>Se repite semanalmente</div>
                     </div>
-                    <label style={lbl}>Fecha de fin (opcional)</label>
-                    <input type="date" value={editingEvent.recurringEnd||""} onChange={e=>setEditingEvent(ev=>({...ev,recurringEnd:e.target.value}))} style={{...inp,width:"auto"}}/>
-                    {!editingEvent.recurringEnd&&<div style={{fontSize:10,color:"#444",marginTop:3}}>Sin fecha de fin — se repite indefinidamente</div>}
+                    <div style={{width:36,height:20,borderRadius:10,background:editingEvent.recurring?"#FF6B6B":"#2a2a3a",position:"relative",transition:"background .2s",flexShrink:0}}>
+                      <div style={{width:14,height:14,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:editingEvent.recurring?18:3,transition:"left .2s"}}/>
+                    </div>
                   </div>
-                )}
-              </div>
+                  {editingEvent.recurring&&(
+                    <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #1e1e2a"}}>
+                      <label style={lbl}>Días de la semana</label>
+                      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
+                        {DAYS_ES.map((d,i)=>{
+                          const on=editingEvent.recurringDays?.includes(i);
+                          return <div key={i} className="dow-pill" onClick={()=>toggleRecurringDay(i)} style={{padding:"4px 9px",borderRadius:8,fontSize:11,fontWeight:on?700:400,background:on?"#FF6B6B33":"#1a1a22",color:on?"#FF6B6B":"#555",border:`1px solid ${on?"#FF6B6B44":"#2a2a3a"}`}}>{d}</div>;
+                        })}
+                      </div>
+                      <label style={lbl}>Fecha de fin (opcional)</label>
+                      <input type="date" value={editingEvent.recurringEnd||""} onChange={e=>setEditingEvent(ev=>({...ev,recurringEnd:e.target.value}))} style={{...inp,width:"auto"}}/>
+                      {!editingEvent.recurringEnd&&<div style={{fontSize:10,color:"#444",marginTop:3}}>Sin fecha de fin — se repite indefinidamente</div>}
+                    </div>
+                  )}
+                </div>
+              )}
               <div style={{display:"flex",gap:8}}>
                 <div style={{flex:1}}>
                   <label style={lbl}>{editingEvent.recurring?"Fecha inicio":"Fecha"}</label>
