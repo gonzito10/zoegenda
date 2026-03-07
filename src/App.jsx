@@ -445,6 +445,7 @@ export default function App() {
       toSave.recurring = true;
       toSave.recurringYearly = true;
       toSave.recurringDays = [];
+      toSave.title = toSave.birthdayPerson || toSave.title;
     }
     delete toSave._editingVirtualDate;
     if (!toSave.recurring) { toSave.recurringDays=[]; toSave.recurringEnd=""; }
@@ -940,12 +941,13 @@ export default function App() {
               <button onClick={closeModal} style={{background:"#1e1e2a",border:"none",color:"#aaa",width:26,height:26,borderRadius:"50%",fontSize:14}}>×</button>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <input value={editingEvent.title} onChange={e=>setEditingEvent(ev=>({...ev,title:e.target.value}))} placeholder="Título del evento" style={inp}/>
-              {editingEvent.category==="birthday"&&(
+              {editingEvent.category==="birthday" ? (
                 <div>
                   <label style={lbl}>🎂 Nombre de quien cumple</label>
-                  <input value={editingEvent.birthdayPerson||""} onChange={e=>setEditingEvent(ev=>({...ev,birthdayPerson:e.target.value,title:e.target.value?`Cumpleaños de ${e.target.value}`:ev.title}))} placeholder="Ej: María" style={inp}/>
+                  <input value={editingEvent.birthdayPerson||""} onChange={e=>setEditingEvent(ev=>({...ev,birthdayPerson:e.target.value,title:e.target.value||""}))} placeholder="Ej: María" style={inp} autoFocus/>
                 </div>
+              ) : (
+                <input value={editingEvent.title} onChange={e=>setEditingEvent(ev=>({...ev,title:e.target.value}))} placeholder="Título del evento" style={inp}/>
               )}
               {editingEvent.category==="birthday" ? (
                 <div style={{background:"#FFB34711",border:"1px solid #FFB34733",borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",gap:8}}>
