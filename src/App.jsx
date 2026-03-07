@@ -74,11 +74,12 @@ function themeBgStyle(t){
   return {background:t.bg, backgroundImage:svg, backgroundRepeat:"repeat"};
 }
 const CATEGORIES = [
-  { id:"work",     label:"Trabajo",   color:"#FF6B6B" },
-  { id:"personal", label:"Personal",  color:"#4ECDC4" },
-  { id:"social",   label:"Social",    color:"#FFEAA7" },
-  { id:"health",   label:"Salud",     color:"#96CEB4" },
-  { id:"other",    label:"Otro",      color:"#DDA0DD" },
+  { id:"work",     label:"Trabajo",    color:"#FF6B6B", icon:"💼" },
+  { id:"personal", label:"Personal",   color:"#4ECDC4", icon:"🙂" },
+  { id:"social",   label:"Social",     color:"#FFEAA7", icon:"🎉" },
+  { id:"health",   label:"Salud",      color:"#96CEB4", icon:"🩺" },
+  { id:"birthday", label:"Cumpleaños", color:"#FFB347", icon:"🎂" },
+  { id:"other",    label:"Otro",       color:"#DDA0DD", icon:"📌" },
 ];
 const DAYS_ES   = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const DAYS_FULL = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
@@ -221,6 +222,8 @@ export default function App() {
   const [groupMembers, setGroupMembers]= useState([]);
   const [showGroupPanel, setShowGroupPanel] = useState(false);
   const [showThemePanel, setShowThemePanel] = useState(false);
+  const [notifications, setNotifications] = useState([]); // eventos de mañana
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
 
   const theme = getTheme(profile?.theme);
   const T = theme; // shorthand
@@ -345,6 +348,28 @@ export default function App() {
     return () => supabase.removeChannel(ch);
   }, [activeGroup?.id]);
 
+  // ── Notification check: events tomorrow ────────────────────────────────
+  useEffect(() => {
+    if (!events.length || !activeGroup) return;
+    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+    const tomorrowStr = fmt(tomorrow);
+    // Check regular events
+    const direct = events.filter(e => !e.recurring && e.date === tomorrowStr);
+    // Check recurring events
+    const recurring = events.filter(e => e.recurring).flatMap(e => {
+      const instances = expandRecurring(e, tomorrowStr, tomorrowStr);
+      return instances.length > 0 ? [e] : [];
+    });
+    const all = [...direct, ...recurring];
+    if (all.length > 0) {
+      setNotifications(all);
+      setShowNotifPanel(true);
+    } else {
+      setNotifications([]);
+      setShowNotifPanel(false);
+    }
+  }, [events, activeGroup?.id]);
+
   // ── Calendar helpers ─────────────────────────────────────────────────────
   const rangeStart = fmt(new Date(currentYear, currentMonth, 1));
   const rangeEnd   = fmt(new Date(currentYear, currentMonth+1, 0));
@@ -384,7 +409,7 @@ export default function App() {
   // ── Event CRUD ───────────────────────────────────────────────────────────
   function openNew(date) {
     const d = date ? parse(date) : parse(selectedDate);
-    setEditingEvent({ id:null, title:"", date:date||selectedDate, time:"09:00", timeEnd:"", category:"work", attendees:[authUser.id], notes:"", color:"#FF6B6B", recurring:false, recurringDays:[d.getDay()], recurringEnd:"" });
+    setEditingEvent({ id:null, title:"", date:date||selectedDate, time:"09:00", timeEnd:"", category:"work", attendees:[authUser.id], notes:"", color:"#FF6B6B", recurring:false, recurringDays:[d.getDay()], recurringEnd:"", birthdayPerson:"" });
     setShowEventModal(true);
   }
   function openEdit(ev) {
@@ -392,7 +417,7 @@ export default function App() {
       const base = events.find(e=>e.id===ev._recurringBase);
       setEditingEvent(base ? {...base, _editingVirtualDate:ev.date} : {...ev});
     } else {
-      setEditingEvent({...ev, recurringDays:ev.recurringDays||[], recurringEnd:ev.recurringEnd||"", timeEnd:ev.timeEnd||""});
+      setEditingEvent({...ev, recurringDays:ev.recurringDays||[], recurringEnd:ev.recurringEnd||"", timeEnd:ev.timeEnd||"", birthdayPerson:ev.birthdayPerson||""});
     }
     setShowEventModal(true);
   }
@@ -580,12 +605,18 @@ export default function App() {
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDay    = getFirstDay(currentYear, currentMonth);
 
-  const EventChip = ({ev}) => (
-    <div className="event-chip" onClick={e=>{e.stopPropagation();openEdit(ev);}}
-      style={{fontSize:9,padding:"2px 4px",borderRadius:3,marginBottom:2,background:cat(ev.category).color+"22",color:cat(ev.category).color,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontWeight:500,display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
-      {ev.recurring&&<span style={{opacity:.7}}>↻</span>}{ev.time} {ev.title}
-    </div>
-  );
+  const EventChip = ({ev}) => {
+    const isBday = ev.category === "birthday";
+    const icon = cat(ev.category).icon;
+    return (
+      <div className="event-chip" onClick={e=>{e.stopPropagation();openEdit(ev);}}
+        style={{fontSize:9,padding:"2px 4px",borderRadius:3,marginBottom:2,background:cat(ev.category).color+"22",color:cat(ev.category).color,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontWeight:500,display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
+        <span style={{flexShrink:0}}>{icon}</span>
+        {isBday ? <span>{ev.title}</span> : <span>{ev.time} {ev.title}</span>}
+        {ev.recurring&&!isBday&&<span style={{opacity:.7,flexShrink:0}}>↻</span>}
+      </div>
+    );
+  };
 
   const Filters = () => (
     <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
@@ -733,6 +764,12 @@ export default function App() {
           <div style={{width:22,height:22,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff"}}>{profile?.avatar}</div>
           <span style={{fontSize:11,color:"#ccc",fontWeight:500,maxWidth:55,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.display_name}</span>
         </div>
+        {notifications.length>0&&(
+          <button onClick={()=>setShowNotifPanel(p=>!p)} style={{position:"relative",background:showNotifPanel?"#FFB34722":"transparent",border:`1px solid ${showNotifPanel?"#FFB34744":"#2a2a3a"}`,borderRadius:9,padding:"7px 10px",fontSize:15,flexShrink:0,cursor:"pointer"}}>
+            🔔
+            <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#FF6B6B",fontSize:9,fontWeight:700,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{notifications.length}</span>
+          </button>
+        )}
         <button onClick={()=>openNew(null)} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:9,padding:"7px 12px",fontSize:12,fontWeight:700,flexShrink:0}}>+ Nuevo</button>
       </header>
 
@@ -768,6 +805,31 @@ export default function App() {
               })}
             </div>
             <div style={{fontSize:11,color:"#888",marginTop:8}}>Tema actual: <span style={{color:"#FF6B6B",fontWeight:600}}>{getTheme(profile?.theme).label}</span></div>
+          </div>
+        </div>
+      )}
+
+      {/* ── NOTIFICATION PANEL ── */}
+      {showNotifPanel&&notifications.length>0&&(
+        <div className="panel-anim" style={{background:"#1a1200",borderBottom:"1px solid #3a2a00",padding:"12px 16px",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:7}}>
+              <span style={{fontSize:16}}>🔔</span>
+              <span style={{fontSize:12,fontWeight:700,color:"#FFB347"}}>Mañana tenés {notifications.length} evento{notifications.length!==1?"s":""}</span>
+            </div>
+            <button onClick={()=>setShowNotifPanel(false)} style={{background:"transparent",border:"none",color:"#666",fontSize:16,cursor:"pointer",lineHeight:1}}>×</button>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:5}}>
+            {notifications.map(ev=>(
+              <div key={ev.id} onClick={()=>{openEdit(ev);setShowNotifPanel(false);}}
+                style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#ffffff08",cursor:"pointer",border:"1px solid #3a2a00"}}>
+                <span style={{fontSize:14}}>{ev.category==="birthday"?"🎂":ev.category==="work"?"💼":ev.category==="health"?"💊":ev.category==="social"?"🎉":"📌"}</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12,fontWeight:600,color:"#f5e0b0"}}>{ev.title}</div>
+                  <div style={{fontSize:10,color:"#888"}}>{ev.time}{ev.timeEnd?` – ${ev.timeEnd}`:""} · {cat(ev.category).label}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -859,6 +921,12 @@ export default function App() {
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               <input value={editingEvent.title} onChange={e=>setEditingEvent(ev=>({...ev,title:e.target.value}))} placeholder="Título del evento" style={inp}/>
+              {editingEvent.category==="birthday"&&(
+                <div>
+                  <label style={lbl}>🎂 Nombre de quien cumple</label>
+                  <input value={editingEvent.birthdayPerson||""} onChange={e=>setEditingEvent(ev=>({...ev,birthdayPerson:e.target.value,title:e.target.value?`Cumpleaños de ${e.target.value}`:ev.title}))} placeholder="Ej: María" style={inp}/>
+                </div>
+              )}
               <div style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"9px 12px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setEditingEvent(ev=>({...ev,recurring:!ev.recurring}))}>
                   <div>
@@ -889,19 +957,19 @@ export default function App() {
                   <label style={lbl}>{editingEvent.recurring?"Fecha inicio":"Fecha"}</label>
                   <input type="date" value={editingEvent.date} onChange={e=>setEditingEvent(ev=>({...ev,date:e.target.value}))} style={inp}/>
                 </div>
-                <div style={{width:100}}>
+                {editingEvent.category!=="birthday"&&<div style={{width:100}}>
                   <label style={lbl}>Hora inicio</label>
                   <input type="time" value={editingEvent.time} onChange={e=>setEditingEvent(ev=>({...ev,time:e.target.value}))} style={inp}/>
-                </div>
-                <div style={{width:100}}>
+                </div>}
+                {editingEvent.category!=="birthday"&&<div style={{width:100}}>
                   <label style={lbl}>Hora fin <span style={{color:"#444",fontWeight:400}}>(opcional)</span></label>
                   <input type="time" value={editingEvent.timeEnd||""} onChange={e=>setEditingEvent(ev=>({...ev,timeEnd:e.target.value}))} style={inp}/>
-                </div>
+                </div>}
               </div>
               <div>
                 <label style={lbl}>Categoría</label>
                 <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                  {CATEGORIES.map(c=><div key={c.id} onClick={()=>setEditingEvent(ev=>({...ev,category:c.id,color:c.color}))} style={{padding:"4px 9px",borderRadius:20,fontSize:11,cursor:"pointer",background:editingEvent.category===c.id?c.color+"33":"#1a1a22",color:editingEvent.category===c.id?c.color:"#666",border:`1px solid ${editingEvent.category===c.id?c.color+"44":"#2a2a3a"}`,fontWeight:editingEvent.category===c.id?600:400}}>{c.label}</div>)}
+                  {CATEGORIES.map(c=><div key={c.id} onClick={()=>setEditingEvent(ev=>({...ev,category:c.id,color:c.color}))} style={{padding:"4px 9px",borderRadius:20,fontSize:11,cursor:"pointer",background:editingEvent.category===c.id?c.color+"33":"#1a1a22",color:editingEvent.category===c.id?c.color:"#666",border:`1px solid ${editingEvent.category===c.id?c.color+"44":"#2a2a3a"}`,fontWeight:editingEvent.category===c.id?600:400}}>{c.icon} {c.label}</div>)}
                 </div>
               </div>
               <div>
