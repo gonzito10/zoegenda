@@ -708,7 +708,7 @@ export default function App() {
             {eventsForDate(dateStr).map(ev=>(
               <div key={ev.id} className="agenda-event" onClick={()=>openEdit(ev)}
                 style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start",borderLeft:`3px solid ${cat(ev.category).color}`,marginBottom:5}}>
-                <div style={{color:"#888",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>{ev.time}{ev.timeEnd&&<span style={{color:"#555"}}>–{ev.timeEnd}</span>}</div>
+                {ev.category!=="birthday"&&<div style={{color:"#888",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>{ev.time}{ev.timeEnd&&<span style={{color:"#555"}}>–{ev.timeEnd}</span>}</div>}
                 <div style={{flex:1}}>
                   <div style={{fontWeight:600,fontSize:13,color:"#e8e8f0",display:"flex",alignItems:"center",gap:5}}>
                     {ev.title}{ev.recurring&&<span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4}}>↻</span>}
@@ -742,7 +742,7 @@ export default function App() {
         {selectedDayEvents.map(ev=>(
           <div key={ev.id} onClick={()=>openEdit(ev)} style={{background:"#131318",borderRadius:12,padding:"12px 16px",cursor:"pointer",border:"1px solid #1e1e2a",borderLeft:`4px solid ${cat(ev.category).color}`}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{fontSize:16,fontWeight:700,color:cat(ev.category).color,fontFamily:"Fraunces,serif"}}>{ev.time}{ev.timeEnd&&<span style={{fontSize:11,fontWeight:400,color:cat(ev.category).color,opacity:.7}}>–{ev.timeEnd}</span>}</div>
+              {ev.category!=="birthday"&&<div style={{fontSize:16,fontWeight:700,color:cat(ev.category).color,fontFamily:"Fraunces,serif"}}>{ev.time}{ev.timeEnd&&<span style={{fontSize:11,fontWeight:400,color:cat(ev.category).color,opacity:.7}}>–{ev.timeEnd}</span>}</div>}
               <div style={{flex:1}}>
                 <div style={{fontSize:14,fontWeight:600,color:"#e8e8f0",display:"flex",alignItems:"center",gap:6}}>
                   {ev.title}{ev.recurring&&<span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4,fontWeight:400}}>↻</span>}
