@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zoegenda</title>
+    <meta name="description" content="Agenda compartida en tiempo real" />
+    <link rel="icon" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f0f13" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Zoegenda" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; background: #0f0f13; overflow-x: hidden; }
+      #root { height: 100%; }
+
+      /* Portrait mobile: sin sidebar, sin bottom nav, con tabs arriba */
+      .sidebar { display: none !important; }
+      .bottom-nav { display: none !important; }
+      .desktop-filters { display: none !important; }
+      .mobile-tabs { display: flex !important; }
+
+      /* Landscape mobile y tablet+: sidebar visible, bottom nav oculto */
+      @media (min-width: 768px), (orientation: landscape) {
+        .sidebar { display: flex !important; }
+        .bottom-nav { display: none !important; }
+        .desktop-filters { display: flex !important; }
+        .mobile-tabs { display: none !important; }
+      }
+
+      /* Desktop grande siempre sidebar */
+      @media (min-width: 1024px) {
+        .sidebar { display: flex !important; }
+        .bottom-nav { display: none !important; }
+        .desktop-filters { display: flex !important; }
+        .mobile-tabs { display: none !important; }
+      }
+
+      @media (max-width: 480px) and (orientation: portrait) {
+        .day-cell { min-height: 52px !important; padding: 3px 2px !important; }
+      }
+      @media (min-width: 768px) {
+        .day-cell { min-height: 90px !important; }
+        .modal-overlay { align-items: center !important; }
+        .modal-box { border-radius: 16px !important; align-self: center; max-height: 85vh !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
