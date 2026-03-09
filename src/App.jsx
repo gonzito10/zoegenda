@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "./supabase";
+import Expenses from "./Expenses";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const COLORS = ["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#98D8C8","#F7DC6F","#FFB347","#87CEEB"];
@@ -209,7 +210,7 @@ const BASE_CSS = `
 
 const inp = {background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"11px 13px",color:"#e8e8f0",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
 const lbl = {fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
-const Logo = ({size=20}) => <span style={{fontFamily:"Fraunces,serif",fontSize:size,fontWeight:600,color:"#fff",letterSpacing:"-0.5px"}}>Zoe<span style={{color:"#FF6B6B"}}>genda</span></span>;
+const Logo = ({size=20}) => <span style={{fontFamily:"Fraunces,serif",fontSize:size,fontWeight:600,color:"#fff",letterSpacing:"-0.5px"}}>Zoe<span style={{color:"#FF6B6B"}}>polis</span></span>;
 
 // ── App ────────────────────────────────────────────────────────────────────
 export default function App() {
@@ -251,6 +252,7 @@ export default function App() {
   const [groupLoading,  setGroupLoading]  = useState(false);
 
   // Calendar
+  const [mainTab,      setMainTab]      = useState("agenda"); // agenda|expenses
   const [events,       setEvents]       = useState([]);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear,  setCurrentYear]  = useState(today.getFullYear());
@@ -830,6 +832,16 @@ export default function App() {
         </div>
       )}
 
+      {/* ── MAIN TABS ── */}
+      <div style={{display:"flex",background:"#0a0a0e",borderBottom:"1px solid #1e1e2a",flexShrink:0}}>
+        {[["agenda","📅 Agenda"],["expenses","💸 Gastos"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setMainTab(v)}
+            style={{flex:1,padding:"11px",fontSize:13,fontWeight:600,border:"none",borderBottom:`2px solid ${mainTab===v?"#FF6B6B":"transparent"}`,background:"transparent",color:mainTab===v?"#FF6B6B":"#555",cursor:"pointer"}}>
+            {l}
+          </button>
+        ))}
+      </div>
+
       {/* ── NOTIFICATION PANEL ── */}
       {showNotifPanel&&notifications.length>0&&(
         <div className="panel-anim" style={{background:"#1a1200",borderBottom:"1px solid #3a2a00",padding:"12px 16px",flexShrink:0}}>
@@ -856,6 +868,13 @@ export default function App() {
       )}
 
       {/* ── BODY: sidebar + content ── */}
+      {mainTab==="expenses" ? (
+        <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
+          <div style={{marginBottom:4,fontFamily:"Fraunces,serif",fontSize:18,fontWeight:600,color:"#fff"}}>Gastos compartidos</div>
+          <div style={{fontSize:12,color:"#555",marginBottom:14}}>{activeGroup?.name}</div>
+          <Expenses groupId={activeGroup?.id} members={groupMembers} currentUserId={authUser?.id}/>
+        </div>
+      ) : (
       <div style={{flex:1,display:"flex",overflow:"hidden"}}>
 
         {/* SIDEBAR (desktop only) */}
@@ -930,6 +949,7 @@ export default function App() {
           <span style={{fontSize:9,fontWeight:600,color:"#FF6B6B"}}>Nuevo</span>
         </button>
       </nav>
+      )} {/* end agenda tab */}
 
       {/* ── EVENT MODAL ── */}
       {showEventModal&&editingEvent&&(
