@@ -874,7 +874,7 @@ export default function App() {
           <div style={{fontSize:12,color:"#555",marginBottom:14}}>{activeGroup?.name}</div>
           <Expenses groupId={activeGroup?.id} members={groupMembers} currentUserId={authUser?.id}/>
         </div>
-      ) : (
+      ) : (<>
       <div style={{flex:1,display:"flex",overflow:"hidden"}}>
 
         {/* SIDEBAR (desktop only) */}
@@ -949,7 +949,7 @@ export default function App() {
           <span style={{fontSize:9,fontWeight:600,color:"#FF6B6B"}}>Nuevo</span>
         </button>
       </nav>
-      )} {/* end agenda tab */}
+      </>) } {/* end mainTab===agenda */}
 
       {/* ── EVENT MODAL ── */}
       {showEventModal&&editingEvent&&(
