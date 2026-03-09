@@ -166,6 +166,9 @@ export default function Expenses({ groupId, members, currentUserId }) {
     document.addEventListener("openExpenseModal", handler);
     return () => document.removeEventListener("openExpenseModal", handler);
   }, []);
+
+  // Load data
+  useEffect(() => {
     if(!groupId) return;
     setLoading(true);
     Promise.all([loadExpenses(groupId), loadCustomCats(groupId), loadSettlements(groupId)])
