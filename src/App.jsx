@@ -793,7 +793,7 @@ export default function App() {
             <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#FF6B6B",fontSize:9,fontWeight:700,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{notifications.length}</span>
           </button>
         )}
-        <button onClick={()=>openNew(null)} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:9,padding:"7px 12px",fontSize:12,fontWeight:700,flexShrink:0}}>+ Nuevo</button>
+        
       </header>
 
       {/* Profile panel */}
@@ -904,7 +904,7 @@ export default function App() {
             ))}
           </div>
           <div style={{flex:1}}/>
-          <button onClick={()=>openNew(null)} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,marginTop:8}}>+ Nuevo evento</button>
+
         </aside>
 
         {/* MAIN CONTENT */}
@@ -944,12 +944,17 @@ export default function App() {
             <span style={{fontSize:9,fontWeight:view===v?700:400}}>{label}</span>
           </button>
         ))}
-        <button className="bottom-nav-item" onClick={()=>openNew(null)}>
-          <span style={{width:36,height:36,borderRadius:"50%",background:"#FF6B6B",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:24,lineHeight:1}}>+</span>
-          <span style={{fontSize:9,fontWeight:600,color:"#FF6B6B"}}>Nuevo</span>
-        </button>
+
       </nav>
       </>) } {/* end mainTab===agenda */}
+
+      {/* ── FAB universal ── */}
+      {mainTab==="expenses"
+        ? <button onClick={()=>{ /* signal to Expenses */ document.dispatchEvent(new CustomEvent("openExpenseModal")); }}
+            style={{position:"fixed",bottom:20,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+        : <button onClick={()=>openNew(null)}
+            style={{position:"fixed",bottom:20,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+      }
 
       {/* ── EVENT MODAL ── */}
       {showEventModal&&editingEvent&&(

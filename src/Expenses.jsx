@@ -160,8 +160,12 @@ export default function Expenses({ groupId, members, currentUserId }) {
   const today = new Date();
   const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}`;
 
-  // Load data
+  // Listen for FAB click from parent
   useEffect(() => {
+    const handler = () => { setEditExp(null); setShowModal(true); };
+    document.addEventListener("openExpenseModal", handler);
+    return () => document.removeEventListener("openExpenseModal", handler);
+  }, []);
     if(!groupId) return;
     setLoading(true);
     Promise.all([loadExpenses(groupId), loadCustomCats(groupId), loadSettlements(groupId)])
@@ -696,12 +700,6 @@ export default function Expenses({ groupId, members, currentUserId }) {
       {subTab==="balance" && <BalanceTab/>}
       {subTab==="history" && <HistoryTab/>}
       {subTab==="stats"   && <StatsTab/>}
-
-      {/* FAB */}
-      <button onClick={()=>{setEditExp(null);setShowModal(true);}}
-        style={{position:"fixed",bottom:76,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>
-        +
-      </button>
 
       {showModal && <ExpenseModal/>}
     </div>
