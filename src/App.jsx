@@ -210,7 +210,7 @@ const BASE_CSS = `
 
 const inp = {background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"11px 13px",color:"#e8e8f0",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
 const lbl = {fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
-const Logo = ({size=20}) => <span style={{fontFamily:"Fraunces,serif",fontSize:size,fontWeight:600,color:"#fff",letterSpacing:"-0.5px"}}>Zoe<span style={{color:"#FF6B6B"}}>polis</span></span>;
+const Logo = ({size=20}) => <span style={{fontFamily:"Fraunces,serif",fontSize:size,fontWeight:600,color:"#fff",letterSpacing:"-0.5px"}}>Zoe<span style={{color:"#FF6B6B"}}>Gens</span></span>;
 
 // ── App ────────────────────────────────────────────────────────────────────
 export default function App() {
