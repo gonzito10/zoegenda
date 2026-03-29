@@ -1,7 +1,7 @@
 {
-  "name": "Zoegenda",
-  "short_name": "Zoegenda",
-  "description": "Agenda compartida en tiempo real",
+  "name": "ZoeGens",
+  "short_name": "ZoeGens",
+  "description": "Agenda y gastos compartidos en tiempo real",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f13",

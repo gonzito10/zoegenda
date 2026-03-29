@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "./supabase";
+import Expenses from "./Expenses";
+import Lists from "./Lists";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const COLORS = ["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#98D8C8","#F7DC6F","#FFB347","#87CEEB"];
@@ -74,12 +76,12 @@ function themeBgStyle(t){
   return {background:t.bg, backgroundImage:svg, backgroundRepeat:"repeat"};
 }
 const CATEGORIES = [
-  { id:"work",     label:"Trabajo",   color:"#FF6B6B" },
-  { id:"personal", label:"Personal",  color:"#4ECDC4" },
-  { id:"social",   label:"Social",    color:"#FFEAA7" },
-  { id:"health",   label:"Salud",     color:"#96CEB4" },
-  { id:"birthday", label:"Cumpleaños",color:"#FFB347", icon:"🎂" },
-  { id:"other",    label:"Otro",      color:"#DDA0DD" },
+  { id:"work",     label:"Trabajo",    color:"#FF6B6B", icon:"💼" },
+  { id:"personal", label:"Personal",   color:"#4ECDC4", icon:"🙂" },
+  { id:"social",   label:"Social",     color:"#FFEAA7", icon:"🎉" },
+  { id:"health",   label:"Salud",      color:"#96CEB4", icon:"🩺" },
+  { id:"birthday", label:"Cumpleaños", color:"#FFB347", icon:"🎂" },
+  { id:"other",    label:"Otro",       color:"#DDA0DD", icon:"📌" },
 ];
 const DAYS_ES   = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const DAYS_FULL = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
@@ -97,9 +99,24 @@ function expandRecurring(ev, rangeStart, rangeEnd) {
   if (!ev.recurring) return [];
   const rStart = parse(rangeStart), rEnd = parse(rangeEnd);
   const origin = parse(ev.date);
-  const endDate = ev.recurringEnd ? parse(ev.recurringEnd) : new Date(rEnd.getFullYear()+2,0,1);
   const exceptions = ev.exceptions || [];
   const instances = [];
+
+  // Yearly (birthdays)
+  if (ev.recurringYearly) {
+    let year = rStart.getFullYear();
+    while (year <= rEnd.getFullYear() + 1) {
+      const d = new Date(year, origin.getMonth(), origin.getDate());
+      const ds = fmt(d);
+      if (d >= rStart && d <= rEnd && !exceptions.includes(ds))
+        instances.push({...ev, id:`${ev.id}_${ds}`, date:ds, _recurringBase:ev.id, _virtual:true});
+      year++;
+    }
+    return instances;
+  }
+
+  // Weekly
+  const endDate = ev.recurringEnd ? parse(ev.recurringEnd) : new Date(rEnd.getFullYear()+2,0,1);
   (ev.recurringDays||[]).forEach(dow => {
     let d = new Date(origin);
     d.setDate(d.getDate() + (dow - d.getDay() + 7) % 7);
@@ -194,7 +211,7 @@ const BASE_CSS = `
 
 const inp = {background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"11px 13px",color:"#e8e8f0",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
 const lbl = {fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
-const Logo = ({size=20}) => <span style={{fontFamily:"Fraunces,serif",fontSize:size,fontWeight:600,color:"#fff",letterSpacing:"-0.5px"}}>Zoe<span style={{color:"#FF6B6B"}}>genda</span></span>;
+const Logo = ({size=20}) => <span style={{fontFamily:"Fraunces,serif",fontSize:size,fontWeight:600,color:"#fff",letterSpacing:"-0.5px"}}>Zoe<span style={{color:"#FF6B6B"}}>Gens</span></span>;
 
 // ── App ────────────────────────────────────────────────────────────────────
 export default function App() {
@@ -236,6 +253,7 @@ export default function App() {
   const [groupLoading,  setGroupLoading]  = useState(false);
 
   // Calendar
+  const [mainTab,      setMainTab]      = useState("agenda"); // agenda|expenses
   const [events,       setEvents]       = useState([]);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear,  setCurrentYear]  = useState(today.getFullYear());
@@ -384,7 +402,8 @@ export default function App() {
 
   const monthEvents = useMemo(() => {
     const expanded = events.flatMap(ev => {
-      if (ev.recurring) return expandRecurring(ev, rangeStart, rangeEnd);
+      if (ev.recurring && !ev.recurringYearly) return []; // rutinas semanales solo en vista rutina
+      if (ev.recurring && ev.recurringYearly) return expandRecurring(ev, rangeStart, rangeEnd); // cumpleaños sí
       if (ev.date >= rangeStart && ev.date <= rangeEnd) return [ev];
       return [];
     });
@@ -394,11 +413,17 @@ export default function App() {
 
   function eventsForDate(dateStr) {
     const expanded = events.flatMap(ev => {
-      if (ev.recurring) return expandRecurring(ev, dateStr, dateStr);
+      if (ev.recurring && !ev.recurringYearly) return []; // rutinas solo en vista rutina
+      if (ev.recurring && ev.recurringYearly) return expandRecurring(ev, dateStr, dateStr);
       return ev.date === dateStr ? [ev] : [];
     });
     return filterEvs(expanded).sort((a,b) => a.time.localeCompare(b.time));
   }
+
+  // Rutinas semanales: eventos con recurring=true y recurringYearly=false
+  const weeklyRoutines = useMemo(() => {
+    return events.filter(ev => ev.recurring && !ev.recurringYearly);
+  }, [events]);
 
   const agendaDates       = [...new Set(monthEvents.map(e=>e.date))];
   const selectedDayEvents = eventsForDate(selectedDate);
@@ -426,6 +451,12 @@ export default function App() {
   async function saveEvent() {
     if (!editingEvent.title.trim()) return;
     const toSave = {...editingEvent};
+    if (toSave.category === "birthday") {
+      toSave.recurring = true;
+      toSave.recurringYearly = true;
+      toSave.recurringDays = [];
+      toSave.title = toSave.birthdayPerson || toSave.title;
+    }
     delete toSave._editingVirtualDate;
     if (!toSave.recurring) { toSave.recurringDays=[]; toSave.recurringEnd=""; }
     if (toSave.recurring && !toSave.recurringDays?.length) toSave.recurringDays=[parse(toSave.date).getDay()];
@@ -607,11 +638,13 @@ export default function App() {
 
   const EventChip = ({ev}) => {
     const isBday = ev.category === "birthday";
+    const icon = cat(ev.category).icon;
     return (
       <div className="event-chip" onClick={e=>{e.stopPropagation();openEdit(ev);}}
         style={{fontSize:9,padding:"2px 4px",borderRadius:3,marginBottom:2,background:cat(ev.category).color+"22",color:cat(ev.category).color,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontWeight:500,display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
-        {isBday ? <span>🎂</span> : ev.recurring ? <span style={{opacity:.7}}>↻</span> : null}
-        {isBday ? ev.title : <>{ev.time} {ev.title}</>}
+        <span style={{flexShrink:0}}>{icon}</span>
+        {isBday ? <span>{ev.title}</span> : <span>{ev.time} {ev.title}</span>}
+        {ev.recurring&&!isBday&&<span style={{opacity:.7,flexShrink:0}}>↻</span>}
       </div>
     );
   };
@@ -629,6 +662,91 @@ export default function App() {
       ))}
     </div>
   );
+
+  // ── Weekly Routine View ──────────────────────────────────────────────────
+  const WeeklyRoutineContent = () => {
+    const DAYS_FULL_SHORT = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+    // Collect all hours used across routines
+    const allHours = useMemo(() => {
+      const hrs = new Set();
+      weeklyRoutines.forEach(ev => {
+        if (ev.time) hrs.add(parseInt(ev.time.split(":")[0]));
+      });
+      if (hrs.size === 0) return [];
+      const min = Math.min(...hrs);
+      const max = Math.max(...hrs);
+      return Array.from({length: max - min + 1}, (_, i) => min + i);
+    // eslint-disable-next-line
+    }, [weeklyRoutines]);
+
+    // Group routines by day and hour
+    const byDayHour = useMemo(() => {
+      const map = {};
+      weeklyRoutines.forEach(ev => {
+        const hour = parseInt((ev.time||"00:00").split(":")[0]);
+        (ev.recurringDays||[]).forEach(dow => {
+          const key = `${dow}-${hour}`;
+          if (!map[key]) map[key] = [];
+          map[key].push(ev);
+        });
+      });
+      return map;
+    // eslint-disable-next-line
+    }, [weeklyRoutines]);
+
+    if (weeklyRoutines.length === 0) return (
+      <div style={{textAlign:"center",color:"#444",padding:"60px 20px",fontSize:14}}>
+        <div style={{fontSize:32,marginBottom:12}}>🔁</div>
+        <div style={{marginBottom:8}}>No hay actividades rutinarias</div>
+        <div style={{fontSize:12,color:"#333",marginBottom:20}}>Creá un evento y marcalo como rutina semanal</div>
+        <button onClick={()=>openNew(null)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontSize:13}}>+ Crear rutina</button>
+      </div>
+    );
+
+    const COL_W = 80;
+    const ROW_H = 54;
+    const LABEL_W = 48;
+
+    return (
+      <div style={{overflowX:"auto",overflowY:"auto",height:"100%"}}>
+        <div style={{minWidth: LABEL_W + COL_W * 7 + 16, padding:"12px 8px 80px"}}>
+          {/* Header row: días */}
+          <div style={{display:"grid",gridTemplateColumns:`${LABEL_W}px repeat(7, ${COL_W}px)`,marginBottom:2}}>
+            <div/>
+            {DAYS_FULL_SHORT.map((d,i)=>(
+              <div key={i} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#555",textTransform:"uppercase",letterSpacing:1,padding:"4px 0",borderBottom:"1px solid #1e1e2a"}}>{d}</div>
+            ))}
+          </div>
+          {/* Hour rows */}
+          {allHours.map(hour => (
+            <div key={hour} style={{display:"grid",gridTemplateColumns:`${LABEL_W}px repeat(7, ${COL_W}px)`,marginBottom:2}}>
+              {/* Hora label */}
+              <div style={{fontSize:10,color:"#444",paddingTop:6,paddingRight:6,textAlign:"right",lineHeight:1}}>{String(hour).padStart(2,"0")}:00</div>
+              {/* Celdas por día */}
+              {[0,1,2,3,4,5,6].map(dow => {
+                const evs = byDayHour[`${dow}-${hour}`] || [];
+                return (
+                  <div key={dow} style={{minHeight:ROW_H,borderLeft:"1px solid #1a1a22",borderBottom:"1px solid #1a1a22",padding:3,background: dow===0||dow===6?"#0f0f15":"#0f0f13"}}>
+                    {evs.map(ev => {
+                      const c = cat(ev.category);
+                      return (
+                        <div key={ev.id} onClick={()=>openEdit(ev)}
+                          style={{fontSize:9,padding:"3px 5px",borderRadius:4,marginBottom:2,background:c.color+"22",color:c.color,cursor:"pointer",borderLeft:`2px solid ${c.color}`,lineHeight:1.3}}>
+                          <div style={{fontWeight:700}}>{ev.time} {ev.title}</div>
+                          {ev.timeEnd && <div style={{opacity:.7}}>{ev.timeEnd}</div>}
+                          <div style={{opacity:.6,marginTop:1}}>{c.icon}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const CalendarContent = () => (
     <div>
@@ -685,7 +803,7 @@ export default function App() {
             {eventsForDate(dateStr).map(ev=>(
               <div key={ev.id} className="agenda-event" onClick={()=>openEdit(ev)}
                 style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start",borderLeft:`3px solid ${cat(ev.category).color}`,marginBottom:5}}>
-                <div style={{color:"#888",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>{ev.time}{ev.timeEnd&&<span style={{color:"#555"}}>–{ev.timeEnd}</span>}</div>
+                {ev.category!=="birthday"&&<div style={{color:"#888",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>{ev.time}{ev.timeEnd&&<span style={{color:"#555"}}>–{ev.timeEnd}</span>}</div>}
                 <div style={{flex:1}}>
                   <div style={{fontWeight:600,fontSize:13,color:"#e8e8f0",display:"flex",alignItems:"center",gap:5}}>
                     {ev.title}{ev.recurring&&<span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4}}>↻</span>}
@@ -719,7 +837,7 @@ export default function App() {
         {selectedDayEvents.map(ev=>(
           <div key={ev.id} onClick={()=>openEdit(ev)} style={{background:"#131318",borderRadius:12,padding:"12px 16px",cursor:"pointer",border:"1px solid #1e1e2a",borderLeft:`4px solid ${cat(ev.category).color}`}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{fontSize:16,fontWeight:700,color:cat(ev.category).color,fontFamily:"Fraunces,serif"}}>{ev.time}{ev.timeEnd&&<span style={{fontSize:11,fontWeight:400,color:cat(ev.category).color,opacity:.7}}>–{ev.timeEnd}</span>}</div>
+              {ev.category!=="birthday"&&<div style={{fontSize:16,fontWeight:700,color:cat(ev.category).color,fontFamily:"Fraunces,serif"}}>{ev.time}{ev.timeEnd&&<span style={{fontSize:11,fontWeight:400,color:cat(ev.category).color,opacity:.7}}>–{ev.timeEnd}</span>}</div>}
               <div style={{flex:1}}>
                 <div style={{fontSize:14,fontWeight:600,color:"#e8e8f0",display:"flex",alignItems:"center",gap:6}}>
                   {ev.title}{ev.recurring&&<span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4,fontWeight:400}}>↻</span>}
@@ -768,7 +886,7 @@ export default function App() {
             <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#FF6B6B",fontSize:9,fontWeight:700,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{notifications.length}</span>
           </button>
         )}
-        <button onClick={()=>openNew(null)} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:9,padding:"7px 12px",fontSize:12,fontWeight:700,flexShrink:0}}>+ Nuevo</button>
+        
       </header>
 
       {/* Profile panel */}
@@ -807,6 +925,16 @@ export default function App() {
         </div>
       )}
 
+      {/* ── MAIN TABS ── */}
+      <div style={{display:"flex",background:"#0a0a0e",borderBottom:"1px solid #1e1e2a",flexShrink:0}}>
+        {[["agenda","📅 Agenda"],["expenses","💸 Gastos"],["lists","📝 Listados"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setMainTab(v)}
+            style={{flex:1,padding:"11px",fontSize:13,fontWeight:600,border:"none",borderBottom:`2px solid ${mainTab===v?"#FF6B6B":"transparent"}`,background:"transparent",color:mainTab===v?"#FF6B6B":"#555",cursor:"pointer"}}>
+            {l}
+          </button>
+        ))}
+      </div>
+
       {/* ── NOTIFICATION PANEL ── */}
       {showNotifPanel&&notifications.length>0&&(
         <div className="panel-anim" style={{background:"#1a1200",borderBottom:"1px solid #3a2a00",padding:"12px 16px",flexShrink:0}}>
@@ -833,12 +961,23 @@ export default function App() {
       )}
 
       {/* ── BODY: sidebar + content ── */}
+      {mainTab==="expenses" ? (
+        <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
+          <div style={{marginBottom:4,fontFamily:"Fraunces,serif",fontSize:18,fontWeight:600,color:"#fff"}}>Gastos compartidos</div>
+          <div style={{fontSize:12,color:"#555",marginBottom:14}}>{activeGroup?.name}</div>
+          <Expenses groupId={activeGroup?.id} members={groupMembers} currentUserId={authUser?.id}/>
+        </div>
+      ) : mainTab==="lists" ? (
+        <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
+          <Lists groupId={activeGroup?.id} currentUserId={authUser?.id}/>
+        </div>
+      ) : (<>
       <div style={{flex:1,display:"flex",overflow:"hidden"}}>
 
         {/* SIDEBAR (desktop only) */}
         <aside className="sidebar" style={{width:220,flexShrink:0,background:"#0a0a0e",borderRight:"1px solid #1e1e2a",display:"flex",flexDirection:"column",padding:"16px 12px",gap:4,overflowY:"auto"}}>
           <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingLeft:8}}>Vistas</div>
-          {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"]].map(([v,icon,label])=>(
+          {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"],["routine","🔁","Rutina semanal"]].map(([v,icon,label])=>(
             <button key={v} onClick={()=>setView(v)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:8,border:"none",background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#555",fontSize:13,fontWeight:view===v?600:400,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:15}}>{icon}</span>{label}
             </button>
@@ -862,16 +1001,16 @@ export default function App() {
             ))}
           </div>
           <div style={{flex:1}}/>
-          <button onClick={()=>openNew(null)} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,marginTop:8}}>+ Nuevo evento</button>
+
         </aside>
 
         {/* MAIN CONTENT */}
         <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
           {/* Mobile tabs + filters - portrait only */}
           <div className="mobile-tabs" style={{display:"flex",flexDirection:"column",flexShrink:0}}>
-            <div style={{padding:"8px 16px 0",display:"flex",gap:4}}>
-              {[["calendar","📅 Mes"],["agenda","📋 Agenda"],["day","🗓 Día"]].map(([v,label])=>(
-                <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#666",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:view===v?600:400,border:view===v?"1px solid #2a2a3a":"1px solid transparent"}}>
+            <div style={{padding:"8px 16px 0",display:"flex",gap:4,overflowX:"auto"}}>
+              {[["calendar","📅 Mes"],["agenda","📋 Agenda"],["day","🗓 Día"],["routine","🔁 Rutina"]].map(([v,label])=>(
+                <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#666",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:view===v?600:400,border:view===v?"1px solid #2a2a3a":"1px solid transparent",whiteSpace:"nowrap",flexShrink:0}}>
                   {label}
                 </button>
               ))}
@@ -886,27 +1025,37 @@ export default function App() {
           </div>
 
           {/* Scrollable content */}
-          <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
+          <div style={{flex:1,overflowY:"auto",padding:view==="routine"?"0":"16px 16px 80px"}}>
             {view==="calendar"&&<CalendarContent/>}
             {view==="agenda"&&<AgendaContent/>}
             {view==="day"&&<DayContent/>}
+            {view==="routine"&&<WeeklyRoutineContent/>}
           </div>
         </main>
       </div>
 
       {/* ── BOTTOM NAV (mobile only) ── */}
       <nav className="bottom-nav">
-        {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"]].map(([v,icon,label])=>(
+        {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["routine","🔁","Rutina"],["day","🗓","Día"]].map(([v,icon,label])=>(
           <button key={v} className="bottom-nav-item" onClick={()=>setView(v)} style={{color:view===v?"#FF6B6B":"#555"}}>
             <span style={{fontSize:20}}>{icon}</span>
             <span style={{fontSize:9,fontWeight:view===v?700:400}}>{label}</span>
           </button>
         ))}
-        <button className="bottom-nav-item" onClick={()=>openNew(null)}>
-          <span style={{width:36,height:36,borderRadius:"50%",background:"#FF6B6B",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:24,lineHeight:1}}>+</span>
-          <span style={{fontSize:9,fontWeight:600,color:"#FF6B6B"}}>Nuevo</span>
-        </button>
+
       </nav>
+      </>) } {/* end mainTab===agenda */}
+
+      {/* ── FAB universal ── */}
+      {mainTab==="expenses"
+        ? <button onClick={()=>{ document.dispatchEvent(new CustomEvent("openExpenseModal")); }}
+            style={{position:"fixed",bottom:20,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+        : mainTab==="lists"
+        ? <button onClick={()=>{ document.dispatchEvent(new CustomEvent("openListModal")); }}
+            style={{position:"fixed",bottom:20,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+        : <button onClick={()=>openNew(null)}
+            style={{position:"fixed",bottom:20,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+      }
 
       {/* ── EVENT MODAL ── */}
       {showEventModal&&editingEvent&&(
@@ -918,56 +1067,67 @@ export default function App() {
               <button onClick={closeModal} style={{background:"#1e1e2a",border:"none",color:"#aaa",width:26,height:26,borderRadius:"50%",fontSize:14}}>×</button>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <input value={editingEvent.title} onChange={e=>setEditingEvent(ev=>({...ev,title:e.target.value}))} placeholder="Título del evento" style={inp}/>
-              {editingEvent.category==="birthday"&&(
+              {editingEvent.category==="birthday" ? (
                 <div>
                   <label style={lbl}>🎂 Nombre de quien cumple</label>
-                  <input value={editingEvent.birthdayPerson||""} onChange={e=>setEditingEvent(ev=>({...ev,birthdayPerson:e.target.value,title:e.target.value?`Cumpleaños de ${e.target.value}`:ev.title}))} placeholder="Ej: María" style={inp}/>
+                  <input value={editingEvent.birthdayPerson||""} onChange={e=>setEditingEvent(ev=>({...ev,birthdayPerson:e.target.value,title:e.target.value||""}))} placeholder="Ej: María" style={inp} autoFocus/>
+                </div>
+              ) : (
+                <input value={editingEvent.title} onChange={e=>setEditingEvent(ev=>({...ev,title:e.target.value}))} placeholder="Título del evento" style={inp}/>
+              )}
+              {editingEvent.category==="birthday" ? (
+                <div style={{background:"#FFB34711",border:"1px solid #FFB34733",borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:16}}>🎂</span>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:"#FFB347"}}>Se repite cada año</div>
+                    <div style={{fontSize:11,color:"#7a6020",marginTop:1}}>El cumpleaños se agrega automáticamente para siempre</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"9px 12px"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setEditingEvent(ev=>({...ev,recurring:!ev.recurring}))}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:600,color:"#e8e8f0"}}>↻ Evento rutinario</div>
+                      <div style={{fontSize:11,color:"#555",marginTop:1}}>Se repite semanalmente</div>
+                    </div>
+                    <div style={{width:36,height:20,borderRadius:10,background:editingEvent.recurring?"#FF6B6B":"#2a2a3a",position:"relative",transition:"background .2s",flexShrink:0}}>
+                      <div style={{width:14,height:14,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:editingEvent.recurring?18:3,transition:"left .2s"}}/>
+                    </div>
+                  </div>
+                  {editingEvent.recurring&&(
+                    <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #1e1e2a"}}>
+                      <label style={lbl}>Días de la semana</label>
+                      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
+                        {DAYS_ES.map((d,i)=>{
+                          const on=editingEvent.recurringDays?.includes(i);
+                          return <div key={i} className="dow-pill" onClick={()=>toggleRecurringDay(i)} style={{padding:"4px 9px",borderRadius:8,fontSize:11,fontWeight:on?700:400,background:on?"#FF6B6B33":"#1a1a22",color:on?"#FF6B6B":"#555",border:`1px solid ${on?"#FF6B6B44":"#2a2a3a"}`}}>{d}</div>;
+                        })}
+                      </div>
+                      <label style={lbl}>Fecha de fin (opcional)</label>
+                      <input type="date" value={editingEvent.recurringEnd||""} onChange={e=>setEditingEvent(ev=>({...ev,recurringEnd:e.target.value}))} style={{...inp,width:"auto"}}/>
+                      {!editingEvent.recurringEnd&&<div style={{fontSize:10,color:"#444",marginTop:3}}>Sin fecha de fin — se repite indefinidamente</div>}
+                    </div>
+                  )}
                 </div>
               )}
-              <div style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"9px 12px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setEditingEvent(ev=>({...ev,recurring:!ev.recurring}))}>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:600,color:"#e8e8f0"}}>↻ Evento rutinario</div>
-                    <div style={{fontSize:11,color:"#555",marginTop:1}}>Se repite semanalmente</div>
-                  </div>
-                  <div style={{width:36,height:20,borderRadius:10,background:editingEvent.recurring?"#FF6B6B":"#2a2a3a",position:"relative",transition:"background .2s",flexShrink:0}}>
-                    <div style={{width:14,height:14,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:editingEvent.recurring?18:3,transition:"left .2s"}}/>
-                  </div>
-                </div>
-                {editingEvent.recurring&&(
-                  <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #1e1e2a"}}>
-                    <label style={lbl}>Días de la semana</label>
-                    <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
-                      {DAYS_ES.map((d,i)=>{
-                        const on=editingEvent.recurringDays?.includes(i);
-                        return <div key={i} className="dow-pill" onClick={()=>toggleRecurringDay(i)} style={{padding:"4px 9px",borderRadius:8,fontSize:11,fontWeight:on?700:400,background:on?"#FF6B6B33":"#1a1a22",color:on?"#FF6B6B":"#555",border:`1px solid ${on?"#FF6B6B44":"#2a2a3a"}`}}>{d}</div>;
-                      })}
-                    </div>
-                    <label style={lbl}>Fecha de fin (opcional)</label>
-                    <input type="date" value={editingEvent.recurringEnd||""} onChange={e=>setEditingEvent(ev=>({...ev,recurringEnd:e.target.value}))} style={{...inp,width:"auto"}}/>
-                    {!editingEvent.recurringEnd&&<div style={{fontSize:10,color:"#444",marginTop:3}}>Sin fecha de fin — se repite indefinidamente</div>}
-                  </div>
-                )}
-              </div>
               <div style={{display:"flex",gap:8}}>
                 <div style={{flex:1}}>
                   <label style={lbl}>{editingEvent.recurring?"Fecha inicio":"Fecha"}</label>
                   <input type="date" value={editingEvent.date} onChange={e=>setEditingEvent(ev=>({...ev,date:e.target.value}))} style={inp}/>
                 </div>
-                <div style={{width:100}}>
+                {editingEvent.category!=="birthday"&&<div style={{width:100}}>
                   <label style={lbl}>Hora inicio</label>
                   <input type="time" value={editingEvent.time} onChange={e=>setEditingEvent(ev=>({...ev,time:e.target.value}))} style={inp}/>
-                </div>
-                <div style={{width:100}}>
+                </div>}
+                {editingEvent.category!=="birthday"&&<div style={{width:100}}>
                   <label style={lbl}>Hora fin <span style={{color:"#444",fontWeight:400}}>(opcional)</span></label>
                   <input type="time" value={editingEvent.timeEnd||""} onChange={e=>setEditingEvent(ev=>({...ev,timeEnd:e.target.value}))} style={inp}/>
-                </div>
+                </div>}
               </div>
               <div>
                 <label style={lbl}>Categoría</label>
                 <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                  {CATEGORIES.map(c=><div key={c.id} onClick={()=>setEditingEvent(ev=>({...ev,category:c.id,color:c.color}))} style={{padding:"4px 9px",borderRadius:20,fontSize:11,cursor:"pointer",background:editingEvent.category===c.id?c.color+"33":"#1a1a22",color:editingEvent.category===c.id?c.color:"#666",border:`1px solid ${editingEvent.category===c.id?c.color+"44":"#2a2a3a"}`,fontWeight:editingEvent.category===c.id?600:400}}>{c.label}</div>)}
+                  {CATEGORIES.map(c=><div key={c.id} onClick={()=>setEditingEvent(ev=>({...ev,category:c.id,color:c.color}))} style={{padding:"4px 9px",borderRadius:20,fontSize:11,cursor:"pointer",background:editingEvent.category===c.id?c.color+"33":"#1a1a22",color:editingEvent.category===c.id?c.color:"#666",border:`1px solid ${editingEvent.category===c.id?c.color+"44":"#2a2a3a"}`,fontWeight:editingEvent.category===c.id?600:400}}>{c.icon} {c.label}</div>)}
                 </div>
               </div>
               <div>
