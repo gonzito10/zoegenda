@@ -437,7 +437,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
     return (
       <div>
         <div style={{display:"flex",gap:6,marginBottom:14}}>
-          {[["month","Este mes"],["annual","Anual"],..( tags.length>0?[["tags","Por etiqueta"]]:[] )].map(([v,l])=>(
+          {[["month","Este mes"],["annual","Anual"],...( tags.length>0?[["tags","Por etiqueta"]]:[] )].map(([v,l])=>(
             <button key={v} onClick={()=>setStatsView(v)}
               style={{padding:"5px 14px",borderRadius:8,fontSize:11,fontWeight:600,border:"1px solid",borderColor:statsView===v?"#2a2a3a":"transparent",background:statsView===v?"#1e1e2a":"transparent",color:statsView===v?"#fff":"#555",cursor:"pointer"}}>
               {l}
