@@ -65,6 +65,25 @@ async function saveSettlement(s){
   const { error } = await supabase.from("settlements").insert(s);
   return error;
 }
+async function loadTags(groupId){
+  const { data } = await supabase.from("expense_tags").select("*").eq("group_id", groupId).order("name");
+  return data || [];
+}
+async function loadTagRelations(groupId){
+  // join via expenses to filter by group
+  const { data } = await supabase.from("expense_tag_relations").select("expense_id, tag_id");
+  return data || [];
+}
+async function saveTag(groupId, name){
+  const { data } = await supabase.from("expense_tags").insert({ group_id: groupId, name }).select().single();
+  return data;
+}
+async function saveTagRelations(expenseId, tagIds){
+  // delete old relations for this expense
+  await supabase.from("expense_tag_relations").delete().eq("expense_id", expenseId);
+  if(tagIds.length === 0) return;
+  await supabase.from("expense_tag_relations").insert(tagIds.map(tid => ({ expense_id: expenseId, tag_id: tid })));
+}
 
 // ── Balance calculator ─────────────────────────────────────────────────────
 function calcBalance(expenses, settlements, members, monthFilter) {
@@ -148,12 +167,14 @@ function PieChart({ cats, total }) {
 
 // ── Main Component ─────────────────────────────────────────────────────────
 export default function Expenses({ groupId, members, currentUserId }) {
-  const [expenses,    setExpenses]    = useState([]);
-  const [customCats,  setCustomCats]  = useState([]);
-  const [settlements, setSettlements] = useState([]);
-  const [subTab,      setSubTab]      = useState("balance"); // balance|history|stats
-  const [selMonth,    setSelMonth]    = useState(null); // null = current month
-  const [showModal,   setShowModal]   = useState(false);
+  const [expenses,     setExpenses]     = useState([]);
+  const [customCats,   setCustomCats]   = useState([]);
+  const [settlements,  setSettlements]  = useState([]);
+  const [tags,         setTags]         = useState([]);
+  const [tagRelations, setTagRelations] = useState([]); // [{expense_id, tag_id}]
+  const [subTab,       setSubTab]       = useState("balance");
+  const [selMonth,     setSelMonth]     = useState(null);
+  const [showModal,    setShowModal]    = useState(false);
   const [editExp,     setEditExp]     = useState(null);
   const [loading,     setLoading]     = useState(true);
 
@@ -171,11 +192,13 @@ export default function Expenses({ groupId, members, currentUserId }) {
   useEffect(() => {
     if(!groupId) return;
     setLoading(true);
-    Promise.all([loadExpenses(groupId), loadCustomCats(groupId), loadSettlements(groupId)])
-      .then(([exps, cats, setts]) => {
+    Promise.all([loadExpenses(groupId), loadCustomCats(groupId), loadSettlements(groupId), loadTags(groupId), loadTagRelations(groupId)])
+      .then(([exps, cats, setts, tgs, rels]) => {
         setExpenses(exps);
         setCustomCats(cats);
         setSettlements(setts);
+        setTags(tgs);
+        setTagRelations(rels);
         setLoading(false);
       });
 
@@ -183,6 +206,8 @@ export default function Expenses({ groupId, members, currentUserId }) {
     const sub = supabase.channel(`expenses-${groupId}`)
       .on("postgres_changes", { event:"*", schema:"public", table:"expenses",    filter:`group_id=eq.${groupId}` }, () => loadExpenses(groupId).then(setExpenses))
       .on("postgres_changes", { event:"*", schema:"public", table:"settlements", filter:`group_id=eq.${groupId}` }, () => loadSettlements(groupId).then(setSettlements))
+      .on("postgres_changes", { event:"*", schema:"public", table:"expense_tags", filter:`group_id=eq.${groupId}` }, () => loadTags(groupId).then(setTags))
+      .on("postgres_changes", { event:"*", schema:"public", table:"expense_tag_relations" }, () => loadTagRelations(groupId).then(setTagRelations))
       .subscribe();
     return () => supabase.removeChannel(sub);
   }, [groupId]);
@@ -363,6 +388,10 @@ export default function Expenses({ groupId, members, currentUserId }) {
                     {payer.display_name} · {c.label}
                     {e.installments>1&&<span style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>}
                     {e.settled&&<span style={{background:"#96CEB422",color:"#96CEB4",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>✓ Liquidado</span>}
+                    {tagRelations.filter(r=>r.expense_id===e.id).map(r=>{
+                      const tag = tags.find(t=>t.id===r.tag_id);
+                      return tag ? <span key={r.tag_id} style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:9}}>🏷 {tag.name}</span> : null;
+                    })}
                   </div>
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
@@ -377,9 +406,30 @@ export default function Expenses({ groupId, members, currentUserId }) {
     </div>
   );
 
+  // Stats by tag (for tag pie charts)
+  const statsByTag = useMemo(() => {
+    if(tags.length === 0) return [];
+    return tags.map(tag => {
+      const tagExpenseIds = new Set(tagRelations.filter(r=>r.tag_id===tag.id).map(r=>r.expense_id));
+      const tagExps = expenses.filter(e => tagExpenseIds.has(e.id));
+      if(tagExps.length === 0) return null;
+      // group by category within this tag
+      const map = {};
+      tagExps.forEach(e => {
+        const c = getCat(e.category);
+        if(!map[e.category]) map[e.category] = { ...c, amount:0 };
+        map[e.category].amount += e.amount;
+      });
+      const cats = Object.values(map).sort((a,b)=>b.amount-a.amount);
+      const total = tagExps.reduce((s,e)=>s+e.amount,0);
+      return { tag, cats, total };
+    }).filter(Boolean);
+  // eslint-disable-next-line
+  }, [tags, tagRelations, expenses, allCats]);
+
   // ── Stats tab ──────────────────────────────────────────────────────────
   const StatsTab = () => {
-    const [statsView, setStatsView] = useState("month"); // month|annual
+    const [statsView, setStatsView] = useState("month"); // month|annual|tags
     const cats   = statsView==="annual" ? annualStats : statsByCat;
     const total  = statsView==="annual" ? annualTotal : monthTotal;
     const max    = cats.length > 0 ? cats[0].amount : 1;
@@ -387,7 +437,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
     return (
       <div>
         <div style={{display:"flex",gap:6,marginBottom:14}}>
-          {[["month","Este mes"],["annual","Anual"]].map(([v,l])=>(
+          {[["month","Este mes"],["annual","Anual"],..( tags.length>0?[["tags","Por etiqueta"]]:[] )].map(([v,l])=>(
             <button key={v} onClick={()=>setStatsView(v)}
               style={{padding:"5px 14px",borderRadius:8,fontSize:11,fontWeight:600,border:"1px solid",borderColor:statsView===v?"#2a2a3a":"transparent",background:statsView===v?"#1e1e2a":"transparent",color:statsView===v?"#fff":"#555",cursor:"pointer"}}>
               {l}
@@ -396,10 +446,36 @@ export default function Expenses({ groupId, members, currentUserId }) {
         </div>
         {statsView==="month" && <MonthSelect value={activeMonth} onChange={v=>setSelMonth(v==="all"?null:v)}/>}
 
-        {cats.length === 0
+        {/* ── Vista por etiqueta ── */}
+        {statsView==="tags" && (
+          statsByTag.length === 0
+            ? <div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>No hay etiquetas con gastos</div>
+            : statsByTag.map(({tag, cats:tCats, total:tTotal}) => (
+              <div key={tag.id} style={{marginBottom:24}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                  <div style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:700}}>🏷 {tag.name}</div>
+                  <div style={{fontSize:12,color:"#555"}}>{fmtMoney(tTotal)}</div>
+                </div>
+                <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:16,display:"flex",alignItems:"center",gap:16}}>
+                  <PieChart cats={tCats} total={tTotal}/>
+                  <div style={{display:"flex",flexDirection:"column",gap:7,flex:1}}>
+                    {tCats.map(c=>(
+                      <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:7}}>
+                        <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>
+                        <div style={{flex:1,fontSize:11,color:"#aaa"}}>{c.icon} {c.label}</div>
+                        <div style={{fontSize:11,fontWeight:700,color:c.color}}>{((c.amount/tTotal)*100).toFixed(1)}%</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))
+        )}
+
+        {/* ── Vista mes/anual ── */}
+        {statsView!=="tags" && (cats.length === 0
           ? <div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>Sin datos para mostrar</div>
           : <>
-            {/* Summary */}
             <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:14,marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
                 <div style={{fontSize:11,color:"#555",marginBottom:4}}>{statsView==="annual"?"Total anual":"Total del mes"}</div>
@@ -410,8 +486,6 @@ export default function Expenses({ groupId, members, currentUserId }) {
                 <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:700}}>{cats.length}</div>
               </div>
             </div>
-
-            {/* Pie + legend */}
             <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:16,marginBottom:14,display:"flex",alignItems:"center",gap:16}}>
               <PieChart cats={cats} total={total}/>
               <div style={{display:"flex",flexDirection:"column",gap:7,flex:1}}>
@@ -424,8 +498,6 @@ export default function Expenses({ groupId, members, currentUserId }) {
                 ))}
               </div>
             </div>
-
-            {/* Bars */}
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
               {cats.map(c=>{
                 const pct = ((c.amount/total)*100).toFixed(1);
@@ -447,7 +519,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
               })}
             </div>
           </>
-        }
+        )}
       </div>
     );
   };
@@ -466,6 +538,23 @@ export default function Expenses({ groupId, members, currentUserId }) {
     const [newCatLabel, setNewCatLabel] = useState("");
     const [newCatIcon,  setNewCatIcon]  = useState("");
     const [saving,      setSaving]      = useState(false);
+    // Tags
+    const [selectedTags, setSelectedTags] = useState(() => {
+      if(!editExp?.id) return [];
+      return tagRelations.filter(r=>r.expense_id===editExp.id).map(r=>r.tag_id);
+    });
+    const [showNewTag,  setShowNewTag]  = useState(false);
+    const [newTagName,  setNewTagName]  = useState("");
+
+    async function handleAddTag(){
+      if(!newTagName.trim()) return;
+      const created = await saveTag(groupId, newTagName.trim());
+      if(created){ setTags(t=>[...t,created]); setSelectedTags(s=>[...s,created.id]); }
+      setNewTagName(""); setShowNewTag(false);
+    }
+    function toggleTag(id){
+      setSelectedTags(s => s.includes(id) ? s.filter(x=>x!==id) : [...s,id]);
+    }
 
     const perCuota = form.amount && form.installments > 1 ? Math.ceil(parseFloat(form.amount)/form.installments) : null;
 
@@ -487,7 +576,6 @@ export default function Expenses({ groupId, members, currentUserId }) {
         created_by: currentUserId,
       };
       if(installments && base.installments > 1 && isNew){
-        // Generate one expense per installment
         const groupInstId = crypto.randomUUID();
         const cuotaAmount = Math.ceil(base.amount / base.installments);
         const startDate = new Date(base.date + "T12:00:00");
@@ -495,20 +583,24 @@ export default function Expenses({ groupId, members, currentUserId }) {
           const d = new Date(startDate);
           d.setMonth(d.getMonth()+i);
           const dateStr = d.toISOString().slice(0,10);
-          await saveExpense({
-            ...base,
-            id: undefined,
-            amount: cuotaAmount,
-            date: dateStr,
-            installment_number: i+1,
-            installment_group_id: groupInstId,
-          });
+          const { data: saved } = await supabase.from("expenses").insert({
+            ...base, id: undefined, amount: cuotaAmount, date: dateStr,
+            installment_number: i+1, installment_group_id: groupInstId,
+          }).select().single();
+          if(saved && selectedTags.length > 0) await saveTagRelations(saved.id, selectedTags);
         }
       } else {
-        await saveExpense(base);
+        if(base.id){
+          await saveExpense(base);
+          await saveTagRelations(base.id, selectedTags);
+        } else {
+          const { data: saved } = await supabase.from("expenses").insert(base).select().single();
+          if(saved && selectedTags.length > 0) await saveTagRelations(saved.id, selectedTags);
+        }
       }
-      const exps = await loadExpenses(groupId);
+      const [exps, rels] = await Promise.all([loadExpenses(groupId), loadTagRelations(groupId)]);
       setExpenses(exps);
+      setTagRelations(rels);
       setSaving(false);
       setShowModal(false);
       setEditExp(null);
@@ -666,6 +758,32 @@ export default function Expenses({ groupId, members, currentUserId }) {
                   </div>
                 );
               })}
+            </div>
+
+            {/* Tags (optional) */}
+            <div>
+              <label style={lbl}>🏷 Etiquetas <span style={{fontWeight:400,textTransform:"none",letterSpacing:0,color:"#333"}}>(opcional)</span></label>
+              <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
+                {tags.map(t=>{
+                  const on = selectedTags.includes(t.id);
+                  return (
+                    <div key={t.id} onClick={()=>toggleTag(t.id)}
+                      style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:on?700:400,background:on?"#DDA0DD33":"#1a1a22",color:on?"#DDA0DD":"#555",border:`1px solid ${on?"#DDA0DD44":"#2a2a3a"}`}}>
+                      {t.name}
+                    </div>
+                  );
+                })}
+                <div onClick={()=>setShowNewTag(v=>!v)}
+                  style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",border:"1px dashed #2a2a3a",color:"#444"}}>
+                  + Nueva
+                </div>
+              </div>
+              {showNewTag && (
+                <div style={{display:"flex",gap:6}}>
+                  <input value={newTagName} onChange={e=>setNewTagName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleAddTag()} placeholder="Nombre de etiqueta" style={{...inp,flex:1}}/>
+                  <button onClick={handleAddTag} style={{background:"#DDA0DD",color:"#fff",border:"none",borderRadius:10,padding:"0 14px",fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
+                </div>
+              )}
             </div>
 
             {/* Save / Delete */}
