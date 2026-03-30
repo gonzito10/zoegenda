@@ -402,8 +402,7 @@ export default function App() {
 
   const monthEvents = useMemo(() => {
     const expanded = events.flatMap(ev => {
-      if (ev.recurring && !ev.recurringYearly) return []; // rutinas semanales solo en vista rutina
-      if (ev.recurring && ev.recurringYearly) return expandRecurring(ev, rangeStart, rangeEnd); // cumpleaños sí
+      if (ev.recurring) return expandRecurring(ev, rangeStart, rangeEnd);
       if (ev.date >= rangeStart && ev.date <= rangeEnd) return [ev];
       return [];
     });
@@ -413,8 +412,7 @@ export default function App() {
 
   function eventsForDate(dateStr) {
     const expanded = events.flatMap(ev => {
-      if (ev.recurring && !ev.recurringYearly) return []; // rutinas solo en vista rutina
-      if (ev.recurring && ev.recurringYearly) return expandRecurring(ev, dateStr, dateStr);
+      if (ev.recurring) return expandRecurring(ev, dateStr, dateStr);
       return ev.date === dateStr ? [ev] : [];
     });
     return filterEvs(expanded).sort((a,b) => a.time.localeCompare(b.time));
@@ -663,87 +661,71 @@ export default function App() {
     </div>
   );
 
-  // ── Weekly Routine View ──────────────────────────────────────────────────
+  // ── Semana View (rutinas semanales estilo agenda) ──────────────────────
   const WeeklyRoutineContent = () => {
-    const DAYS_FULL_SHORT = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-    // Collect all hours used across routines
-    const allHours = useMemo(() => {
-      const hrs = new Set();
-      weeklyRoutines.forEach(ev => {
-        if (ev.time) hrs.add(parseInt(ev.time.split(":")[0]));
-      });
-      if (hrs.size === 0) return [];
-      const min = Math.min(...hrs);
-      const max = Math.max(...hrs);
-      return Array.from({length: max - min + 1}, (_, i) => min + i);
-    // eslint-disable-next-line
-    }, [weeklyRoutines]);
+    const DAYS_FULL_ES = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 
-    // Group routines by day and hour
-    const byDayHour = useMemo(() => {
-      const map = {};
+    // Agrupar rutinas por día de semana, ordenadas por hora
+    const byDay = useMemo(() => {
+      const map = {0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
       weeklyRoutines.forEach(ev => {
-        const hour = parseInt((ev.time||"00:00").split(":")[0]);
         (ev.recurringDays||[]).forEach(dow => {
-          const key = `${dow}-${hour}`;
-          if (!map[key]) map[key] = [];
-          map[key].push(ev);
+          map[dow].push(ev);
         });
+      });
+      // Ordenar cada día por hora
+      Object.keys(map).forEach(dow => {
+        map[dow].sort((a,b) => (a.time||"").localeCompare(b.time||""));
       });
       return map;
     // eslint-disable-next-line
     }, [weeklyRoutines]);
 
+    // Solo mostrar días que tienen actividades
+    const activeDays = [1,2,3,4,5,6,0].filter(dow => byDay[dow].length > 0);
+
     if (weeklyRoutines.length === 0) return (
       <div style={{textAlign:"center",color:"#444",padding:"60px 20px",fontSize:14}}>
-        <div style={{fontSize:32,marginBottom:12}}>🔁</div>
-        <div style={{marginBottom:8}}>No hay actividades rutinarias</div>
+        <div style={{fontSize:32,marginBottom:12}}>📅</div>
+        <div style={{marginBottom:8}}>No hay actividades semanales</div>
         <div style={{fontSize:12,color:"#333",marginBottom:20}}>Creá un evento y marcalo como rutina semanal</div>
         <button onClick={()=>openNew(null)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontSize:13}}>+ Crear rutina</button>
       </div>
     );
 
-    const COL_W = 80;
-    const ROW_H = 54;
-    const LABEL_W = 48;
-
     return (
-      <div style={{overflowX:"auto",overflowY:"auto",height:"100%"}}>
-        <div style={{minWidth: LABEL_W + COL_W * 7 + 16, padding:"12px 8px 80px"}}>
-          {/* Header row: días */}
-          <div style={{display:"grid",gridTemplateColumns:`${LABEL_W}px repeat(7, ${COL_W}px)`,marginBottom:2}}>
-            <div/>
-            {DAYS_FULL_SHORT.map((d,i)=>(
-              <div key={i} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#555",textTransform:"uppercase",letterSpacing:1,padding:"4px 0",borderBottom:"1px solid #1e1e2a"}}>{d}</div>
+      <div style={{padding:"16px 16px 80px"}}>
+        {activeDays.map(dow => (
+          <div key={dow} style={{marginBottom:18}}>
+            {/* Cabecera del día */}
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+              <div style={{width:38,height:38,borderRadius:9,background:"#1a1a22",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{fontSize:10,fontWeight:700,color:"#fff",lineHeight:1}}>{DAYS_FULL_ES[dow].slice(0,3).toUpperCase()}</span>
+              </div>
+              <div style={{flex:1,height:1,background:"#1e1e2a"}}/>
+            </div>
+            {/* Actividades del día */}
+            {byDay[dow].map(ev => (
+              <div key={ev.id} className="agenda-event" onClick={()=>openEdit(ev)}
+                style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start",borderLeft:`3px solid ${cat(ev.category).color}`,marginBottom:5}}>
+                <div style={{color:"#888",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>
+                  {ev.time}{ev.timeEnd&&<span style={{color:"#555"}}>–{ev.timeEnd}</span>}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:600,fontSize:13,color:"#e8e8f0",display:"flex",alignItems:"center",gap:5}}>
+                    {cat(ev.category).icon} {ev.title}
+                    <span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4}}>↻</span>
+                  </div>
+                  {ev.notes&&<div style={{fontSize:11,color:"#666",marginTop:2}}>{ev.notes}</div>}
+                  <div style={{display:"flex",gap:4,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
+                    <span style={{fontSize:9,padding:"1px 6px",borderRadius:20,background:cat(ev.category).color+"22",color:cat(ev.category).color}}>{cat(ev.category).label}</span>
+                    {ev.attendees?.map(uid=><div key={uid} title={member(uid).display_name} style={{width:13,height:13,borderRadius:"50%",background:member(uid).color,fontSize:6,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>{member(uid).avatar}</div>)}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-          {/* Hour rows */}
-          {allHours.map(hour => (
-            <div key={hour} style={{display:"grid",gridTemplateColumns:`${LABEL_W}px repeat(7, ${COL_W}px)`,marginBottom:2}}>
-              {/* Hora label */}
-              <div style={{fontSize:10,color:"#444",paddingTop:6,paddingRight:6,textAlign:"right",lineHeight:1}}>{String(hour).padStart(2,"0")}:00</div>
-              {/* Celdas por día */}
-              {[0,1,2,3,4,5,6].map(dow => {
-                const evs = byDayHour[`${dow}-${hour}`] || [];
-                return (
-                  <div key={dow} style={{minHeight:ROW_H,borderLeft:"1px solid #1a1a22",borderBottom:"1px solid #1a1a22",padding:3,background: dow===0||dow===6?"#0f0f15":"#0f0f13"}}>
-                    {evs.map(ev => {
-                      const c = cat(ev.category);
-                      return (
-                        <div key={ev.id} onClick={()=>openEdit(ev)}
-                          style={{fontSize:9,padding:"3px 5px",borderRadius:4,marginBottom:2,background:c.color+"22",color:c.color,cursor:"pointer",borderLeft:`2px solid ${c.color}`,lineHeight:1.3}}>
-                          <div style={{fontWeight:700}}>{ev.time} {ev.title}</div>
-                          {ev.timeEnd && <div style={{opacity:.7}}>{ev.timeEnd}</div>}
-                          <div style={{opacity:.6,marginTop:1}}>{c.icon}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
     );
   };
@@ -773,7 +755,6 @@ export default function App() {
               </div>
               {dayEvs.slice(0,2).map(ev=><EventChip key={ev.id} ev={ev}/>)}
               {dayEvs.length>2&&<div style={{fontSize:8,color:"#555"}}>+{dayEvs.length-2}</div>}
-              <div onClick={e=>{e.stopPropagation();openNew(dateStr);}} style={{fontSize:10,color:"#2a2a3a",textAlign:"right",cursor:"pointer",marginTop:2}}>+</div>
             </div>
           );
         })}
@@ -977,7 +958,7 @@ export default function App() {
         {/* SIDEBAR (desktop only) */}
         <aside className="sidebar" style={{width:220,flexShrink:0,background:"#0a0a0e",borderRight:"1px solid #1e1e2a",display:"flex",flexDirection:"column",padding:"16px 12px",gap:4,overflowY:"auto"}}>
           <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingLeft:8}}>Vistas</div>
-          {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"],["routine","🔁","Rutina semanal"]].map(([v,icon,label])=>(
+          {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"],["routine","📅","Semana"]].map(([v,icon,label])=>(
             <button key={v} onClick={()=>setView(v)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:8,border:"none",background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#555",fontSize:13,fontWeight:view===v?600:400,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:15}}>{icon}</span>{label}
             </button>
@@ -1009,7 +990,7 @@ export default function App() {
           {/* Mobile tabs + filters - portrait only */}
           <div className="mobile-tabs" style={{display:"flex",flexDirection:"column",flexShrink:0}}>
             <div style={{padding:"8px 16px 0",display:"flex",gap:4,overflowX:"auto"}}>
-              {[["calendar","📅 Mes"],["agenda","📋 Agenda"],["day","🗓 Día"],["routine","🔁 Rutina"]].map(([v,label])=>(
+              {[["calendar","📅 Mes"],["agenda","📋 Agenda"],["day","🗓 Día"],["routine","📅 Semana"]].map(([v,label])=>(
                 <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#666",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:view===v?600:400,border:view===v?"1px solid #2a2a3a":"1px solid transparent",whiteSpace:"nowrap",flexShrink:0}}>
                   {label}
                 </button>
@@ -1025,7 +1006,7 @@ export default function App() {
           </div>
 
           {/* Scrollable content */}
-          <div style={{flex:1,overflowY:"auto",padding:view==="routine"?"0":"16px 16px 80px"}}>
+          <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
             {view==="calendar"&&<CalendarContent/>}
             {view==="agenda"&&<AgendaContent/>}
             {view==="day"&&<DayContent/>}
@@ -1036,7 +1017,7 @@ export default function App() {
 
       {/* ── BOTTOM NAV (mobile only) ── */}
       <nav className="bottom-nav">
-        {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["routine","🔁","Rutina"],["day","🗓","Día"]].map(([v,icon,label])=>(
+        {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["routine","📅","Semana"],["day","🗓","Día"]].map(([v,icon,label])=>(
           <button key={v} className="bottom-nav-item" onClick={()=>setView(v)} style={{color:view===v?"#FF6B6B":"#555"}}>
             <span style={{fontSize:20}}>{icon}</span>
             <span style={{fontSize:9,fontWeight:view===v?700:400}}>{label}</span>
