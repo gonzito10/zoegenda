@@ -429,47 +429,126 @@ export default function Expenses({ groupId, members, currentUserId }) {
 
   // ── Stats tab ──────────────────────────────────────────────────────────
   const StatsTab = () => {
-    const [statsView, setStatsView] = useState("month"); // month|annual|tags
-    const cats   = statsView==="annual" ? annualStats : statsByCat;
-    const total  = statsView==="annual" ? annualTotal : monthTotal;
-    const max    = cats.length > 0 ? cats[0].amount : 1;
+    const [statsView,    setStatsView]    = useState("month");
+    const [openCat,      setOpenCat]      = useState(null); // cat key currently expanded
+    const [openTagCat,   setOpenTagCat]   = useState({}); // {tagId: catKey}
+
+    const cats  = statsView==="annual" ? annualStats : statsByCat;
+    const total = statsView==="annual" ? annualTotal : monthTotal;
+    const max   = cats.length > 0 ? cats[0].amount : 1;
+
+    // Get expenses for a category (filtered by month/annual)
+    function expsForCat(catId) {
+      const base = statsView==="annual" ? expenses : monthExpenses;
+      return base.filter(e => e.category === catId);
+    }
+    // Get expenses for a category within a tag
+    function expsForTagCat(tagId, catId) {
+      const tagExpIds = new Set(tagRelations.filter(r=>r.tag_id===tagId).map(r=>r.expense_id));
+      return expenses.filter(e => tagExpIds.has(e.id) && e.category === catId);
+    }
+
+    // Reusable: bar row with accordion
+    const CatRow = ({ c, total: rowTotal, max: rowMax, isOpen, onToggle, expsList }) => {
+      const pct  = ((c.amount / rowTotal) * 100).toFixed(1);
+      const barW = ((c.amount / rowMax) * 100).toFixed(1);
+      return (
+        <div style={{marginBottom:6}}>
+          <div onClick={onToggle} style={{cursor:"pointer",padding:"10px 12px",borderRadius:isOpen?"10px 10px 0 0":10,background:isOpen?c.color+"22":"#131318",border:`1px solid ${isOpen?c.color+"44":"#1e1e2a"}`,borderBottom:isOpen?"none":""}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <div style={{fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:17}}>{c.icon}</span>{c.label}
+                <span style={{fontSize:10,color:"#555",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:13,fontWeight:700,fontFamily:"Fraunces,serif",color:c.color}}>{fmtMoney(c.amount)}</div>
+                <div style={{fontSize:10,color:"#555"}}>{pct}% del total</div>
+              </div>
+            </div>
+            <div style={{height:7,background:"#1a1a22",borderRadius:4,overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${barW}%`,background:c.color+"55",border:`1px solid ${c.color}66`,borderRadius:4}}/>
+            </div>
+          </div>
+          {isOpen && (
+            <div style={{background:"#0f0f13",border:`1px solid ${c.color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:"8px 10px",display:"flex",flexDirection:"column",gap:4}}>
+              {expsList.length === 0
+                ? <div style={{fontSize:11,color:"#444",padding:"8px 0",textAlign:"center"}}>Sin gastos</div>
+                : expsList.map(e => {
+                  const payer = getMember(e.paid_by);
+                  return (
+                    <div key={e.id} onClick={()=>{setEditExp(e);setShowModal(true);}}
+                      style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:8,background:"#131318",border:"1px solid #1a1a22",cursor:"pointer"}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.description}</div>
+                        <div style={{fontSize:10,color:"#555",marginTop:1}}>{e.date} · {payer.display_name}{e.installments>1?` · Cuota ${e.installment_number}/${e.installments}`:""}</div>
+                      </div>
+                      <div style={{fontSize:12,fontWeight:700,color:c.color,flexShrink:0}}>{fmtMoney(e.amount)}</div>
+                    </div>
+                  );
+                })
+              }
+            </div>
+          )}
+        </div>
+      );
+    };
 
     return (
       <div>
+        {/* Sub-view tabs */}
         <div style={{display:"flex",gap:6,marginBottom:14}}>
-          {[["month","Este mes"],["annual","Anual"],...( tags.length>0?[["tags","Por etiqueta"]]:[] )].map(([v,l])=>(
-            <button key={v} onClick={()=>setStatsView(v)}
-              style={{padding:"5px 14px",borderRadius:8,fontSize:11,fontWeight:600,border:"1px solid",borderColor:statsView===v?"#2a2a3a":"transparent",background:statsView===v?"#1e1e2a":"transparent",color:statsView===v?"#fff":"#555",cursor:"pointer"}}>
-              {l}
-            </button>
-          ))}
+          {[["month","Este mes"],["annual","Anual"],...(tags.length>0?[["tags","Por etiqueta"]]:[])]
+            .map(([v,l])=>(
+              <button key={v} onClick={()=>{setStatsView(v);setOpenCat(null);setOpenTagCat({});}}
+                style={{padding:"5px 14px",borderRadius:8,fontSize:11,fontWeight:600,border:"1px solid",borderColor:statsView===v?"#2a2a3a":"transparent",background:statsView===v?"#1e1e2a":"transparent",color:statsView===v?"#fff":"#555",cursor:"pointer"}}>
+                {l}
+              </button>
+            ))
+          }
         </div>
-        {statsView==="month" && <MonthSelect value={activeMonth} onChange={v=>setSelMonth(v==="all"?null:v)}/>}
+        {statsView==="month" && <MonthSelect value={activeMonth} onChange={v=>{setSelMonth(v==="all"?null:v);setOpenCat(null);}}/>}
 
         {/* ── Vista por etiqueta ── */}
         {statsView==="tags" && (
           statsByTag.length === 0
             ? <div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>No hay etiquetas con gastos</div>
-            : statsByTag.map(({tag, cats:tCats, total:tTotal}) => (
-              <div key={tag.id} style={{marginBottom:24}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                  <div style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:700}}>🏷 {tag.name}</div>
-                  <div style={{fontSize:12,color:"#555"}}>{fmtMoney(tTotal)}</div>
-                </div>
-                <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:16,display:"flex",alignItems:"center",gap:16}}>
-                  <PieChart cats={tCats} total={tTotal}/>
-                  <div style={{display:"flex",flexDirection:"column",gap:7,flex:1}}>
-                    {tCats.map(c=>(
-                      <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:7}}>
-                        <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>
-                        <div style={{flex:1,fontSize:11,color:"#aaa"}}>{c.icon} {c.label}</div>
-                        <div style={{fontSize:11,fontWeight:700,color:c.color}}>{((c.amount/tTotal)*100).toFixed(1)}%</div>
-                      </div>
-                    ))}
+            : statsByTag.map(({tag, cats:tCats, total:tTotal}) => {
+              const tMax = tCats.length > 0 ? tCats[0].amount : 1;
+              return (
+                <div key={tag.id} style={{marginBottom:24}}>
+                  {/* Tag header */}
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                    <div style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:700}}>🏷 {tag.name}</div>
+                    <div style={{fontSize:12,color:"#555"}}>{fmtMoney(tTotal)}</div>
                   </div>
+                  {/* Pie + leyenda */}
+                  <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:16,marginBottom:10,display:"flex",alignItems:"center",gap:16}}>
+                    <PieChart cats={tCats} total={tTotal}/>
+                    <div style={{display:"flex",flexDirection:"column",gap:7,flex:1}}>
+                      {tCats.map(c=>(
+                        <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:7}}>
+                          <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>
+                          <div style={{flex:1,fontSize:11,color:"#aaa"}}>{c.icon} {c.label}</div>
+                          <div style={{fontSize:11,fontWeight:700,color:c.color}}>{((c.amount/tTotal)*100).toFixed(1)}%</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Barras con acordeón */}
+                  {tCats.map(c => {
+                    const key = c.id||c.label;
+                    const isOpen = openTagCat[tag.id] === key;
+                    return (
+                      <CatRow key={key} c={c} total={tTotal} max={tMax}
+                        isOpen={isOpen}
+                        onToggle={()=>setOpenTagCat(prev=>({...prev, [tag.id]: isOpen ? null : key}))}
+                        expsList={expsForTagCat(tag.id, c.id)}
+                      />
+                    );
+                  })}
                 </div>
-              </div>
-            ))
+              );
+            })
         )}
 
         {/* ── Vista mes/anual ── */}
@@ -498,23 +577,16 @@ export default function Expenses({ groupId, members, currentUserId }) {
                 ))}
               </div>
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:14}}>
-              {cats.map(c=>{
-                const pct = ((c.amount/total)*100).toFixed(1);
-                const barW = ((c.amount/max)*100).toFixed(1);
+            <div>
+              {cats.map(c => {
+                const key = c.id||c.label;
+                const isOpen = openCat === key;
                 return (
-                  <div key={c.id||c.label}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:5}}>
-                      <div style={{fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:18}}>{c.icon}</span>{c.label}</div>
-                      <div style={{textAlign:"right"}}>
-                        <div style={{fontSize:13,fontWeight:700,fontFamily:"Fraunces,serif",color:c.color}}>{fmtMoney(c.amount)}</div>
-                        <div style={{fontSize:10,color:"#555"}}>{pct}% del total</div>
-                      </div>
-                    </div>
-                    <div style={{height:8,background:"#1a1a22",borderRadius:4,overflow:"hidden"}}>
-                      <div style={{height:"100%",width:`${barW}%`,background:c.color+"44",border:`1px solid ${c.color}66`,borderRadius:4,transition:"width .4s ease"}}/>
-                    </div>
-                  </div>
+                  <CatRow key={key} c={c} total={total} max={max}
+                    isOpen={isOpen}
+                    onToggle={()=>setOpenCat(isOpen ? null : key)}
+                    expsList={expsForCat(c.id)}
+                  />
                 );
               })}
             </div>
