@@ -713,17 +713,16 @@ export default function App() {
       <div style={{padding:"16px 16px 80px"}}>
         {weekDays.map(({dow, dateStr, date}) => {
           const dayEvs = byDay[dateStr] || [];
+          if (dayEvs.length === 0) return null;
           const isToday = dateStr === fmt(today);
           return (
             <div key={dateStr} style={{marginBottom:18}}>
               {/* Cabecera del día */}
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-                <div style={{width:38,height:38,borderRadius:9,background:isToday?"#FF6B6B":"#1a1a22",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <span style={{fontSize:12,fontWeight:700,color:"#fff",lineHeight:1}}>{date.getDate()}</span>
-                  <span style={{fontSize:8,color:isToday?"#ffb3b3":"#555",textTransform:"uppercase"}}>{DAYS_FULL_ES[dow].slice(0,3)}</span>
+                <div style={{width:38,height:38,borderRadius:9,background:isToday?"#FF6B6B":"#1a1a22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <span style={{fontSize:11,fontWeight:700,color:isToday?"#fff":"#aaa",textTransform:"uppercase"}}>{DAYS_FULL_ES[dow].slice(0,3)}</span>
                 </div>
                 <div style={{flex:1,height:1,background:"#1e1e2a"}}/>
-                {dayEvs.length===0 && <span style={{fontSize:10,color:"#2a2a3a"}}>Sin eventos</span>}
               </div>
               {/* Actividades del día */}
               {dayEvs.map(ev => (
@@ -980,7 +979,7 @@ export default function App() {
         {/* SIDEBAR (desktop only) */}
         <aside className="sidebar" style={{width:220,flexShrink:0,background:"#0a0a0e",borderRight:"1px solid #1e1e2a",display:"flex",flexDirection:"column",padding:"16px 12px",gap:4,overflowY:"auto"}}>
           <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingLeft:8}}>Vistas</div>
-          {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"],["routine","📅","Semana"]].map(([v,icon,label])=>(
+          {[["calendar","📅","Mes"],["routine","📅","Semana"],["day","🗓","Día"],["agenda","📋","Agenda"]].map(([v,icon,label])=>(
             <button key={v} onClick={()=>setView(v)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:8,border:"none",background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#555",fontSize:13,fontWeight:view===v?600:400,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:15}}>{icon}</span>{label}
             </button>
@@ -1012,7 +1011,7 @@ export default function App() {
           {/* Mobile tabs + filters - portrait only */}
           <div className="mobile-tabs" style={{display:"flex",flexDirection:"column",flexShrink:0}}>
             <div style={{padding:"8px 16px 0",display:"flex",gap:4,overflowX:"auto"}}>
-              {[["calendar","📅 Mes"],["agenda","📋 Agenda"],["day","🗓 Día"],["routine","📅 Semana"]].map(([v,label])=>(
+              {[["calendar","📅 Mes"],["routine","📅 Semana"],["day","🗓 Día"],["agenda","📋 Agenda"]].map(([v,label])=>(
                 <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#666",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:view===v?600:400,border:view===v?"1px solid #2a2a3a":"1px solid transparent",whiteSpace:"nowrap",flexShrink:0}}>
                   {label}
                 </button>
@@ -1039,7 +1038,7 @@ export default function App() {
 
       {/* ── BOTTOM NAV (mobile only) ── */}
       <nav className="bottom-nav">
-        {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["routine","📅","Semana"],["day","🗓","Día"]].map(([v,icon,label])=>(
+        {[["calendar","📅","Mes"],["routine","📅","Semana"],["day","🗓","Día"],["agenda","📋","Agenda"]].map(([v,icon,label])=>(
           <button key={v} className="bottom-nav-item" onClick={()=>setView(v)} style={{color:view===v?"#FF6B6B":"#555"}}>
             <span style={{fontSize:20}}>{icon}</span>
             <span style={{fontSize:9,fontWeight:view===v?700:400}}>{label}</span>
