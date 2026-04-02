@@ -366,26 +366,28 @@ export default function App() {
     return () => supabase.removeChannel(ch);
   }, [activeGroup?.id]);
 
-  // ── Notification check: events tomorrow ────────────────────────────────
+  // ── Notification check: events with alarms ────────────────────────────
   useEffect(() => {
     if (!events.length || !activeGroup) return;
-    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
-    const tomorrowStr = fmt(tomorrow);
-    // Check regular events
-    const direct = events.filter(e => !e.recurring && e.date === tomorrowStr);
-    // Check recurring events
-    const recurring = events.filter(e => e.recurring).flatMap(e => {
-      const instances = expandRecurring(e, tomorrowStr, tomorrowStr);
-      return instances.length > 0 ? [e] : [];
+    const alarmed = [];
+    events.forEach(ev => {
+      // Rutinas sin alarma activada: ignorar por defecto
+      if (ev.recurring && !ev.alarmDays) return;
+      // Eventos sin alarma: ignorar
+      if (!ev.alarmDays) return;
+      const days = parseInt(ev.alarmDays); // 1, 2, o 7
+      const target = new Date(today);
+      target.setDate(target.getDate() + days);
+      const targetStr = fmt(target);
+      if (ev.recurring) {
+        const instances = expandRecurring(ev, targetStr, targetStr);
+        if (instances.length > 0) alarmed.push({...ev, _alarmDate: targetStr});
+      } else {
+        if (ev.date === targetStr) alarmed.push({...ev, _alarmDate: targetStr});
+      }
     });
-    const all = [...direct, ...recurring];
-    if (all.length > 0) {
-      setNotifications(all);
-      setShowNotifPanel(true);
-    } else {
-      setNotifications([]);
-      setShowNotifPanel(false);
-    }
+    setNotifications(alarmed);
+    // No auto-abrir el panel — solo mostrar campana
   }, [events, activeGroup?.id]);
 
   // ── Calendar helpers ─────────────────────────────────────────────────────
@@ -432,7 +434,7 @@ export default function App() {
   // ── Event CRUD ───────────────────────────────────────────────────────────
   function openNew(date) {
     const d = date ? parse(date) : parse(selectedDate);
-    setEditingEvent({ id:null, title:"", date:date||selectedDate, time:"09:00", timeEnd:"", category:"work", attendees:[authUser.id], notes:"", color:"#FF6B6B", recurring:false, recurringDays:[d.getDay()], recurringEnd:"", birthdayPerson:"" });
+    setEditingEvent({ id:null, title:"", date:date||selectedDate, time:"09:00", timeEnd:"", category:"work", attendees:[authUser.id], notes:"", color:"#FF6B6B", recurring:false, recurringDays:[d.getDay()], recurringEnd:"", birthdayPerson:"", alarmDays:"" });
     setShowEventModal(true);
   }
   function openEdit(ev) {
@@ -440,7 +442,7 @@ export default function App() {
       const base = events.find(e=>e.id===ev._recurringBase);
       setEditingEvent(base ? {...base, _editingVirtualDate:ev.date} : {...ev});
     } else {
-      setEditingEvent({...ev, recurringDays:ev.recurringDays||[], recurringEnd:ev.recurringEnd||"", timeEnd:ev.timeEnd||"", birthdayPerson:ev.birthdayPerson||""});
+      setEditingEvent({...ev, recurringDays:ev.recurringDays||[], recurringEnd:ev.recurringEnd||"", timeEnd:ev.timeEnd||"", birthdayPerson:ev.birthdayPerson||"", alarmDays:ev.alarmDays||""});
     }
     setShowEventModal(true);
   }
@@ -883,12 +885,11 @@ export default function App() {
           <span style={{fontSize:11,color:"#ccc",fontWeight:500,maxWidth:55,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.display_name}</span>
         </div>
         {notifications.length>0&&(
-          <button onClick={()=>setShowNotifPanel(p=>!p)} style={{position:"relative",background:showNotifPanel?"#FFB34722":"transparent",border:`1px solid ${showNotifPanel?"#FFB34744":"#2a2a3a"}`,borderRadius:9,padding:"7px 10px",fontSize:15,flexShrink:0,cursor:"pointer"}}>
+          <button onClick={()=>{setMainTab("agenda");setView("agenda");setShowNotifPanel(p=>!p);setShowGroupPanel(false);}} style={{position:"relative",background:showNotifPanel?"#FFB34722":"transparent",border:`1px solid ${showNotifPanel?"#FFB34744":"#2a2a3a"}`,borderRadius:9,padding:"7px 10px",fontSize:15,flexShrink:0,cursor:"pointer"}}>
             🔔
             <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#FF6B6B",fontSize:9,fontWeight:700,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{notifications.length}</span>
           </button>
         )}
-        
       </header>
 
       {/* Profile panel */}
@@ -937,27 +938,33 @@ export default function App() {
         ))}
       </div>
 
-      {/* ── NOTIFICATION PANEL ── */}
-      {showNotifPanel&&notifications.length>0&&(
+      {/* ── NOTIFICATION PANEL — solo en sección agenda ── */}
+      {showNotifPanel&&notifications.length>0&&mainTab==="agenda"&&(
         <div className="panel-anim" style={{background:"#1a1200",borderBottom:"1px solid #3a2a00",padding:"12px 16px",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
             <div style={{display:"flex",alignItems:"center",gap:7}}>
               <span style={{fontSize:16}}>🔔</span>
-              <span style={{fontSize:12,fontWeight:700,color:"#FFB347"}}>Mañana tenés {notifications.length} evento{notifications.length!==1?"s":""}</span>
+              <span style={{fontSize:12,fontWeight:700,color:"#FFB347"}}>{notifications.length} alarma{notifications.length!==1?"s":""} próxima{notifications.length!==1?"s":""}</span>
             </div>
             <button onClick={()=>setShowNotifPanel(false)} style={{background:"transparent",border:"none",color:"#666",fontSize:16,cursor:"pointer",lineHeight:1}}>×</button>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:5}}>
-            {notifications.map(ev=>(
-              <div key={ev.id} onClick={()=>{openEdit(ev);setShowNotifPanel(false);}}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#ffffff08",cursor:"pointer",border:"1px solid #3a2a00"}}>
-                <span style={{fontSize:14}}>{ev.category==="birthday"?"🎂":ev.category==="work"?"💼":ev.category==="health"?"💊":ev.category==="social"?"🎉":"📌"}</span>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"#f5e0b0"}}>{ev.title}</div>
-                  <div style={{fontSize:10,color:"#888"}}>{ev.time}{ev.timeEnd?` – ${ev.timeEnd}`:""} · {cat(ev.category).label}</div>
+            {notifications.map(ev=>{
+              const daysLabel = ev.alarmDays==="1"?"mañana":ev.alarmDays==="2"?"en 2 días":"en 1 semana";
+              return (
+                <div key={ev.id} onClick={()=>{
+                  const d = ev._alarmDate || ev.date;
+                  setSelectedDate(d); setView("day"); setShowNotifPanel(false);
+                }}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#ffffff08",cursor:"pointer",border:"1px solid #3a2a00"}}>
+                  <span style={{fontSize:14}}>{cat(ev.category).icon}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,fontWeight:600,color:"#f5e0b0"}}>{ev.title}</div>
+                    <div style={{fontSize:10,color:"#888"}}>{ev.time}{ev.timeEnd?` – ${ev.timeEnd}`:""} · {daysLabel}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -1147,6 +1154,20 @@ export default function App() {
                 <label style={lbl}>Notas</label>
                 <textarea value={editingEvent.notes} onChange={e=>setEditingEvent(ev=>({...ev,notes:e.target.value}))} placeholder="Detalles adicionales..." rows={2} style={{...inp,resize:"none"}}/>
               </div>
+              {/* Alarma — desactivada por defecto en rutinarios */}
+              {editingEvent.category!=="birthday"&&(
+                <div style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"10px 13px"}}>
+                  <div style={{fontSize:12,fontWeight:600,color:"#e8e8f0",marginBottom:7,display:"flex",alignItems:"center",gap:6}}>🔔 Alarma <span style={{fontSize:10,color:"#444",fontWeight:400}}>{editingEvent.recurring?"(desactivada por defecto en rutinarios)":""}</span></div>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                    {[["","Sin alarma"],["1","1 día antes"],["2","2 días antes"],["7","1 semana antes"]].map(([v,l])=>(
+                      <div key={v} onClick={()=>setEditingEvent(ev=>({...ev,alarmDays:v}))}
+                        style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:editingEvent.alarmDays===v?700:400,background:editingEvent.alarmDays===v?"#FFB34733":"#1a1a22",color:editingEvent.alarmDays===v?"#FFB347":"#555",border:`1px solid ${editingEvent.alarmDays===v?"#FFB34744":"#2a2a3a"}`}}>
+                        {l}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div style={{display:"flex",gap:8}}>
                 {editingEvent.id&&<button onClick={()=>{if(editingEvent.recurring)setDeleteDialog({baseId:editingEvent.id,isBase:true});else confirmDelete(editingEvent.id,null,null);}} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:10,padding:"9px 12px",fontSize:12,fontWeight:600}}>Eliminar</button>}
                 <button onClick={saveEvent} style={{flex:1,background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"10px",fontSize:14,fontWeight:700}}>{editingEvent.id?"Guardar":"Crear evento"}</button>

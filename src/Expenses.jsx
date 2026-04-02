@@ -12,12 +12,16 @@ const DEFAULT_CATS = [
 ];
 
 const ICON_OPTIONS = [
-  { group:"Comida y hogar",    icons:["🍳","🥩","🥦","🧹","🪴","🛁","🛏","🪑","🔧","🏠"] },
-  { group:"Transporte",        icons:["🚗","🚌","🛵","✈️","🚂","⛽","🅿️","🛞"] },
-  { group:"Salud",             icons:["💊","🩺","🏋️","🧘","💆","🦷","🩻","🧬"] },
-  { group:"Ocio",              icons:["🎬","🎮","📚","🎵","🏖️","🎭","🎲","⚽","🎤","🎨"] },
-  { group:"Mascotas",          icons:["🐶","🐱","🐾","🦴","🐠","🐰"] },
-  { group:"Otros",             icons:["🎁","💰","📦","📎","✨","🛍️","💳","📱","🖥️","📷"] },
+  { group:"Comida y hogar",    icons:["🍳","🥩","🥦","🧹","🪴","🛁","🛏","🪑","🔧","🏠","🍕","🥗","🍔","🍜","🥘","🧆","🍷","🥂","☕","🍰","🧺","🪣","🧻","🪟","🚪","🛋","🪞","🧴","🧼","🫙"] },
+  { group:"Transporte",        icons:["🚗","🚌","🛵","✈️","🚂","⛽","🅿️","🛞","🚕","🚙","🛺","⛵","🚲","🛴","🚁","🚢","🗺️","🛣️","🏍️","🚦"] },
+  { group:"Salud y bienestar", icons:["💊","🩺","🏋️","🧘","💆","🦷","🩻","🧬","🏥","💉","🩹","🧪","🫀","🧠","👁️","🛁","🌡️","🩼","🩴","💪"] },
+  { group:"Ocio y cultura",    icons:["🎬","🎮","📚","🎵","🏖️","🎭","🎲","⚽","🎤","🎨","🎸","🎯","🏄","🎪","🎡","🎢","🏔️","🎾","🎳","🏊","🎹","🎻","🎺","🎷","🎰","🎟️","🏕️","🧩","🎠","🌄"] },
+  { group:"Mascotas",          icons:["🐶","🐱","🐾","🦴","🐠","🐰","🐹","🐦","🦜","🐍","🐢","🐇","🦎","🐈","🐕","🐾","🏡","🛁","🪺","🦮"] },
+  { group:"Educación",         icons:["📖","✏️","🎓","🏫","📐","📏","🔬","💻","📓","📝","🖊️","📌","📎","🗒️","📊","🖥️","⌨️","🖱️","📡","🔭"] },
+  { group:"Ropa y belleza",    icons:["👗","👔","👟","👠","👜","💄","💍","💎","🧴","🪮","💅","🧣","🧤","🎩","🪭","👒","🕶️","⌚","🧢","🥿"] },
+  { group:"Finanzas",          icons:["💰","💳","🏦","📈","📉","💵","🪙","💸","🧾","📑","🏧","💹","🤑","💱","📂","🗂️","📋","🔐","🏷️","🎁"] },
+  { group:"Servicios del hogar",icons:["⚡","💧","🔥","📶","📺","📱","🖥️","🌐","📮","🗑️","🔑","🪛","🔨","🪚","🧲","💡","🔌","🪤","📡","🛠️"] },
+  { group:"Otros",             icons:["⭐","🌟","✨","🎀","🪄","🌈","☀️","🌙","❄️","🌊","🍀","🌸","🌺","🌻","🦋","🐝","🕊️","🌍","🗺️","🎊"] },
 ];
 
 const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -233,8 +237,8 @@ export default function Expenses({ groupId, members, currentUserId }) {
   const monthExpenses = useMemo(() => expenses.filter(e => monthKey(e.date) === activeMonth), [expenses, activeMonth]);
   const monthTotal    = useMemo(() => monthExpenses.reduce((s,e)=>s+e.amount,0), [monthExpenses]);
 
-  // Balance
-  const balance = useMemo(() => calcBalance(expenses, settlements, members, activeMonth), [expenses, settlements, members, activeMonth]);
+  // Balance siempre acumulado histórico total (sin filtro de mes)
+  const balance = useMemo(() => calcBalance(expenses, settlements, members, null), [expenses, settlements, members]);
   const debts   = useMemo(() => calcDebts(balance, members), [balance, members]);
 
   // Stats by category
@@ -289,9 +293,13 @@ export default function Expenses({ groupId, members, currentUserId }) {
   );
 
   // ── Balance tab ────────────────────────────────────────────────────────
-  const BalanceTab = () => (
+  const BalanceTab = () => {
+    const totalHistorico = useMemo(() => expenses.reduce((s,e)=>s+e.amount,0), []);
+    return (
     <div>
-      <MonthSelect value={activeMonth} onChange={v=>{setSelMonth(v==="all"?null:v)}}/>
+      <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"8px 14px",marginBottom:12,fontSize:11,color:"#555",display:"flex",alignItems:"center",gap:6}}>
+        <span>📊</span> Balance acumulado histórico — incluye todos los meses
+      </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
         {members.map(m=>{
           const b = balance[m.id] || 0;
@@ -307,9 +315,9 @@ export default function Expenses({ groupId, members, currentUserId }) {
           );
         })}
         <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:12}}>
-          <div style={{fontSize:11,color:"#666",marginBottom:4}}>💰 Total</div>
-          <div style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"#e8e8f0"}}>{fmtMoney(monthTotal)}</div>
-          <div style={{fontSize:10,color:"#555",marginTop:3}}>{monthLabel(activeMonth)}</div>
+          <div style={{fontSize:11,color:"#666",marginBottom:4}}>💰 Total histórico</div>
+          <div style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"#e8e8f0"}}>{fmtMoney(totalHistorico)}</div>
+          <div style={{fontSize:10,color:"#555",marginTop:3}}>Todos los meses</div>
         </div>
       </div>
 
@@ -361,7 +369,8 @@ export default function Expenses({ groupId, members, currentUserId }) {
         })}
       </>}
     </div>
-  );
+    );
+  };
 
   // ── History tab ────────────────────────────────────────────────────────
   const HistoryTab = () => (
