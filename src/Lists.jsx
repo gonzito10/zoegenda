@@ -4,7 +4,24 @@ import { supabase } from "./supabase";
 const inp = {background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"11px 13px",color:"#e8e8f0",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
 const lbl = {fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
 
-const LIST_ICONS = ["🛒","📋","🏠","🔧","🎁","✈️","🏋️","📚","🍕","💊","🐾","🌱","👗","🎮","💰","🎨","🚗","🧹","📦","⭐","🎓","🏖️","🌍","🎵","🛠️","🎂","🧺","🌸","🔑","💡"];
+const LIST_ICONS = [
+  // Hogar y compras
+  "🛒","🏠","🔧","🧹","🪣","🛁","🛋","🪑","🛏","🪟","🚪","🔑","💡","🔌","🧺","🪴","🌿","🧴","🧼","🫙",
+  // Comida y cocina
+  "🍕","🍔","🥗","🍳","🥘","🍷","☕","🧃","🥦","🥩","🍰","🧁","🫙","🥫","🍜","🍣","🥐","🧇","🥚","🫕",
+  // Salud y bienestar
+  "💊","🏥","🩺","🧘","🏋️","🚴","🧬","🩹","💉","🦷","🧠","❤️","🫀","🩻","🌡️","🛁","💆","🧖","🏃","🤸",
+  // Transporte y viajes
+  "✈️","🚗","🚌","🛵","🚂","⛵","🚲","🏍️","🛺","🚁","🗺️","🧳","🏖️","🏔️","🌍","🗼","🏕️","⛺","🎡","🎢",
+  // Trabajo y educación
+  "💼","📚","✏️","🎓","🏫","📐","💻","🖥️","⌨️","📊","📈","📝","🗂️","📌","📎","🖊️","📋","🗒️","🔬","🔭",
+  // Entretenimiento
+  "🎮","🎬","🎵","🎸","🎨","🎭","🎲","⚽","🏊","🎾","🎯","🎳","🎪","🎠","🎤","🎹","🎺","🎷","🥊","🏄",
+  // Mascotas y naturaleza
+  "🐶","🐱","🐾","🦴","🐠","🐰","🐹","🦜","🌸","🌻","🌺","🍀","🌈","☀️","🌙","❄️","🌊","🦋","🐝","🌵",
+  // Finanzas y misc
+  "💰","💳","🏦","📈","🎁","⭐","✨","🎀","🪄","🔐","🏷️","📦","🗑️","♻️","🧲","🪛","🔨","🪚","🛠️","⚙️",
+];
 
 async function loadLists(groupId) {
   const { data } = await supabase.from("lists").select("*").eq("group_id", groupId).order("created_at");
@@ -139,15 +156,9 @@ export default function Lists({ groupId, currentUserId }) {
       {/* Selector de listas */}
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
         {lists.map(l => (
-          <div key={l.id} style={{display:"flex",alignItems:"center",gap:0}}>
-            <div onClick={()=>setActiveList(l.id)}
-              style={{padding:"6px 12px",borderRadius:activeList===l.id?"20px 0 0 20px":20,fontSize:12,fontWeight:600,cursor:"pointer",background:activeList===l.id?"#FF6B6B22":"#1a1a22",color:activeList===l.id?"#FF6B6B":"#555",border:`1px solid ${activeList===l.id?"#FF6B6B44":"#2a2a3a"}`,borderRight:activeList===l.id?"none":"1px solid",display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:15}}>{l.icon||"📋"}</span>{l.name}
-            </div>
-            {activeList===l.id&&(
-              <div onClick={()=>openEditModal(l)}
-                style={{padding:"6px 8px",borderRadius:"0 20px 20px 0",fontSize:11,cursor:"pointer",background:"#FF6B6B22",color:"#FF6B6B88",border:"1px solid #FF6B6B44",borderLeft:"none",lineHeight:1}}>✎</div>
-            )}
+          <div key={l.id} onClick={()=>setActiveList(l.id)}
+            style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:activeList===l.id?"#FF6B6B22":"#1a1a22",color:activeList===l.id?"#FF6B6B":"#555",border:`1px solid ${activeList===l.id?"#FF6B6B44":"#2a2a3a"}`,display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontSize:15}}>{l.icon||"📋"}</span>{l.name}
           </div>
         ))}
       </div>
@@ -159,8 +170,12 @@ export default function Lists({ groupId, currentUserId }) {
             <span style={{fontSize:24}}>{currentList.icon||"📋"}</span>
             <div style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"#fff"}}>{currentList.name}</div>
           </div>
-          <button onClick={()=>setShowDelete(currentList.id)}
-            style={{background:"transparent",border:"none",color:"#2a2a3a",fontSize:18,cursor:"pointer",padding:"4px 8px"}}>🗑</button>
+          <div style={{display:"flex",gap:4}}>
+            <button onClick={()=>openEditModal(currentList)}
+              style={{background:"transparent",border:"none",color:"#555",fontSize:16,cursor:"pointer",padding:"4px 8px"}}>✎</button>
+            <button onClick={()=>setShowDelete(currentList.id)}
+              style={{background:"transparent",border:"none",color:"#2a2a3a",fontSize:18,cursor:"pointer",padding:"4px 8px"}}>🗑</button>
+          </div>
         </div>
       )}
 
