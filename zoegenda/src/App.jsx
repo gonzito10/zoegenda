@@ -366,26 +366,28 @@ export default function App() {
     return () => supabase.removeChannel(ch);
   }, [activeGroup?.id]);
 
-  // ── Notification check: events tomorrow ────────────────────────────────
+  // ── Notification check: events with alarms ────────────────────────────
   useEffect(() => {
     if (!events.length || !activeGroup) return;
-    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
-    const tomorrowStr = fmt(tomorrow);
-    // Check regular events
-    const direct = events.filter(e => !e.recurring && e.date === tomorrowStr);
-    // Check recurring events
-    const recurring = events.filter(e => e.recurring).flatMap(e => {
-      const instances = expandRecurring(e, tomorrowStr, tomorrowStr);
-      return instances.length > 0 ? [e] : [];
+    const alarmed = [];
+    events.forEach(ev => {
+      // Rutinas sin alarma activada: ignorar por defecto
+      if (ev.recurring && !ev.alarmDays) return;
+      // Eventos sin alarma: ignorar
+      if (!ev.alarmDays) return;
+      const days = parseInt(ev.alarmDays); // 1, 2, o 7
+      const target = new Date(today);
+      target.setDate(target.getDate() + days);
+      const targetStr = fmt(target);
+      if (ev.recurring) {
+        const instances = expandRecurring(ev, targetStr, targetStr);
+        if (instances.length > 0) alarmed.push({...ev, _alarmDate: targetStr});
+      } else {
+        if (ev.date === targetStr) alarmed.push({...ev, _alarmDate: targetStr});
+      }
     });
-    const all = [...direct, ...recurring];
-    if (all.length > 0) {
-      setNotifications(all);
-      setShowNotifPanel(true);
-    } else {
-      setNotifications([]);
-      setShowNotifPanel(false);
-    }
+    setNotifications(alarmed);
+    // No auto-abrir el panel — solo mostrar campana
   }, [events, activeGroup?.id]);
 
   // ── Calendar helpers ─────────────────────────────────────────────────────
@@ -402,8 +404,7 @@ export default function App() {
 
   const monthEvents = useMemo(() => {
     const expanded = events.flatMap(ev => {
-      if (ev.recurring && !ev.recurringYearly) return []; // rutinas semanales solo en vista rutina
-      if (ev.recurring && ev.recurringYearly) return expandRecurring(ev, rangeStart, rangeEnd); // cumpleaños sí
+      if (ev.recurring) return expandRecurring(ev, rangeStart, rangeEnd);
       if (ev.date >= rangeStart && ev.date <= rangeEnd) return [ev];
       return [];
     });
@@ -413,8 +414,7 @@ export default function App() {
 
   function eventsForDate(dateStr) {
     const expanded = events.flatMap(ev => {
-      if (ev.recurring && !ev.recurringYearly) return []; // rutinas solo en vista rutina
-      if (ev.recurring && ev.recurringYearly) return expandRecurring(ev, dateStr, dateStr);
+      if (ev.recurring) return expandRecurring(ev, dateStr, dateStr);
       return ev.date === dateStr ? [ev] : [];
     });
     return filterEvs(expanded).sort((a,b) => a.time.localeCompare(b.time));
@@ -434,7 +434,7 @@ export default function App() {
   // ── Event CRUD ───────────────────────────────────────────────────────────
   function openNew(date) {
     const d = date ? parse(date) : parse(selectedDate);
-    setEditingEvent({ id:null, title:"", date:date||selectedDate, time:"09:00", timeEnd:"", category:"work", attendees:[authUser.id], notes:"", color:"#FF6B6B", recurring:false, recurringDays:[d.getDay()], recurringEnd:"", birthdayPerson:"" });
+    setEditingEvent({ id:null, title:"", date:date||selectedDate, time:"09:00", timeEnd:"", category:"work", attendees:[authUser.id], notes:"", color:"#FF6B6B", recurring:false, recurringDays:[d.getDay()], recurringEnd:"", birthdayPerson:"", alarmDays:"" });
     setShowEventModal(true);
   }
   function openEdit(ev) {
@@ -442,7 +442,7 @@ export default function App() {
       const base = events.find(e=>e.id===ev._recurringBase);
       setEditingEvent(base ? {...base, _editingVirtualDate:ev.date} : {...ev});
     } else {
-      setEditingEvent({...ev, recurringDays:ev.recurringDays||[], recurringEnd:ev.recurringEnd||"", timeEnd:ev.timeEnd||"", birthdayPerson:ev.birthdayPerson||""});
+      setEditingEvent({...ev, recurringDays:ev.recurringDays||[], recurringEnd:ev.recurringEnd||"", timeEnd:ev.timeEnd||"", birthdayPerson:ev.birthdayPerson||"", alarmDays:ev.alarmDays||""});
     }
     setShowEventModal(true);
   }
@@ -636,11 +636,11 @@ export default function App() {
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDay    = getFirstDay(currentYear, currentMonth);
 
-  const EventChip = ({ev}) => {
+  const EventChip = ({ev, dateStr}) => {
     const isBday = ev.category === "birthday";
     const icon = cat(ev.category).icon;
     return (
-      <div className="event-chip" onClick={e=>{e.stopPropagation();openEdit(ev);}}
+      <div className="event-chip" onClick={e=>{e.stopPropagation();if(dateStr){setSelectedDate(dateStr);setView("day");}}}
         style={{fontSize:9,padding:"2px 4px",borderRadius:3,marginBottom:2,background:cat(ev.category).color+"22",color:cat(ev.category).color,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontWeight:500,display:"flex",alignItems:"center",gap:2,flexShrink:0}}>
         <span style={{flexShrink:0}}>{icon}</span>
         {isBday ? <span>{ev.title}</span> : <span>{ev.time} {ev.title}</span>}
@@ -663,87 +663,92 @@ export default function App() {
     </div>
   );
 
-  // ── Weekly Routine View ──────────────────────────────────────────────────
+  // ── Semana View (rutinas semanales estilo agenda) ──────────────────────
   const WeeklyRoutineContent = () => {
-    const DAYS_FULL_SHORT = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-    // Collect all hours used across routines
-    const allHours = useMemo(() => {
-      const hrs = new Set();
-      weeklyRoutines.forEach(ev => {
-        if (ev.time) hrs.add(parseInt(ev.time.split(":")[0]));
-      });
-      if (hrs.size === 0) return [];
-      const min = Math.min(...hrs);
-      const max = Math.max(...hrs);
-      return Array.from({length: max - min + 1}, (_, i) => min + i);
-    // eslint-disable-next-line
-    }, [weeklyRoutines]);
+    const DAYS_FULL_ES = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 
-    // Group routines by day and hour
-    const byDayHour = useMemo(() => {
+    // Calcular el lunes de la semana actual
+    const weekStart = useMemo(() => {
+      const d = new Date(today);
+      const day = d.getDay(); // 0=dom
+      const diff = day === 0 ? -6 : 1 - day; // ajustar a lunes
+      d.setDate(d.getDate() + diff);
+      d.setHours(0,0,0,0);
+      return d;
+    // eslint-disable-next-line
+    }, []);
+
+    // Generar los 7 días de la semana (lun→dom)
+    const weekDays = useMemo(() => {
+      return Array.from({length:7}, (_, i) => {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() + i);
+        return { dow: d.getDay(), dateStr: fmt(d), date: d };
+      });
+    }, [weekStart]);
+
+    // Para cada día: eventos puntuales + rutinas
+    const byDay = useMemo(() => {
       const map = {};
-      weeklyRoutines.forEach(ev => {
-        const hour = parseInt((ev.time||"00:00").split(":")[0]);
-        (ev.recurringDays||[]).forEach(dow => {
-          const key = `${dow}-${hour}`;
-          if (!map[key]) map[key] = [];
-          map[key].push(ev);
+      weekDays.forEach(({dow, dateStr}) => {
+        const evs = events.flatMap(ev => {
+          if (ev.recurring) return expandRecurring(ev, dateStr, dateStr);
+          return ev.date === dateStr ? [ev] : [];
         });
+        map[dateStr] = filterEvs(evs).sort((a,b) => (a.time||"").localeCompare(b.time||""));
       });
       return map;
     // eslint-disable-next-line
-    }, [weeklyRoutines]);
+    }, [events, weekDays, filterUser, filterCat]);
 
-    if (weeklyRoutines.length === 0) return (
+    const hasAny = weekDays.some(({dateStr}) => byDay[dateStr]?.length > 0);
+
+    if (!hasAny) return (
       <div style={{textAlign:"center",color:"#444",padding:"60px 20px",fontSize:14}}>
-        <div style={{fontSize:32,marginBottom:12}}>🔁</div>
-        <div style={{marginBottom:8}}>No hay actividades rutinarias</div>
-        <div style={{fontSize:12,color:"#333",marginBottom:20}}>Creá un evento y marcalo como rutina semanal</div>
-        <button onClick={()=>openNew(null)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontSize:13}}>+ Crear rutina</button>
+        <div style={{fontSize:32,marginBottom:12}}>📅</div>
+        <div style={{marginBottom:8}}>No hay actividades esta semana</div>
+        <button onClick={()=>openNew(null)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontSize:13}}>+ Agregar</button>
       </div>
     );
 
-    const COL_W = 80;
-    const ROW_H = 54;
-    const LABEL_W = 48;
-
     return (
-      <div style={{overflowX:"auto",overflowY:"auto",height:"100%"}}>
-        <div style={{minWidth: LABEL_W + COL_W * 7 + 16, padding:"12px 8px 80px"}}>
-          {/* Header row: días */}
-          <div style={{display:"grid",gridTemplateColumns:`${LABEL_W}px repeat(7, ${COL_W}px)`,marginBottom:2}}>
-            <div/>
-            {DAYS_FULL_SHORT.map((d,i)=>(
-              <div key={i} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#555",textTransform:"uppercase",letterSpacing:1,padding:"4px 0",borderBottom:"1px solid #1e1e2a"}}>{d}</div>
-            ))}
-          </div>
-          {/* Hour rows */}
-          {allHours.map(hour => (
-            <div key={hour} style={{display:"grid",gridTemplateColumns:`${LABEL_W}px repeat(7, ${COL_W}px)`,marginBottom:2}}>
-              {/* Hora label */}
-              <div style={{fontSize:10,color:"#444",paddingTop:6,paddingRight:6,textAlign:"right",lineHeight:1}}>{String(hour).padStart(2,"0")}:00</div>
-              {/* Celdas por día */}
-              {[0,1,2,3,4,5,6].map(dow => {
-                const evs = byDayHour[`${dow}-${hour}`] || [];
-                return (
-                  <div key={dow} style={{minHeight:ROW_H,borderLeft:"1px solid #1a1a22",borderBottom:"1px solid #1a1a22",padding:3,background: dow===0||dow===6?"#0f0f15":"#0f0f13"}}>
-                    {evs.map(ev => {
-                      const c = cat(ev.category);
-                      return (
-                        <div key={ev.id} onClick={()=>openEdit(ev)}
-                          style={{fontSize:9,padding:"3px 5px",borderRadius:4,marginBottom:2,background:c.color+"22",color:c.color,cursor:"pointer",borderLeft:`2px solid ${c.color}`,lineHeight:1.3}}>
-                          <div style={{fontWeight:700}}>{ev.time} {ev.title}</div>
-                          {ev.timeEnd && <div style={{opacity:.7}}>{ev.timeEnd}</div>}
-                          <div style={{opacity:.6,marginTop:1}}>{c.icon}</div>
-                        </div>
-                      );
-                    })}
+      <div style={{padding:"16px 16px 80px"}}>
+        {weekDays.map(({dow, dateStr, date}) => {
+          const dayEvs = byDay[dateStr] || [];
+          if (dayEvs.length === 0) return null;
+          const isToday = dateStr === fmt(today);
+          return (
+            <div key={dateStr} style={{marginBottom:18}}>
+              {/* Cabecera del día */}
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+                <div style={{width:38,height:38,borderRadius:9,background:isToday?"#FF6B6B":"#1a1a22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <span style={{fontSize:11,fontWeight:700,color:isToday?"#fff":"#aaa",textTransform:"uppercase"}}>{DAYS_FULL_ES[dow].slice(0,3)}</span>
+                </div>
+                <div style={{flex:1,height:1,background:"#1e1e2a"}}/>
+              </div>
+              {/* Actividades del día */}
+              {dayEvs.map(ev => (
+                <div key={ev.id} className="agenda-event" onClick={()=>openEdit(ev)}
+                  style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start",borderLeft:`3px solid ${cat(ev.category).color}`,marginBottom:5}}>
+                  {ev.category!=="birthday" && <div style={{color:"#888",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>
+                    {ev.time}{ev.timeEnd&&<span style={{color:"#555"}}>–{ev.timeEnd}</span>}
+                  </div>}
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:600,fontSize:13,color:"#e8e8f0",display:"flex",alignItems:"center",gap:5}}>
+                      {cat(ev.category).icon} {ev.title}
+                      {ev.recurring&&<span style={{fontSize:9,background:"#2a2a3a",color:"#888",padding:"1px 5px",borderRadius:4}}>↻</span>}
+                    </div>
+                    {ev.notes&&<div style={{fontSize:11,color:"#666",marginTop:2}}>{ev.notes}</div>}
+                    <div style={{display:"flex",gap:4,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
+                      <span style={{fontSize:9,padding:"1px 6px",borderRadius:20,background:cat(ev.category).color+"22",color:cat(ev.category).color}}>{cat(ev.category).label}</span>
+                      {ev.attendees?.map(uid=><div key={uid} title={member(uid).display_name} style={{width:13,height:13,borderRadius:"50%",background:member(uid).color,fontSize:6,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>{member(uid).avatar}</div>)}
+                    </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     );
   };
@@ -771,9 +776,8 @@ export default function App() {
               <div style={{fontSize:11,fontWeight:isToday?700:400,color:isToday?"#FF6B6B":"#e8e8f0",marginBottom:2,display:"flex",justifyContent:"space-between"}}>
                 {day}{dayEvs.length>0&&<span style={{fontSize:8,color:"#555"}}>{dayEvs.length}</span>}
               </div>
-              {dayEvs.slice(0,2).map(ev=><EventChip key={ev.id} ev={ev}/>)}
+              {dayEvs.slice(0,2).map(ev=><EventChip key={ev.id} ev={ev} dateStr={dateStr}/>)}
               {dayEvs.length>2&&<div style={{fontSize:8,color:"#555"}}>+{dayEvs.length-2}</div>}
-              <div onClick={e=>{e.stopPropagation();openNew(dateStr);}} style={{fontSize:10,color:"#2a2a3a",textAlign:"right",cursor:"pointer",marginTop:2}}>+</div>
             </div>
           );
         })}
@@ -881,12 +885,11 @@ export default function App() {
           <span style={{fontSize:11,color:"#ccc",fontWeight:500,maxWidth:55,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.display_name}</span>
         </div>
         {notifications.length>0&&(
-          <button onClick={()=>setShowNotifPanel(p=>!p)} style={{position:"relative",background:showNotifPanel?"#FFB34722":"transparent",border:`1px solid ${showNotifPanel?"#FFB34744":"#2a2a3a"}`,borderRadius:9,padding:"7px 10px",fontSize:15,flexShrink:0,cursor:"pointer"}}>
+          <button onClick={()=>{setMainTab("agenda");setView("agenda");setShowNotifPanel(p=>!p);setShowGroupPanel(false);}} style={{position:"relative",background:showNotifPanel?"#FFB34722":"transparent",border:`1px solid ${showNotifPanel?"#FFB34744":"#2a2a3a"}`,borderRadius:9,padding:"7px 10px",fontSize:15,flexShrink:0,cursor:"pointer"}}>
             🔔
             <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#FF6B6B",fontSize:9,fontWeight:700,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{notifications.length}</span>
           </button>
         )}
-        
       </header>
 
       {/* Profile panel */}
@@ -935,27 +938,33 @@ export default function App() {
         ))}
       </div>
 
-      {/* ── NOTIFICATION PANEL ── */}
-      {showNotifPanel&&notifications.length>0&&(
+      {/* ── NOTIFICATION PANEL — solo en sección agenda ── */}
+      {showNotifPanel&&notifications.length>0&&mainTab==="agenda"&&(
         <div className="panel-anim" style={{background:"#1a1200",borderBottom:"1px solid #3a2a00",padding:"12px 16px",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
             <div style={{display:"flex",alignItems:"center",gap:7}}>
               <span style={{fontSize:16}}>🔔</span>
-              <span style={{fontSize:12,fontWeight:700,color:"#FFB347"}}>Mañana tenés {notifications.length} evento{notifications.length!==1?"s":""}</span>
+              <span style={{fontSize:12,fontWeight:700,color:"#FFB347"}}>{notifications.length} alarma{notifications.length!==1?"s":""} próxima{notifications.length!==1?"s":""}</span>
             </div>
             <button onClick={()=>setShowNotifPanel(false)} style={{background:"transparent",border:"none",color:"#666",fontSize:16,cursor:"pointer",lineHeight:1}}>×</button>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:5}}>
-            {notifications.map(ev=>(
-              <div key={ev.id} onClick={()=>{openEdit(ev);setShowNotifPanel(false);}}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#ffffff08",cursor:"pointer",border:"1px solid #3a2a00"}}>
-                <span style={{fontSize:14}}>{ev.category==="birthday"?"🎂":ev.category==="work"?"💼":ev.category==="health"?"💊":ev.category==="social"?"🎉":"📌"}</span>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"#f5e0b0"}}>{ev.title}</div>
-                  <div style={{fontSize:10,color:"#888"}}>{ev.time}{ev.timeEnd?` – ${ev.timeEnd}`:""} · {cat(ev.category).label}</div>
+            {notifications.map(ev=>{
+              const daysLabel = ev.alarmDays==="1"?"mañana":ev.alarmDays==="2"?"en 2 días":"en 1 semana";
+              return (
+                <div key={ev.id} onClick={()=>{
+                  const d = ev._alarmDate || ev.date;
+                  setSelectedDate(d); setView("day"); setShowNotifPanel(false);
+                }}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#ffffff08",cursor:"pointer",border:"1px solid #3a2a00"}}>
+                  <span style={{fontSize:14}}>{cat(ev.category).icon}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,fontWeight:600,color:"#f5e0b0"}}>{ev.title}</div>
+                    <div style={{fontSize:10,color:"#888"}}>{ev.time}{ev.timeEnd?` – ${ev.timeEnd}`:""} · {daysLabel}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -977,7 +986,7 @@ export default function App() {
         {/* SIDEBAR (desktop only) */}
         <aside className="sidebar" style={{width:220,flexShrink:0,background:"#0a0a0e",borderRight:"1px solid #1e1e2a",display:"flex",flexDirection:"column",padding:"16px 12px",gap:4,overflowY:"auto"}}>
           <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingLeft:8}}>Vistas</div>
-          {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["day","🗓","Día"],["routine","🔁","Rutina semanal"]].map(([v,icon,label])=>(
+          {[["calendar","📅","Mes"],["routine","📅","Semana"],["day","🗓","Día"],["agenda","📋","Agenda"]].map(([v,icon,label])=>(
             <button key={v} onClick={()=>setView(v)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:8,border:"none",background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#555",fontSize:13,fontWeight:view===v?600:400,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:15}}>{icon}</span>{label}
             </button>
@@ -1009,7 +1018,7 @@ export default function App() {
           {/* Mobile tabs + filters - portrait only */}
           <div className="mobile-tabs" style={{display:"flex",flexDirection:"column",flexShrink:0}}>
             <div style={{padding:"8px 16px 0",display:"flex",gap:4,overflowX:"auto"}}>
-              {[["calendar","📅 Mes"],["agenda","📋 Agenda"],["day","🗓 Día"],["routine","🔁 Rutina"]].map(([v,label])=>(
+              {[["calendar","📅 Mes"],["routine","📅 Semana"],["day","🗓 Día"],["agenda","📋 Agenda"]].map(([v,label])=>(
                 <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#666",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:view===v?600:400,border:view===v?"1px solid #2a2a3a":"1px solid transparent",whiteSpace:"nowrap",flexShrink:0}}>
                   {label}
                 </button>
@@ -1025,7 +1034,7 @@ export default function App() {
           </div>
 
           {/* Scrollable content */}
-          <div style={{flex:1,overflowY:"auto",padding:view==="routine"?"0":"16px 16px 80px"}}>
+          <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
             {view==="calendar"&&<CalendarContent/>}
             {view==="agenda"&&<AgendaContent/>}
             {view==="day"&&<DayContent/>}
@@ -1036,7 +1045,7 @@ export default function App() {
 
       {/* ── BOTTOM NAV (mobile only) ── */}
       <nav className="bottom-nav">
-        {[["calendar","📅","Mes"],["agenda","📋","Agenda"],["routine","🔁","Rutina"],["day","🗓","Día"]].map(([v,icon,label])=>(
+        {[["calendar","📅","Mes"],["routine","📅","Semana"],["day","🗓","Día"],["agenda","📋","Agenda"]].map(([v,icon,label])=>(
           <button key={v} className="bottom-nav-item" onClick={()=>setView(v)} style={{color:view===v?"#FF6B6B":"#555"}}>
             <span style={{fontSize:20}}>{icon}</span>
             <span style={{fontSize:9,fontWeight:view===v?700:400}}>{label}</span>
@@ -1145,6 +1154,20 @@ export default function App() {
                 <label style={lbl}>Notas</label>
                 <textarea value={editingEvent.notes} onChange={e=>setEditingEvent(ev=>({...ev,notes:e.target.value}))} placeholder="Detalles adicionales..." rows={2} style={{...inp,resize:"none"}}/>
               </div>
+              {/* Alarma — desactivada por defecto en rutinarios */}
+              {editingEvent.category!=="birthday"&&(
+                <div style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"10px 13px"}}>
+                  <div style={{fontSize:12,fontWeight:600,color:"#e8e8f0",marginBottom:7,display:"flex",alignItems:"center",gap:6}}>🔔 Alarma <span style={{fontSize:10,color:"#444",fontWeight:400}}>{editingEvent.recurring?"(desactivada por defecto en rutinarios)":""}</span></div>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                    {[["","Sin alarma"],["1","1 día antes"],["2","2 días antes"],["7","1 semana antes"]].map(([v,l])=>(
+                      <div key={v} onClick={()=>setEditingEvent(ev=>({...ev,alarmDays:v}))}
+                        style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:editingEvent.alarmDays===v?700:400,background:editingEvent.alarmDays===v?"#FFB34733":"#1a1a22",color:editingEvent.alarmDays===v?"#FFB347":"#555",border:`1px solid ${editingEvent.alarmDays===v?"#FFB34744":"#2a2a3a"}`}}>
+                        {l}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div style={{display:"flex",gap:8}}>
                 {editingEvent.id&&<button onClick={()=>{if(editingEvent.recurring)setDeleteDialog({baseId:editingEvent.id,isBase:true});else confirmDelete(editingEvent.id,null,null);}} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:10,padding:"9px 12px",fontSize:12,fontWeight:600}}>Eliminar</button>}
                 <button onClick={saveEvent} style={{flex:1,background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"10px",fontSize:14,fontWeight:700}}>{editingEvent.id?"Guardar":"Crear evento"}</button>
