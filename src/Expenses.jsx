@@ -90,32 +90,29 @@ async function saveTagRelations(expenseId, tagIds){
 }
 
 // ── Balance calculator ─────────────────────────────────────────────────────
-function calcBalance(expenses, settlements, members, monthFilter) {
-  // paid[uid] = total paid by uid; owed[uid] = total owed by uid
+function calcBalance(expenses, settlements, members) {
   const paid  = {};
   const share = {};
   members.forEach(m => { paid[m.id] = 0; share[m.id] = 0; });
 
-  const filtered = monthFilter
-    ? expenses.filter(e => monthKey(e.date) === monthFilter)
-    : expenses;
+  const today = new Date().toISOString().slice(0, 10);
 
-  filtered.forEach(exp => {
+  expenses.forEach(exp => {
+    // Principio de devengado: solo incluir si la fecha de la cuota ya llegó
+    if (exp.date > today) return;
+
     const n = exp.split_between?.length || 1;
     const perPerson = exp.amount / n;
-    if(paid[exp.paid_by] !== undefined) paid[exp.paid_by] += exp.amount;
+    if (paid[exp.paid_by] !== undefined) paid[exp.paid_by] += exp.amount;
     exp.split_between?.forEach(uid => {
-      if(share[uid] !== undefined) share[uid] += perPerson;
+      if (share[uid] !== undefined) share[uid] += perPerson;
     });
   });
 
   // Apply settlements
-  const settFiltered = monthFilter
-    ? settlements.filter(s => monthKey(s.date) === monthFilter)
-    : settlements;
-  settFiltered.forEach(s => {
-    if(paid[s.from_user] !== undefined) paid[s.from_user] += s.amount;
-    if(share[s.to_user]  !== undefined) share[s.to_user]  += s.amount;
+  settlements.forEach(s => {
+    if (paid[s.from_user] !== undefined) paid[s.from_user] += s.amount;
+    if (share[s.to_user]  !== undefined) share[s.to_user]  += s.amount;
   });
 
   const balance = {};
@@ -237,8 +234,8 @@ export default function Expenses({ groupId, members, currentUserId }) {
   const monthExpenses = useMemo(() => expenses.filter(e => monthKey(e.date) === activeMonth), [expenses, activeMonth]);
   const monthTotal    = useMemo(() => monthExpenses.reduce((s,e)=>s+e.amount,0), [monthExpenses]);
 
-  // Balance siempre acumulado histórico total (sin filtro de mes)
-  const balance = useMemo(() => calcBalance(expenses, settlements, members, null), [expenses, settlements, members]);
+  // Balance siempre acumulado histórico total (solo cuotas devengadas)
+  const balance = useMemo(() => calcBalance(expenses, settlements, members), [expenses, settlements, members]);
   const debts   = useMemo(() => calcDebts(balance, members), [balance, members]);
 
   // Stats by category
