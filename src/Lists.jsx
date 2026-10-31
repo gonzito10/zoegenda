@@ -23,6 +23,30 @@ const LIST_ICONS = [
   "💰","💳","🏦","📈","🎁","⭐","✨","🎀","🪄","🔐","🏷️","📦","🗑️","♻️","🧲","🪛","🔨","🪚","🛠️","⚙️",
 ];
 
+// Tipos de listado: cambian los títulos y las opciones disponibles
+const LIST_TYPES = {
+  shopping: {
+    label:"Compras", icon:"🛒", desc:"Elementos a comprar, con cantidad y unidad", hasQty:true,
+    selectedTitle:"A comprar", catalogTitle:"Elementos guardados",
+    clearText:"Vaciar comprados", doneText:"comprados",
+    emptySelected:"Nada para comprar todavía. Tocá un elemento guardado para agregarlo.",
+  },
+  tasks: {
+    label:"Tareas", icon:"✅", desc:"Tareas a realizar y completar", hasQty:false,
+    selectedTitle:"A completar", catalogTitle:"Tareas guardadas",
+    clearText:"Vaciar completadas", doneText:"completadas",
+    emptySelected:"No hay tareas pendientes. Tocá una tarea guardada para agregarla.",
+  },
+  general: {
+    label:"Otro", icon:"📋", desc:"Lugares, ideas o cualquier otra lista", hasQty:false,
+    selectedTitle:"Seleccionados", catalogTitle:"Elementos guardados",
+    clearText:"Vaciar hechos", doneText:"hechos",
+    emptySelected:"Todavía no seleccionaste nada. Tocá un elemento guardado.",
+  },
+};
+const UNITS = ["unid","kg","g","L","ml","paq","caja","docena"];
+
+// ── DB helpers ─────────────────────────────────────────────────────────────
 async function loadLists(groupId) {
   const { data } = await supabase.from("lists").select("*").eq("group_id", groupId).order("created_at");
   return data || [];
@@ -31,43 +55,60 @@ async function loadItems(listId) {
   const { data } = await supabase.from("list_items").select("*").eq("list_id", listId).order("created_at");
   return data || [];
 }
-async function createList(groupId, userId, name, icon) {
-  const { data } = await supabase.from("lists").insert({ group_id: groupId, created_by: userId, name, icon }).select().single();
+async function createList(groupId, userId, name, icon, type) {
+  const { data } = await supabase.from("lists").insert({ group_id: groupId, created_by: userId, name, icon, type }).select().single();
   return data;
 }
-async function updateList(id, name, icon) {
-  await supabase.from("lists").update({ name, icon }).eq("id", id);
+async function updateList(id, fields) {
+  await supabase.from("lists").update(fields).eq("id", id);
 }
 async function deleteList(id) {
   await supabase.from("lists").delete().eq("id", id);
 }
-async function addItem(listId, userId, text) {
-  const { data } = await supabase.from("list_items").insert({ list_id: listId, created_by: userId, text, checked: false }).select().single();
+async function insertItem(listId, userId, text) {
+  const { data } = await supabase.from("list_items").insert({ list_id: listId, created_by: userId, text, selected: false, checked: false }).select().single();
   return data;
-}
-async function toggleItem(id, checked) {
-  await supabase.from("list_items").update({ checked }).eq("id", id);
 }
 async function deleteItem(id) {
   await supabase.from("list_items").delete().eq("id", id);
 }
+// El listado de compras por defecto se crea una sola vez por grupo (y se puede eliminar)
 async function ensureShoppingList(groupId, userId, lists) {
-  if (lists.length > 0) return lists;
-  const created = await createList(groupId, userId, "Compras", "🛒");
+  const key = `zg_lists_seeded_${groupId}`;
+  try {
+    if (lists.length > 0) { localStorage.setItem(key, "1"); return lists; }
+    if (localStorage.getItem(key)) return lists;
+  } catch (e) { if (lists.length > 0) return lists; }
+  const created = await createList(groupId, userId, "Compras", "🛒", "shopping");
+  try { localStorage.setItem(key, "1"); } catch (e) {}
   return created ? [created] : lists;
 }
+const fmtQty = (q) => String(Number(q));
 
+// ── Component ──────────────────────────────────────────────────────────────
 export default function Lists({ groupId, currentUserId }) {
   const [lists,       setLists]       = useState([]);
   const [activeList,  setActiveList]  = useState(null);
   const [items,       setItems]       = useState([]);
   const [loading,     setLoading]     = useState(true);
-  const [newItemText, setNewItemText] = useState("");
+  const [query,       setQuery]       = useState("");
+
+  // Modal nuevo/editar listado
   const [showModal,   setShowModal]   = useState(false);
   const [editingList, setEditingList] = useState(null);
   const [modalName,   setModalName]   = useState("");
-  const [modalIcon,   setModalIcon]   = useState("📋");
+  const [modalIcon,   setModalIcon]   = useState("🛒");
+  const [modalType,   setModalType]   = useState("shopping");
+  const [iconTouched, setIconTouched] = useState(false);
   const [showDelete,  setShowDelete]  = useState(null);
+
+  // Edición de cantidad/unidad de un elemento seleccionado
+  const [qtyEditId,   setQtyEditId]   = useState(null);
+  const [qtyDraft,    setQtyDraft]    = useState("");
+  const [unitDraft,   setUnitDraft]   = useState("unid");
+
+  const activeRef = useRef(null);
+  activeRef.current = activeList;
 
   useEffect(() => {
     if (!groupId) return;
@@ -80,9 +121,12 @@ export default function Lists({ groupId, currentUserId }) {
     });
     const sub = supabase.channel(`lists-${groupId}`)
       .on("postgres_changes", { event:"*", schema:"public", table:"lists", filter:`group_id=eq.${groupId}` }, () =>
-        loadLists(groupId).then(ls => setLists(ls)))
+        loadLists(groupId).then(ls => {
+          setLists(ls);
+          if (activeRef.current && !ls.some(l => l.id === activeRef.current)) setActiveList(ls[0]?.id || null);
+        }))
       .on("postgres_changes", { event:"*", schema:"public", table:"list_items" }, () => {
-        if (activeList) loadItems(activeList).then(setItems);
+        if (activeRef.current) loadItems(activeRef.current).then(setItems);
       })
       .subscribe();
     return () => supabase.removeChannel(sub);
@@ -90,30 +134,42 @@ export default function Lists({ groupId, currentUserId }) {
   }, [groupId]);
 
   useEffect(() => {
-    if (!activeList) return;
+    setQuery(""); setQtyEditId(null);
+    if (!activeList) { setItems([]); return; }
     loadItems(activeList).then(setItems);
   }, [activeList]);
 
+  // Botón + flotante: nuevo listado
   useEffect(() => {
-    const handler = () => { setEditingList(null); setModalName(""); setModalIcon("📋"); setShowModal(true); };
+    const handler = () => openNewModal();
     document.addEventListener("openListModal", handler);
     return () => document.removeEventListener("openListModal", handler);
+  // eslint-disable-next-line
   }, []);
 
-  function openEditModal(list) {
-    setEditingList(list);
-    setModalName(list.name);
-    setModalIcon(list.icon || "📋");
+  function openNewModal() {
+    setEditingList(null); setModalName(""); setModalType("shopping");
+    setModalIcon(LIST_TYPES.shopping.icon); setIconTouched(false);
     setShowModal(true);
+  }
+  function openEditModal(list) {
+    setEditingList(list); setModalName(list.name);
+    setModalType(list.type || "general"); setModalIcon(list.icon || "📋"); setIconTouched(true);
+    setShowModal(true);
+  }
+  function pickType(t) {
+    setModalType(t);
+    if (!iconTouched && !editingList) setModalIcon(LIST_TYPES[t].icon);
   }
 
   async function handleSaveList() {
     if (!modalName.trim()) return;
+    const fields = { name: modalName.trim(), icon: modalIcon, type: modalType };
     if (editingList) {
-      await updateList(editingList.id, modalName.trim(), modalIcon);
-      setLists(ls => ls.map(l => l.id === editingList.id ? {...l, name: modalName.trim(), icon: modalIcon} : l));
+      await updateList(editingList.id, fields);
+      setLists(ls => ls.map(l => l.id === editingList.id ? { ...l, ...fields } : l));
     } else {
-      const created = await createList(groupId, currentUserId, modalName.trim(), modalIcon);
+      const created = await createList(groupId, currentUserId, fields.name, fields.icon, fields.type);
       if (created) { setLists(ls => [...ls, created]); setActiveList(created.id); }
     }
     setShowModal(false); setEditingList(null);
@@ -127,33 +183,75 @@ export default function Lists({ groupId, currentUserId }) {
     setShowDelete(null);
   }
 
-  async function handleAddItem(e) {
-    e?.preventDefault();
-    if (!newItemText.trim() || !activeList) return;
-    const item = await addItem(activeList, currentUserId, newItemText.trim());
+  // ── Elementos ──
+  async function patchItem(id, fields) {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...fields } : i));
+    await supabase.from("list_items").update(fields).eq("id", id);
+  }
+
+  async function handleCreateItem() {
+    const text = query.trim();
+    if (!text || !activeList) return;
+    const existing = items.find(i => i.text.toLowerCase() === text.toLowerCase());
+    if (existing) {
+      if (!existing.selected) await patchItem(existing.id, { selected: true, checked: false });
+      setQuery(""); return;
+    }
+    const item = await insertItem(activeList, currentUserId, text);
     if (item) setItems(prev => [...prev, item]);
-    setNewItemText("");
+    setQuery("");
   }
 
-  async function handleToggle(item) {
-    await toggleItem(item.id, !item.checked);
-    setItems(prev => prev.map(i => i.id === item.id ? {...i, checked: !i.checked} : i));
+  async function handleDeleteItem(item) {
+    if (!window.confirm(`¿Eliminar "${item.text}" del listado?`)) return;
+    setItems(prev => prev.filter(i => i.id !== item.id));
+    await deleteItem(item.id);
   }
 
-  async function handleDeleteItem(id) {
-    await deleteItem(id);
-    setItems(prev => prev.filter(i => i.id !== id));
+  async function handleClearDone() {
+    const ids = items.filter(i => i.selected && i.checked).map(i => i.id);
+    if (ids.length === 0) return;
+    setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, selected: false, checked: false } : i));
+    await supabase.from("list_items").update({ selected: false, checked: false }).in("id", ids);
+  }
+
+  function openQtyEditor(item) {
+    if (qtyEditId === item.id) { setQtyEditId(null); return; }
+    setQtyEditId(item.id);
+    setQtyDraft(item.quantity != null ? fmtQty(item.quantity) : "");
+    setUnitDraft(item.unit || "unid");
+  }
+  async function saveQty(item) {
+    const n = parseFloat(String(qtyDraft).replace(",", "."));
+    const hasQty = !isNaN(n) && n > 0;
+    await patchItem(item.id, hasQty ? { quantity: n, unit: unitDraft } : { quantity: null, unit: null });
+    setQtyEditId(null);
   }
 
   const currentList = lists.find(l => l.id === activeList);
-  const unchecked = items.filter(i => !i.checked);
-  const checked   = items.filter(i =>  i.checked);
+  const T = LIST_TYPES[currentList?.type] || LIST_TYPES.general;
+
+  const q = query.trim().toLowerCase();
+  const selectedItems = items.filter(i => i.selected).sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
+  const doneCount = selectedItems.filter(i => i.checked).length;
+  const catalog = items
+    .filter(i => !i.selected && (!q || i.text.toLowerCase().includes(q)))
+    .sort((a, b) => a.text.localeCompare(b.text, "es"));
+  const exactMatch = items.some(i => i.text.toLowerCase() === q);
 
   if (loading) return <div style={{textAlign:"center",color:"#555",padding:"50px 0"}}>Cargando listados...</div>;
 
   return (
     <div>
-      {/* Selector de listas */}
+      {lists.length === 0 && (
+        <div style={{textAlign:"center",color:"#444",padding:"60px 20px"}}>
+          <div style={{fontSize:32,marginBottom:12}}>📝</div>
+          <div style={{marginBottom:8,fontSize:14}}>No hay listados todavía</div>
+          <div style={{fontSize:12,color:"#333"}}>Tocá + para crear el primero</div>
+        </div>
+      )}
+
+      {/* Selector de listados */}
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
         {lists.map(l => (
           <div key={l.id} onClick={()=>setActiveList(l.id)}
@@ -163,84 +261,156 @@ export default function Lists({ groupId, currentUserId }) {
         ))}
       </div>
 
-      {/* Header lista activa */}
-      {currentList && (
+      {currentList && (<>
+        {/* Cabecera del listado activo */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0}}>
             <span style={{fontSize:24}}>{currentList.icon||"📋"}</span>
-            <div style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"#fff"}}>{currentList.name}</div>
+            <div style={{minWidth:0}}>
+              <div style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"#fff"}}>{currentList.name}</div>
+              <div style={{fontSize:10,color:"#555",marginTop:1}}>Listado de {T.label.toLowerCase()}</div>
+            </div>
           </div>
-          <div style={{display:"flex",gap:4}}>
-            <button onClick={()=>openEditModal(currentList)}
-              style={{background:"transparent",border:"none",color:"#555",fontSize:16,cursor:"pointer",padding:"4px 8px"}}>✎</button>
-            <button onClick={()=>setShowDelete(currentList.id)}
-              style={{background:"transparent",border:"none",color:"#2a2a3a",fontSize:18,cursor:"pointer",padding:"4px 8px"}}>🗑</button>
+          <div style={{display:"flex",gap:4,flexShrink:0}}>
+            <button onClick={()=>openEditModal(currentList)} style={{background:"transparent",border:"none",color:"#555",fontSize:16,cursor:"pointer",padding:"4px 8px"}}>✎</button>
+            <button onClick={()=>setShowDelete(currentList.id)} style={{background:"transparent",border:"none",color:"#2a2a3a",fontSize:18,cursor:"pointer",padding:"4px 8px"}}>🗑</button>
           </div>
         </div>
-      )}
 
-      {/* Input agregar */}
-      {activeList && (
-        <div style={{display:"flex",gap:8,marginBottom:16}}>
-          <input value={newItemText} onChange={e=>setNewItemText(e.target.value)}
-            onKeyDown={e=>e.key==="Enter"&&handleAddItem(e)}
-            placeholder="Agregar elemento..." style={{...inp,flex:1}}/>
-          <button onClick={handleAddItem}
+        {/* Buscar o crear elemento */}
+        <div style={{display:"flex",gap:8,marginBottom:6}}>
+          <input value={query} onChange={e=>setQuery(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&handleCreateItem()}
+            placeholder="Buscar o crear elemento (ej: Azúcar)" style={{...inp,flex:1}}/>
+          <button onClick={handleCreateItem}
             style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"0 16px",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
         </div>
-      )}
+        <div style={{fontSize:10,color:"#444",marginBottom:16}}>Los elementos que crees quedan guardados para volver a usarlos.</div>
 
-      {items.length===0&&activeList&&(
-        <div style={{textAlign:"center",color:"#333",padding:"40px 0",fontSize:13}}>Lista vacía — agregá el primer elemento</div>
-      )}
-
-      {/* Pendientes */}
-      {unchecked.map(item => (
-        <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,background:"#131318",border:"1px solid #1e1e2a",marginBottom:5}}>
-          <div onClick={()=>handleToggle(item)} style={{width:20,height:20,borderRadius:"50%",border:"2px solid #2a2a3a",flexShrink:0,cursor:"pointer"}}/>
-          <span style={{flex:1,fontSize:13,color:"#e8e8f0"}}>{item.text}</span>
-          <button onClick={()=>handleDeleteItem(item.id)} style={{background:"transparent",border:"none",color:"#2a2a3a",fontSize:16,cursor:"pointer",padding:"2px 6px"}}>×</button>
+        {/* Seleccionados: a comprar / a completar */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",margin:"4px 0 8px"}}>
+          <div style={{fontSize:10,color:"#888",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>
+            {T.selectedTitle} {selectedItems.length>0&&<span style={{color:"#555",fontWeight:500}}>· {doneCount}/{selectedItems.length} {T.doneText}</span>}
+          </div>
+          {doneCount>0&&(
+            <button onClick={handleClearDone}
+              style={{background:"#96CEB422",color:"#96CEB4",border:"1px solid #96CEB444",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{T.clearText}</button>
+          )}
         </div>
-      ))}
-
-      {/* Completados */}
-      {checked.length>0&&<>
-        <div style={{fontSize:10,color:"#333",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>Completados ({checked.length})</div>
-        {checked.map(item => (
-          <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,background:"#0f0f13",border:"1px solid #1a1a22",marginBottom:5,opacity:.55}}>
-            <div onClick={()=>handleToggle(item)} style={{width:20,height:20,borderRadius:"50%",background:"#96CEB4",border:"2px solid #96CEB4",flexShrink:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700}}>✓</div>
-            <span style={{flex:1,fontSize:13,color:"#555",textDecoration:"line-through"}}>{item.text}</span>
-            <button onClick={()=>handleDeleteItem(item.id)} style={{background:"transparent",border:"none",color:"#2a2a3a",fontSize:16,cursor:"pointer",padding:"2px 6px"}}>×</button>
+        {selectedItems.length===0 && (
+          <div style={{textAlign:"center",color:"#3a3a4a",padding:"18px 10px",fontSize:12,background:"#0f0f13",border:"1px dashed #1e1e2a",borderRadius:10,marginBottom:6}}>{T.emptySelected}</div>
+        )}
+        {selectedItems.map(item => (
+          <div key={item.id} style={{marginBottom:5}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:qtyEditId===item.id?"10px 10px 0 0":10,background:item.checked?"#0f0f13":"#131318",border:"1px solid #1e1e2a",opacity:item.checked?.6:1}}>
+              <div onClick={()=>patchItem(item.id,{checked:!item.checked})}
+                style={{width:22,height:22,borderRadius:"50%",flexShrink:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",fontWeight:700,background:item.checked?"#96CEB4":"transparent",border:`2px solid ${item.checked?"#96CEB4":"#2a2a3a"}`}}>{item.checked?"✓":""}</div>
+              <span style={{flex:1,fontSize:14,color:item.checked?"#555":"#e8e8f0",textDecoration:item.checked?"line-through":"none",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}}>{item.text}</span>
+              {T.hasQty && (
+                <button onClick={()=>openQtyEditor(item)}
+                  style={{background:item.quantity!=null?"#FFB34722":"transparent",color:item.quantity!=null?"#FFB347":"#444",border:`1px ${item.quantity!=null?"solid":"dashed"} ${item.quantity!=null?"#FFB34744":"#2a2a3a"}`,borderRadius:8,padding:"3px 9px",fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                  {item.quantity!=null ? `${fmtQty(item.quantity)} ${item.unit||""}` : "+ cantidad"}
+                </button>
+              )}
+              <button onClick={()=>patchItem(item.id,{selected:false,checked:false})} title="Devolver a guardados"
+                style={{background:"transparent",border:"none",color:"#3a3a4a",fontSize:18,cursor:"pointer",padding:"0 4px",lineHeight:1}}>×</button>
+            </div>
+            {T.hasQty && qtyEditId===item.id && (
+              <div style={{display:"flex",gap:6,padding:"10px 12px",background:"#0f0f13",border:"1px solid #1e1e2a",borderTop:"none",borderRadius:"0 0 10px 10px"}}>
+                <input value={qtyDraft} onChange={e=>setQtyDraft(e.target.value)} inputMode="decimal" placeholder="Cantidad" autoFocus
+                  onKeyDown={e=>e.key==="Enter"&&saveQty(item)} style={{...inp,flex:1,padding:"8px 11px"}}/>
+                <select value={unitDraft} onChange={e=>setUnitDraft(e.target.value)}
+                  style={{...inp,width:92,padding:"8px 8px",cursor:"pointer"}}>
+                  {UNITS.map(u=><option key={u} value={u}>{u}</option>)}
+                </select>
+                <button onClick={()=>saveQty(item)}
+                  style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"0 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>OK</button>
+              </div>
+            )}
           </div>
         ))}
-      </>}
+
+        {/* Catálogo de elementos guardados */}
+        <div style={{fontSize:10,color:"#888",fontWeight:700,textTransform:"uppercase",letterSpacing:1,margin:"20px 0 8px"}}>
+          {T.catalogTitle} <span style={{color:"#555",fontWeight:500}}>· tocá para agregar</span>
+        </div>
+        {q && !exactMatch && (
+          <div onClick={handleCreateItem}
+            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:10,background:"#FF6B6B11",border:"1px dashed #FF6B6B44",color:"#FF6B6B",fontSize:13,cursor:"pointer",marginBottom:5}}>
+            <span style={{fontWeight:700}}>+</span> Crear “{query.trim()}”
+          </div>
+        )}
+        {catalog.length===0 && !q && (
+          <div style={{textAlign:"center",color:"#3a3a4a",padding:"18px 10px",fontSize:12}}>
+            {items.length===0 ? "Todavía no creaste elementos. Escribí un nombre arriba y tocá +." : "Todos los elementos están seleccionados."}
+          </div>
+        )}
+        {catalog.map(item => (
+          <div key={item.id} style={{display:"flex",alignItems:"center",gap:6,marginBottom:5}}>
+            <div onClick={()=>patchItem(item.id,{selected:true,checked:false})}
+              style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,background:"#131318",border:"1px solid #1e1e2a",cursor:"pointer",minWidth:0}}>
+              <span style={{color:"#FF6B6B",fontWeight:700,fontSize:15,lineHeight:1}}>+</span>
+              <span style={{flex:1,fontSize:13,color:"#c8c8d4",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}}>{item.text}</span>
+              {T.hasQty && item.quantity!=null && <span style={{fontSize:10,color:"#555",flexShrink:0}}>{fmtQty(item.quantity)} {item.unit||""}</span>}
+            </div>
+            <button onClick={()=>handleDeleteItem(item)} title="Eliminar elemento"
+              style={{background:"transparent",border:"none",color:"#2f2f3c",fontSize:15,cursor:"pointer",padding:"6px 8px",flexShrink:0}}>🗑</button>
+          </div>
+        ))}
+        {q && catalog.length===0 && exactMatch && (
+          <div style={{textAlign:"center",color:"#3a3a4a",padding:"12px",fontSize:12}}>“{query.trim()}” ya está seleccionado.</div>
+        )}
+      </>)}
 
       {/* Modal nuevo/editar listado */}
-      {showModal&&(
+      {showModal && (
         <div onClick={e=>{if(e.target===e.currentTarget){setShowModal(false);setEditingList(null);}}}
           style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-          <div style={{background:"#131318",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,padding:20,border:"1px solid #2a2a3a",maxHeight:"80vh",overflow:"auto"}}>
+          <div style={{background:"#131318",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,padding:20,border:"1px solid #2a2a3a",maxHeight:"88vh",overflow:"auto"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
               <h2 style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"#fff"}}>{editingList?"Editar listado":"Nuevo listado"}</h2>
               <button onClick={()=>{setShowModal(false);setEditingList(null);}} style={{background:"#1e1e2a",border:"none",color:"#aaa",width:26,height:26,borderRadius:"50%",fontSize:14,cursor:"pointer"}}>×</button>
             </div>
+
+            <div style={{marginBottom:14}}>
+              <label style={lbl}>Tipo de listado</label>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {Object.entries(LIST_TYPES).map(([k,t])=>{
+                  const on = modalType===k;
+                  return (
+                    <div key={k} onClick={()=>pickType(k)}
+                      style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:on?"#FF6B6B11":"#0f0f13",border:`1px solid ${on?"#FF6B6B55":"#1e1e2a"}`}}>
+                      <span style={{fontSize:20}}>{t.icon}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:600,color:on?"#FF6B6B":"#e8e8f0"}}>{t.label}</div>
+                        <div style={{fontSize:10,color:"#555",marginTop:1}}>{t.desc}</div>
+                      </div>
+                      {on && <span style={{color:"#FF6B6B",fontSize:14}}>✓</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div style={{marginBottom:14}}>
               <label style={lbl}>Nombre</label>
               <input value={modalName} onChange={e=>setModalName(e.target.value)}
                 onKeyDown={e=>e.key==="Enter"&&handleSaveList()}
-                placeholder="Ej: Arreglos, Lugares para visitar..." style={inp} autoFocus/>
+                placeholder="Ej: Supermercado, Arreglos, Lugares para visitar..." style={inp} autoFocus/>
             </div>
+
             <div style={{marginBottom:16}}>
               <label style={lbl}>Ícono</label>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                {LIST_ICONS.map(ico=>(
-                  <div key={ico} onClick={()=>setModalIcon(ico)}
+              <div style={{display:"flex",flexWrap:"wrap",gap:6,maxHeight:170,overflowY:"auto"}}>
+                {LIST_ICONS.map((ico,idx)=>(
+                  <div key={ico+idx} onClick={()=>{setModalIcon(ico);setIconTouched(true);}}
                     style={{width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:10,fontSize:20,cursor:"pointer",background:modalIcon===ico?"#FF6B6B22":"#1a1a22",border:`1.5px solid ${modalIcon===ico?"#FF6B6B":"transparent"}`}}>
                     {ico}
                   </div>
                 ))}
               </div>
             </div>
+
             <div style={{background:"#0f0f13",border:"1px solid #1e1e2a",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
               <span style={{fontSize:22}}>{modalIcon}</span>
               <span style={{fontSize:14,fontWeight:600,color:modalName?"#e8e8f0":"#444"}}>{modalName||"Sin nombre"}</span>
@@ -253,13 +423,13 @@ export default function Lists({ groupId, currentUserId }) {
         </div>
       )}
 
-      {/* Confirmar eliminar */}
-      {showDelete&&(
+      {/* Confirmar eliminar listado */}
+      {showDelete && (
         <div onClick={e=>{if(e.target===e.currentTarget)setShowDelete(null)}}
           style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{background:"#131318",borderRadius:16,padding:24,width:"100%",maxWidth:340,border:"1px solid #2a2a3a"}}>
             <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"#fff",marginBottom:8}}>Eliminar listado</div>
-            <div style={{fontSize:13,color:"#666",marginBottom:20}}>Se eliminarán también todos los elementos. Esta acción no se puede deshacer.</div>
+            <div style={{fontSize:13,color:"#666",marginBottom:20}}>Se eliminarán también todos los elementos guardados. Esta acción no se puede deshacer.</div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>setShowDelete(null)} style={{flex:1,background:"#1e1e2a",color:"#aaa",border:"none",borderRadius:10,padding:"10px",fontSize:13,cursor:"pointer"}}>Cancelar</button>
               <button onClick={()=>handleDeleteList(showDelete)} style={{flex:1,background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Eliminar</button>
