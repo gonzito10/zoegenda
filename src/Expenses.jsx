@@ -32,6 +32,13 @@ const lbl  = {fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",
 // ── Helpers ────────────────────────────────────────────────────────────────
 function fmtMoney(n){ return "$" + Math.round(n).toLocaleString("es-AR"); }
 function monthKey(dateStr){ return dateStr.slice(0,7); } // "2026-03"
+function localToday(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function fmtDay(dateStr){ const [y,m,d] = dateStr.split("-"); return `${d}/${m}/${y}`; }
+// Cuotas con fecha futura todavía no se muestran en el historial
+function isVisibleInHistory(e){ return !(e.installments>1 && e.date > localToday()); }
 function monthLabel(key){
   const [y,m] = key.split("-").map(Number);
   return `${MONTHS_ES[m-1]} ${y}`;
@@ -95,7 +102,7 @@ function calcBalance(expenses, settlements, members) {
   const share = {};
   members.forEach(m => { paid[m.id] = 0; share[m.id] = 0; });
 
-  const todayMonth = new Date().toISOString().slice(0, 7); // "2026-05"
+  const todayMonth = localToday().slice(0, 7); // "2026-05"
 
   expenses.forEach(exp => {
     // Principio de devengado: incluir si el mes de la cuota ya llegó
@@ -215,7 +222,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
 
   // Available months from expenses
   const availableMonths = useMemo(() => {
-    const keys = [...new Set(expenses.map(e => monthKey(e.date)))].sort().reverse();
+    const keys = [...new Set(expenses.filter(isVisibleInHistory).map(e => monthKey(e.date)))].sort().reverse();
     return keys;
   }, [expenses]);
 
@@ -370,17 +377,23 @@ export default function Expenses({ groupId, members, currentUserId }) {
   };
 
   // ── History tab ────────────────────────────────────────────────────────
-  const HistoryTab = () => (
+  const HistoryTab = () => {
+    // Más reciente primero; las cuotas futuras se ocultan hasta que llegue su fecha
+    const historyExpenses = monthExpenses
+      .filter(isVisibleInHistory)
+      .sort((a,b) => b.date.localeCompare(a.date) || (b.created_at||"").localeCompare(a.created_at||""));
+    const historyTotal = historyExpenses.reduce((sum,e)=>sum+e.amount,0);
+    return (
     <div>
       <MonthSelect value={activeMonth} onChange={v=>setSelMonth(v==="all"?null:v)}/>
-      {monthExpenses.length === 0
+      {historyExpenses.length === 0
         ? <div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>No hay gastos este mes</div>
         : <>
           <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:8,padding:"8px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",fontSize:12}}>
             <span style={{color:"#555"}}>Total del mes</span>
-            <strong style={{color:"#e8e8f0"}}>{fmtMoney(monthTotal)}</strong>
+            <strong style={{color:"#e8e8f0"}}>{fmtMoney(historyTotal)}</strong>
           </div>
-          {monthExpenses.map(e=>{
+          {historyExpenses.map(e=>{
             const c = getCat(e.category);
             const payer = getMember(e.paid_by);
             const perPerson = e.amount / (e.split_between?.length || 1);
@@ -391,7 +404,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textDecoration:e.settled?"line-through":"none"}}>{e.description}</div>
                   <div style={{fontSize:11,color:"#555",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
-                    {payer.display_name} · {c.label}
+                    <span style={{color:"#8a8a9a",fontWeight:600}}>📅 {fmtDay(e.date)}</span> · {payer.display_name} · {c.label}
                     {e.installments>1&&<span style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>}
                     {e.settled&&<span style={{background:"#96CEB422",color:"#96CEB4",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>✓ Liquidado</span>}
                     {tagRelations.filter(r=>r.expense_id===e.id).map(r=>{
@@ -410,7 +423,8 @@ export default function Expenses({ groupId, members, currentUserId }) {
         </>
       }
     </div>
-  );
+    );
+  };
 
   // Stats by tag (for tag pie charts)
   const statsByTag = useMemo(() => {

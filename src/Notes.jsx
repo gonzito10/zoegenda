@@ -129,16 +129,15 @@ export default function Notes({ groupId, currentUserId }) {
 
   if (loading) return <div style={{textAlign:"center",color:"#555",padding:"50px 0"}}>Cargando notas...</div>;
 
-  if (notes.length === 0) return (
-    <div style={{textAlign:"center",color:"#444",padding:"60px 20px"}}>
-      <div style={{fontSize:32,marginBottom:12}}>📓</div>
-      <div style={{marginBottom:8,fontSize:14}}>No hay notas todavía</div>
-      <div style={{fontSize:12,color:"#333",marginBottom:20}}>Tocá + para crear la primera</div>
-    </div>
-  );
-
   return (
     <div>
+      {notes.length === 0 && (
+        <div style={{textAlign:"center",color:"#444",padding:"60px 20px"}}>
+          <div style={{fontSize:32,marginBottom:12}}>📓</div>
+          <div style={{marginBottom:8,fontSize:14}}>No hay notas todavía</div>
+          <div style={{fontSize:12,color:"#333",marginBottom:20}}>Tocá + para crear la primera</div>
+        </div>
+      )}
       {/* Selector de notas */}
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
         {notes.map(n => (
