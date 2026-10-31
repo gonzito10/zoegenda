@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
 
-const inp = {background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"11px 13px",color:"#e8e8f0",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
-const lbl = {fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
+const inp = {background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",color:"var(--text)",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
+const lbl = {fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
 
 async function loadNotes(groupId) {
   const { data } = await supabase.from("notes").select("*").eq("group_id", groupId).order("updated_at", { ascending: false });
@@ -127,22 +127,22 @@ export default function Notes({ groupId, currentUserId }) {
   const currentNote = notes.find(n => n.id === activeNote);
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("es-AR", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }) : "";
 
-  if (loading) return <div style={{textAlign:"center",color:"#555",padding:"50px 0"}}>Cargando notas...</div>;
+  if (loading) return <div style={{textAlign:"center",color:"var(--g5)",padding:"50px 0"}}>Cargando notas...</div>;
 
   return (
     <div>
       {notes.length === 0 && (
-        <div style={{textAlign:"center",color:"#444",padding:"60px 20px"}}>
+        <div style={{textAlign:"center",color:"var(--g4)",padding:"60px 20px"}}>
           <div style={{fontSize:32,marginBottom:12}}>📓</div>
           <div style={{marginBottom:8,fontSize:14}}>No hay notas todavía</div>
-          <div style={{fontSize:12,color:"#333",marginBottom:20}}>Tocá + para crear la primera</div>
+          <div style={{fontSize:12,color:"var(--g3)",marginBottom:20}}>Tocá + para crear la primera</div>
         </div>
       )}
       {/* Selector de notas */}
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
         {notes.map(n => (
           <div key={n.id} onClick={()=>selectNote(n)}
-            style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:activeNote===n.id?"#FF6B6B22":"#1a1a22",color:activeNote===n.id?"#FF6B6B":"#555",border:`1px solid ${activeNote===n.id?"#FF6B6B44":"#2a2a3a"}`}}>
+            style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:activeNote===n.id?"#FF6B6B22":"var(--card2)",color:activeNote===n.id?"#FF6B6B":"var(--g5)",border:`1px solid ${activeNote===n.id?"#FF6B6B44":"var(--border2)"}`}}>
             {n.title}
           </div>
         ))}
@@ -161,17 +161,17 @@ export default function Notes({ groupId, currentUserId }) {
               </div>
             ) : (
               <div onClick={()=>{setTitleDraft(currentNote.title);setEditingTitle(true);}}
-                style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                {currentNote.title} <span style={{fontSize:12,color:"#333"}}>✎</span>
+                style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"var(--title)",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                {currentNote.title} <span style={{fontSize:12,color:"var(--g3)"}}>✎</span>
               </div>
             )}
-            <div style={{fontSize:10,color:"#444",marginTop:2}}>
+            <div style={{fontSize:10,color:"var(--g4)",marginTop:2}}>
               Modificado {fmtDate(currentNote.updated_at)}
-              {saving && <span style={{color:"#555",marginLeft:6}}>· Guardando...</span>}
+              {saving && <span style={{color:"var(--g5)",marginLeft:6}}>· Guardando...</span>}
             </div>
           </div>
           <button onClick={()=>setShowDelete(currentNote.id)}
-            style={{background:"transparent",border:"none",color:"#2a2a3a",fontSize:18,cursor:"pointer",padding:"4px 8px",flexShrink:0}}>🗑</button>
+            style={{background:"transparent",border:"none",color:"var(--border2)",fontSize:18,cursor:"pointer",padding:"4px 8px",flexShrink:0}}>🗑</button>
         </div>
       )}
 
@@ -189,10 +189,10 @@ export default function Notes({ groupId, currentUserId }) {
       {showModal && (
         <div onClick={e=>{if(e.target===e.currentTarget)setShowModal(false)}}
           style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-          <div style={{background:"#131318",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,padding:20,border:"1px solid #2a2a3a"}}>
+          <div style={{background:"var(--card)",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,padding:20,border:"1px solid var(--border2)"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-              <h2 style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"#fff"}}>Nueva nota</h2>
-              <button onClick={()=>setShowModal(false)} style={{background:"#1e1e2a",border:"none",color:"#aaa",width:26,height:26,borderRadius:"50%",fontSize:14,cursor:"pointer"}}>×</button>
+              <h2 style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)"}}>Nueva nota</h2>
+              <button onClick={()=>setShowModal(false)} style={{background:"var(--border)",border:"none",color:"var(--ga)",width:26,height:26,borderRadius:"50%",fontSize:14,cursor:"pointer"}}>×</button>
             </div>
             <div style={{marginBottom:14}}>
               <label style={lbl}>Nombre</label>
@@ -213,11 +213,11 @@ export default function Notes({ groupId, currentUserId }) {
       {showDelete && (
         <div onClick={e=>{if(e.target===e.currentTarget)setShowDelete(null)}}
           style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#131318",borderRadius:16,padding:24,width:"100%",maxWidth:340,border:"1px solid #2a2a3a"}}>
-            <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"#fff",marginBottom:8}}>Eliminar nota</div>
-            <div style={{fontSize:13,color:"#666",marginBottom:20}}>Esta acción no se puede deshacer.</div>
+          <div style={{background:"var(--card)",borderRadius:16,padding:24,width:"100%",maxWidth:340,border:"1px solid var(--border2)"}}>
+            <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)",marginBottom:8}}>Eliminar nota</div>
+            <div style={{fontSize:13,color:"var(--g6)",marginBottom:20}}>Esta acción no se puede deshacer.</div>
             <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>setShowDelete(null)} style={{flex:1,background:"#1e1e2a",color:"#aaa",border:"none",borderRadius:10,padding:"10px",fontSize:13,cursor:"pointer"}}>Cancelar</button>
+              <button onClick={()=>setShowDelete(null)} style={{flex:1,background:"var(--border)",color:"var(--ga)",border:"none",borderRadius:10,padding:"10px",fontSize:13,cursor:"pointer"}}>Cancelar</button>
               <button onClick={()=>handleDeleteNote(showDelete)} style={{flex:1,background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Eliminar</button>
             </div>
           </div>

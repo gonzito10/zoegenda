@@ -26,8 +26,8 @@ const ICON_OPTIONS = [
 
 const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-const inp  = {background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"11px 13px",color:"#e8e8f0",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
-const lbl  = {fontSize:10,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
+const inp  = {background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",color:"var(--text)",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
+const lbl  = {fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function fmtMoney(n){ return "$" + Math.round(n).toLocaleString("es-AR"); }
@@ -167,7 +167,7 @@ function PieChart({ cats, total }) {
       {slices.map(({c,x1,y1,x2,y2,large},i)=>(
         <path key={i}
           d={`M100,100 L${x1.toFixed(1)},${y1.toFixed(1)} A80,80 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} Z`}
-          fill={c.color} stroke="#0f0f13" strokeWidth={2}/>
+          fill={c.color} stroke="var(--bg)" strokeWidth={2}/>
       ))}
     </svg>
   );
@@ -234,8 +234,8 @@ export default function Expenses({ groupId, members, currentUserId }) {
     ...customCats.map(c => ({ id:c.id, label:c.label, icon:c.icon, color:c.color }))
   ], [customCats]);
 
-  function getCat(id){ return allCats.find(c=>c.id===id) || { label:id, icon:"📌", color:"#888" }; }
-  function getMember(id){ return members.find(m=>m.id===id) || { display_name:"?", color:"#888", avatar:"?" }; }
+  function getCat(id){ return allCats.find(c=>c.id===id) || { label:id, icon:"📌", color:"var(--g8)" }; }
+  function getMember(id){ return members.find(m=>m.id===id) || { display_name:"?", color:"var(--g8)", avatar:"?" }; }
 
   // Filtered expenses for active month
   const monthExpenses = useMemo(() => expenses.filter(e => monthKey(e.date) === activeMonth), [expenses, activeMonth]);
@@ -292,7 +292,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
           : availableMonths.map(k=><option key={k} value={k}>{monthLabel(k)}</option>)
         }
       </select>
-      <div style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:"#555"}}>▾</div>
+      <div style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:"var(--g5)"}}>▾</div>
     </div>
   );
 
@@ -301,36 +301,36 @@ export default function Expenses({ groupId, members, currentUserId }) {
     const totalHistorico = useMemo(() => expenses.reduce((s,e)=>s+e.amount,0), []);
     return (
     <div>
-      <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"8px 14px",marginBottom:12,fontSize:11,color:"#555",display:"flex",alignItems:"center",gap:6}}>
+      <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 14px",marginBottom:12,fontSize:11,color:"var(--g5)",display:"flex",alignItems:"center",gap:6}}>
         <span>📊</span> Balance acumulado histórico — incluye todos los meses
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
         {members.map(m=>{
           const b = balance[m.id] || 0;
           return (
-            <div key={m.id} style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:12}}>
-              <div style={{fontSize:11,color:"#666",marginBottom:4,display:"flex",alignItems:"center",gap:6}}>
+            <div key={m.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
+              <div style={{fontSize:11,color:"var(--g6)",marginBottom:4,display:"flex",alignItems:"center",gap:6}}>
                 <div style={{width:16,height:16,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:6,fontWeight:700,color:"#fff"}}>{m.avatar}</div>
                 {m.display_name}
               </div>
-              <div style={{fontSize:20,fontWeight:700,fontFamily:"Fraunces,serif",color:b>0.01?"#96CEB4":b<-0.01?"#FF6B6B":"#555"}}>{fmtMoney(Math.abs(b))}</div>
-              <div style={{fontSize:10,marginTop:3,color:b>0.01?"#96CEB4":b<-0.01?"#FF6B6B":"#555"}}>{b>0.01?"Le deben":b<-0.01?"Debe":"Al día ✓"}</div>
+              <div style={{fontSize:20,fontWeight:700,fontFamily:"Fraunces,serif",color:b>0.01?"#96CEB4":b<-0.01?"#FF6B6B":"var(--g5)"}}>{fmtMoney(Math.abs(b))}</div>
+              <div style={{fontSize:10,marginTop:3,color:b>0.01?"#96CEB4":b<-0.01?"#FF6B6B":"var(--g5)"}}>{b>0.01?"Le deben":b<-0.01?"Debe":"Al día ✓"}</div>
             </div>
           );
         })}
-        <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:12}}>
-          <div style={{fontSize:11,color:"#666",marginBottom:4}}>💰 Total histórico</div>
-          <div style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"#e8e8f0"}}>{fmtMoney(totalHistorico)}</div>
-          <div style={{fontSize:10,color:"#555",marginTop:3}}>Todos los meses</div>
+        <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
+          <div style={{fontSize:11,color:"var(--g6)",marginBottom:4}}>💰 Total histórico</div>
+          <div style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"var(--text)"}}>{fmtMoney(totalHistorico)}</div>
+          <div style={{fontSize:10,color:"var(--g5)",marginTop:3}}>Todos los meses</div>
         </div>
       </div>
 
       {debts.length > 0 && <>
-        <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Quién le debe a quién</div>
+        <div style={{fontSize:10,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Quién le debe a quién</div>
         {debts.map((d,i)=>{
           const from = getMember(d.from), to = getMember(d.to);
           return (
-            <div key={i} style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+            <div key={i} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
               <div style={{width:28,height:28,borderRadius:"50%",background:from.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{from.avatar}</div>
               <div style={{flex:1,fontSize:12}}>
                 {from.display_name} → <strong style={{color:to.color}}>{to.display_name}</strong>
@@ -351,22 +351,22 @@ export default function Expenses({ groupId, members, currentUserId }) {
 
       {/* Active installments this month */}
       {monthExpenses.filter(e=>e.installments>1).length > 0 && <>
-        <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>Cuotas activas</div>
+        <div style={{fontSize:10,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>Cuotas activas</div>
         {monthExpenses.filter(e=>e.installments>1).map(e=>{
           const c = getCat(e.category);
           return (
-            <div key={e.id} style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+            <div key={e.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
               <div style={{width:34,height:34,borderRadius:9,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.description}</div>
-                <div style={{fontSize:11,color:"#555",marginTop:2,display:"flex",gap:5,alignItems:"center"}}>
+                <div style={{fontSize:11,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center"}}>
                   {getMember(e.paid_by).display_name}
                   <span style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>
                 </div>
               </div>
               <div style={{textAlign:"right",flexShrink:0}}>
                 <div style={{fontSize:14,fontWeight:700,color:"#DDA0DD"}}>{fmtMoney(e.amount)}</div>
-                <div style={{fontSize:10,color:"#555"}}>÷{e.split_between?.length||1} = {fmtMoney(e.amount/(e.split_between?.length||1))} c/u</div>
+                <div style={{fontSize:10,color:"var(--g5)"}}>÷{e.split_between?.length||1} = {fmtMoney(e.amount/(e.split_between?.length||1))} c/u</div>
               </div>
             </div>
           );
@@ -387,11 +387,11 @@ export default function Expenses({ groupId, members, currentUserId }) {
     <div>
       <MonthSelect value={activeMonth} onChange={v=>setSelMonth(v==="all"?null:v)}/>
       {historyExpenses.length === 0
-        ? <div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>No hay gastos este mes</div>
+        ? <div style={{textAlign:"center",color:"var(--g4)",padding:"50px 0",fontSize:14}}>No hay gastos este mes</div>
         : <>
-          <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:8,padding:"8px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",fontSize:12}}>
-            <span style={{color:"#555"}}>Total del mes</span>
-            <strong style={{color:"#e8e8f0"}}>{fmtMoney(historyTotal)}</strong>
+          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",fontSize:12}}>
+            <span style={{color:"var(--g5)"}}>Total del mes</span>
+            <strong style={{color:"var(--text)"}}>{fmtMoney(historyTotal)}</strong>
           </div>
           {historyExpenses.map(e=>{
             const c = getCat(e.category);
@@ -399,11 +399,11 @@ export default function Expenses({ groupId, members, currentUserId }) {
             const perPerson = e.amount / (e.split_between?.length || 1);
             return (
               <div key={e.id} onClick={()=>{ setEditExp(e); setShowModal(true); }}
-                style={{background:e.settled?"#0f0f13":"#131318",border:"1px solid #1e1e2a",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6,cursor:"pointer",opacity:e.settled?0.5:1}}>
+                style={{background:e.settled?"var(--bg)":"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6,cursor:"pointer",opacity:e.settled?0.5:1}}>
                 <div style={{width:34,height:34,borderRadius:9,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textDecoration:e.settled?"line-through":"none"}}>{e.description}</div>
-                  <div style={{fontSize:11,color:"#555",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                  <div style={{fontSize:11,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
                     <span style={{color:"#8a8a9a",fontWeight:600}}>📅 {fmtDay(e.date)}</span> · {payer.display_name} · {c.label}
                     {e.installments>1&&<span style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>}
                     {e.settled&&<span style={{background:"#96CEB422",color:"#96CEB4",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>✓ Liquidado</span>}
@@ -414,8 +414,8 @@ export default function Expenses({ groupId, members, currentUserId }) {
                   </div>
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
-                  <div style={{fontSize:14,fontWeight:700,color:e.installments>1?"#DDA0DD":"#e8e8f0",textDecoration:e.settled?"line-through":"none"}}>{fmtMoney(e.amount)}</div>
-                  <div style={{fontSize:10,color:"#555"}}>÷{e.split_between?.length||1} = {fmtMoney(perPerson)} c/u</div>
+                  <div style={{fontSize:14,fontWeight:700,color:e.installments>1?"#DDA0DD":"var(--text)",textDecoration:e.settled?"line-through":"none"}}>{fmtMoney(e.amount)}</div>
+                  <div style={{fontSize:10,color:"var(--g5)"}}>÷{e.split_between?.length||1} = {fmtMoney(perPerson)} c/u</div>
                 </div>
               </div>
             );
@@ -474,33 +474,33 @@ export default function Expenses({ groupId, members, currentUserId }) {
       const barW = ((c.amount / rowMax) * 100).toFixed(1);
       return (
         <div style={{marginBottom:6}}>
-          <div onClick={onToggle} style={{cursor:"pointer",padding:"10px 12px",borderRadius:isOpen?"10px 10px 0 0":10,background:isOpen?c.color+"22":"#131318",border:`1px solid ${isOpen?c.color+"44":"#1e1e2a"}`,borderBottom:isOpen?"none":""}}>
+          <div onClick={onToggle} style={{cursor:"pointer",padding:"10px 12px",borderRadius:isOpen?"10px 10px 0 0":10,background:isOpen?c.color+"22":"var(--card)",border:`1px solid ${isOpen?c.color+"44":"var(--border)"}`,borderBottom:isOpen?"none":""}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
               <div style={{fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
                 <span style={{fontSize:17}}>{c.icon}</span>{c.label}
-                <span style={{fontSize:10,color:"#555",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
+                <span style={{fontSize:10,color:"var(--g5)",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
               </div>
               <div style={{textAlign:"right"}}>
                 <div style={{fontSize:13,fontWeight:700,fontFamily:"Fraunces,serif",color:c.color}}>{fmtMoney(c.amount)}</div>
-                <div style={{fontSize:10,color:"#555"}}>{pct}% del total</div>
+                <div style={{fontSize:10,color:"var(--g5)"}}>{pct}% del total</div>
               </div>
             </div>
-            <div style={{height:7,background:"#1a1a22",borderRadius:4,overflow:"hidden"}}>
+            <div style={{height:7,background:"var(--card2)",borderRadius:4,overflow:"hidden"}}>
               <div style={{height:"100%",width:`${barW}%`,background:c.color+"55",border:`1px solid ${c.color}66`,borderRadius:4}}/>
             </div>
           </div>
           {isOpen && (
-            <div style={{background:"#0f0f13",border:`1px solid ${c.color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:"8px 10px",display:"flex",flexDirection:"column",gap:4}}>
+            <div style={{background:"var(--bg)",border:`1px solid ${c.color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:"8px 10px",display:"flex",flexDirection:"column",gap:4}}>
               {expsList.length === 0
-                ? <div style={{fontSize:11,color:"#444",padding:"8px 0",textAlign:"center"}}>Sin gastos</div>
+                ? <div style={{fontSize:11,color:"var(--g4)",padding:"8px 0",textAlign:"center"}}>Sin gastos</div>
                 : expsList.map(e => {
                   const payer = getMember(e.paid_by);
                   return (
                     <div key={e.id} onClick={()=>{setEditExp(e);setShowModal(true);}}
-                      style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:8,background:"#131318",border:"1px solid #1a1a22",cursor:"pointer"}}>
+                      style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:8,background:"var(--card)",border:"1px solid var(--card2)",cursor:"pointer"}}>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:12,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.description}</div>
-                        <div style={{fontSize:10,color:"#555",marginTop:1}}>{e.date} · {payer.display_name}{e.installments>1?` · Cuota ${e.installment_number}/${e.installments}`:""}</div>
+                        <div style={{fontSize:10,color:"var(--g5)",marginTop:1}}>{e.date} · {payer.display_name}{e.installments>1?` · Cuota ${e.installment_number}/${e.installments}`:""}</div>
                       </div>
                       <div style={{fontSize:12,fontWeight:700,color:c.color,flexShrink:0}}>{fmtMoney(e.amount)}</div>
                     </div>
@@ -520,7 +520,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
           {[["month","Este mes"],["annual","Anual"],...(tags.length>0?[["tags","Por etiqueta"]]:[])]
             .map(([v,l])=>(
               <button key={v} onClick={()=>{setStatsView(v);setOpenCat(null);setOpenTagCat({});}}
-                style={{padding:"5px 14px",borderRadius:8,fontSize:11,fontWeight:600,border:"1px solid",borderColor:statsView===v?"#2a2a3a":"transparent",background:statsView===v?"#1e1e2a":"transparent",color:statsView===v?"#fff":"#555",cursor:"pointer"}}>
+                style={{padding:"5px 14px",borderRadius:8,fontSize:11,fontWeight:600,border:"1px solid",borderColor:statsView===v?"var(--border2)":"transparent",background:statsView===v?"var(--border)":"transparent",color:statsView===v?"var(--title)":"var(--g5)",cursor:"pointer"}}>
                 {l}
               </button>
             ))
@@ -531,7 +531,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
         {/* ── Vista por etiqueta ── */}
         {statsView==="tags" && (
           statsByTag.length === 0
-            ? <div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>No hay etiquetas con gastos</div>
+            ? <div style={{textAlign:"center",color:"var(--g4)",padding:"50px 0",fontSize:14}}>No hay etiquetas con gastos</div>
             : statsByTag.map(({tag, cats:tCats, total:tTotal}) => {
               const tMax = tCats.length > 0 ? tCats[0].amount : 1;
               return (
@@ -539,16 +539,16 @@ export default function Expenses({ groupId, members, currentUserId }) {
                   {/* Tag header */}
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                     <div style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:700}}>🏷 {tag.name}</div>
-                    <div style={{fontSize:12,color:"#555"}}>{fmtMoney(tTotal)}</div>
+                    <div style={{fontSize:12,color:"var(--g5)"}}>{fmtMoney(tTotal)}</div>
                   </div>
                   {/* Pie + leyenda */}
-                  <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:16,marginBottom:10,display:"flex",alignItems:"center",gap:16}}>
+                  <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:16,marginBottom:10,display:"flex",alignItems:"center",gap:16}}>
                     <PieChart cats={tCats} total={tTotal}/>
                     <div style={{display:"flex",flexDirection:"column",gap:7,flex:1}}>
                       {tCats.map(c=>(
                         <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:7}}>
                           <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>
-                          <div style={{flex:1,fontSize:11,color:"#aaa"}}>{c.icon} {c.label}</div>
+                          <div style={{flex:1,fontSize:11,color:"var(--ga)"}}>{c.icon} {c.label}</div>
                           <div style={{fontSize:11,fontWeight:700,color:c.color}}>{((c.amount/tTotal)*100).toFixed(1)}%</div>
                         </div>
                       ))}
@@ -573,25 +573,25 @@ export default function Expenses({ groupId, members, currentUserId }) {
 
         {/* ── Vista mes/anual ── */}
         {statsView!=="tags" && (cats.length === 0
-          ? <div style={{textAlign:"center",color:"#444",padding:"50px 0",fontSize:14}}>Sin datos para mostrar</div>
+          ? <div style={{textAlign:"center",color:"var(--g4)",padding:"50px 0",fontSize:14}}>Sin datos para mostrar</div>
           : <>
-            <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:14,marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:14,marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
-                <div style={{fontSize:11,color:"#555",marginBottom:4}}>{statsView==="annual"?"Total anual":"Total del mes"}</div>
+                <div style={{fontSize:11,color:"var(--g5)",marginBottom:4}}>{statsView==="annual"?"Total anual":"Total del mes"}</div>
                 <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:700}}>{fmtMoney(total)}</div>
               </div>
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:11,color:"#555",marginBottom:4}}>Categorías</div>
+                <div style={{fontSize:11,color:"var(--g5)",marginBottom:4}}>Categorías</div>
                 <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:700}}>{cats.length}</div>
               </div>
             </div>
-            <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:12,padding:16,marginBottom:14,display:"flex",alignItems:"center",gap:16}}>
+            <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:16,marginBottom:14,display:"flex",alignItems:"center",gap:16}}>
               <PieChart cats={cats} total={total}/>
               <div style={{display:"flex",flexDirection:"column",gap:7,flex:1}}>
                 {cats.map(c=>(
                   <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:7}}>
                     <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>
-                    <div style={{flex:1,fontSize:11,color:"#aaa"}}>{c.icon} {c.label}</div>
+                    <div style={{flex:1,fontSize:11,color:"var(--ga)"}}>{c.icon} {c.label}</div>
                     <div style={{fontSize:11,fontWeight:700,color:c.color}}>{((c.amount/total)*100).toFixed(1)}%</div>
                   </div>
                 ))}
@@ -725,10 +725,10 @@ export default function Expenses({ groupId, members, currentUserId }) {
     return (
       <div onClick={e=>{if(e.target===e.currentTarget){setShowModal(false);setEditExp(null);}}}
         style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-        <div style={{background:"#131318",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,padding:20,border:"1px solid #2a2a3a",maxHeight:"92vh",overflow:"auto"}}>
+        <div style={{background:"var(--card)",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,padding:20,border:"1px solid var(--border2)",maxHeight:"92vh",overflow:"auto"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-            <h2 style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"#fff"}}>{isNew?"Nuevo gasto":"Editar gasto"}</h2>
-            <button onClick={()=>{setShowModal(false);setEditExp(null);}} style={{background:"#1e1e2a",border:"none",color:"#aaa",width:26,height:26,borderRadius:"50%",fontSize:14}}>×</button>
+            <h2 style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)"}}>{isNew?"Nuevo gasto":"Editar gasto"}</h2>
+            <button onClick={()=>{setShowModal(false);setEditExp(null);}} style={{background:"var(--border)",border:"none",color:"var(--ga)",width:26,height:26,borderRadius:"50%",fontSize:14}}>×</button>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {/* Description */}
@@ -751,12 +751,12 @@ export default function Expenses({ groupId, members, currentUserId }) {
 
             {/* Installments toggle */}
             <div onClick={()=>setInstallments(v=>!v)}
-              style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
+              style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
               <div>
-                <div style={{fontSize:13,fontWeight:600,color:"#e8e8f0"}}>💳 Compra en cuotas</div>
-                <div style={{fontSize:11,color:"#555",marginTop:1}}>Se genera un gasto automático por mes</div>
+                <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>💳 Compra en cuotas</div>
+                <div style={{fontSize:11,color:"var(--g5)",marginTop:1}}>Se genera un gasto automático por mes</div>
               </div>
-              <div style={{width:36,height:20,borderRadius:10,background:installments?"#DDA0DD":"#2a2a3a",position:"relative",transition:"background .2s",flexShrink:0}}>
+              <div style={{width:36,height:20,borderRadius:10,background:installments?"#DDA0DD":"var(--border2)",position:"relative",transition:"background .2s",flexShrink:0}}>
                 <div style={{width:14,height:14,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:installments?18:3,transition:"left .2s"}}/>
               </div>
             </div>
@@ -765,11 +765,11 @@ export default function Expenses({ groupId, members, currentUserId }) {
               <div style={{background:"#DDA0DD11",border:"1px solid #DDA0DD33",borderRadius:10,padding:12,display:"flex",flexDirection:"column",gap:10}}>
                 <div>
                   <label style={{...lbl,color:"#DDA0DD"}}>Cantidad de cuotas</label>
-                  <input type="number" value={form.installments} onChange={e=>setForm(f=>({...f,installments:e.target.value}))} placeholder="Ej: 12" min={2} max={60} style={{...inp,background:"#0f0f13"}}/>
+                  <input type="number" value={form.installments} onChange={e=>setForm(f=>({...f,installments:e.target.value}))} placeholder="Ej: 12" min={2} max={60} style={{...inp,background:"var(--bg)"}}/>
                 </div>
                 {perCuota && (
-                  <div style={{background:"#0f0f13",border:"1px solid #DDA0DD33",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <span style={{fontSize:11,color:"#888"}}>Monto por cuota</span>
+                  <div style={{background:"var(--bg)",border:"1px solid #DDA0DD33",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <span style={{fontSize:11,color:"var(--g8)"}}>Monto por cuota</span>
                     <span style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"#DDA0DD"}}>{fmtMoney(perCuota)}</span>
                   </div>
                 )}
@@ -784,31 +784,31 @@ export default function Expenses({ groupId, members, currentUserId }) {
                   const on = form.category===c.id;
                   return (
                     <div key={c.id} onClick={()=>setForm(f=>({...f,category:c.id}))}
-                      style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:on?600:400,background:on?c.color+"33":"#1a1a22",color:on?c.color:"#666",border:`1px solid ${on?c.color+"44":"#2a2a3a"}`}}>
+                      style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:on?600:400,background:on?c.color+"33":"var(--card2)",color:on?c.color:"var(--g6)",border:`1px solid ${on?c.color+"44":"var(--border2)"}`}}>
                       {c.icon} {c.label}
                     </div>
                   );
                 })}
                 <div onClick={()=>setShowAddCat(v=>!v)}
-                  style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",borderStyle:"dashed",border:"1px dashed #2a2a3a",color:"#444"}}>
+                  style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",borderStyle:"dashed",border:"1px dashed var(--border2)",color:"var(--g4)"}}>
                   + Nueva
                 </div>
               </div>
 
               {/* Add custom category */}
               {showAddCat && (
-                <div style={{background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:12,padding:12,marginTop:8,display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:12,padding:12,marginTop:8,display:"flex",flexDirection:"column",gap:10}}>
                   <input value={newCatLabel} onChange={e=>setNewCatLabel(e.target.value)} placeholder="Nombre de la categoría" style={inp}/>
                   <div>
                     <label style={lbl}>Elegí un ícono</label>
                     <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:180,overflowY:"auto"}}>
                       {ICON_OPTIONS.map(g=>(
                         <div key={g.group}>
-                          <div style={{fontSize:9,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{g.group}</div>
+                          <div style={{fontSize:9,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{g.group}</div>
                           <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                             {g.icons.map(ico=>(
                               <div key={ico} onClick={()=>setNewCatIcon(ico)}
-                                style={{width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:18,cursor:"pointer",background:newCatIcon===ico?"#FF6B6B22":"#1a1a22",border:`1.5px solid ${newCatIcon===ico?"#FF6B6B":"transparent"}`}}>
+                                style={{width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:18,cursor:"pointer",background:newCatIcon===ico?"#FF6B6B22":"var(--card2)",border:`1.5px solid ${newCatIcon===ico?"#FF6B6B":"transparent"}`}}>
                                 {ico}
                               </div>
                             ))}
@@ -818,9 +818,9 @@ export default function Expenses({ groupId, members, currentUserId }) {
                     </div>
                   </div>
                   {newCatIcon && (
-                    <div style={{background:"#131318",border:"1px solid #1e1e2a",borderRadius:8,padding:"8px 12px",display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 12px",display:"flex",alignItems:"center",gap:10}}>
                       <span style={{fontSize:22}}>{newCatIcon}</span>
-                      <span style={{fontSize:12,color:newCatLabel?"#e8e8f0":"#555"}}>{newCatLabel||"Sin nombre"}</span>
+                      <span style={{fontSize:12,color:newCatLabel?"var(--text)":"var(--g5)"}}>{newCatLabel||"Sin nombre"}</span>
                     </div>
                   )}
                   <button onClick={handleAddCat} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"9px",fontSize:13,fontWeight:700}}>Agregar categoría</button>
@@ -843,8 +843,8 @@ export default function Expenses({ groupId, members, currentUserId }) {
                 const on = form.split_between?.includes(m.id);
                 return (
                   <div key={m.id} onClick={()=>toggleMember(m.id)}
-                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:on?"#FF6B6B11":"#0f0f13",border:`1px solid ${on?"#FF6B6B33":"#1e1e2a"}`,cursor:"pointer",marginBottom:5}}>
-                    <div style={{width:16,height:16,borderRadius:4,border:`1.5px solid ${on?"#FF6B6B":"#2a2a3a"}`,background:on?"#FF6B6B":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",flexShrink:0}}>{on?"✓":""}</div>
+                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:on?"#FF6B6B11":"var(--bg)",border:`1px solid ${on?"#FF6B6B33":"var(--border)"}`,cursor:"pointer",marginBottom:5}}>
+                    <div style={{width:16,height:16,borderRadius:4,border:`1.5px solid ${on?"#FF6B6B":"var(--border2)"}`,background:on?"#FF6B6B":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",flexShrink:0}}>{on?"✓":""}</div>
                     <div style={{width:22,height:22,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff"}}>{m.avatar}</div>
                     <span style={{fontSize:13}}>{m.display_name}</span>
                   </div>
@@ -854,19 +854,19 @@ export default function Expenses({ groupId, members, currentUserId }) {
 
             {/* Tags (optional) */}
             <div>
-              <label style={lbl}>🏷 Etiquetas <span style={{fontWeight:400,textTransform:"none",letterSpacing:0,color:"#333"}}>(opcional)</span></label>
+              <label style={lbl}>🏷 Etiquetas <span style={{fontWeight:400,textTransform:"none",letterSpacing:0,color:"var(--g3)"}}>(opcional)</span></label>
               <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
                 {tags.map(t=>{
                   const on = selectedTags.includes(t.id);
                   return (
                     <div key={t.id} onClick={()=>toggleTag(t.id)}
-                      style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:on?700:400,background:on?"#DDA0DD33":"#1a1a22",color:on?"#DDA0DD":"#555",border:`1px solid ${on?"#DDA0DD44":"#2a2a3a"}`}}>
+                      style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:on?700:400,background:on?"#DDA0DD33":"var(--card2)",color:on?"#DDA0DD":"var(--g5)",border:`1px solid ${on?"#DDA0DD44":"var(--border2)"}`}}>
                       {t.name}
                     </div>
                   );
                 })}
                 <div onClick={()=>setShowNewTag(v=>!v)}
-                  style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",border:"1px dashed #2a2a3a",color:"#444"}}>
+                  style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",border:"1px dashed var(--border2)",color:"var(--g4)"}}>
                   + Nueva
                 </div>
               </div>
@@ -896,7 +896,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────
-  if(loading) return <div style={{textAlign:"center",color:"#555",padding:"50px 0"}}>Cargando gastos...</div>;
+  if(loading) return <div style={{textAlign:"center",color:"var(--g5)",padding:"50px 0"}}>Cargando gastos...</div>;
 
   return (
     <div style={{paddingBottom:80}}>
@@ -904,7 +904,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
       <div style={{display:"flex",gap:4,marginBottom:14}}>
         {[["balance","⚖️ Balance"],["history","📋 Historial"],["stats","📊 Estadísticas"]].map(([v,l])=>(
           <button key={v} onClick={()=>setSubTab(v)}
-            style={{padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:600,border:`1px solid ${subTab===v?"#2a2a3a":"transparent"}`,background:subTab===v?"#1e1e2a":"transparent",color:subTab===v?"#fff":"#555",cursor:"pointer"}}>
+            style={{padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:600,border:`1px solid ${subTab===v?"var(--border2)":"transparent"}`,background:subTab===v?"var(--border)":"transparent",color:subTab===v?"var(--title)":"var(--g5)",cursor:"pointer"}}>
             {l}
           </button>
         ))}
