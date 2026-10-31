@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { pushSupported, isStandalone, isIOS, getPushState, enablePush, disablePush } from "./push.js";
 import { supabase } from "./supabase";
 import Expenses from "./Expenses";
 import Lists from "./Lists";
@@ -257,6 +258,9 @@ export default function App() {
   const [showThemePanel, setShowThemePanel] = useState(false);
   const [notifications, setNotifications] = useState([]); // eventos de mañana
   const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [pushState, setPushState] = useState("off"); // on | off | denied | unsupported
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMsg, setPushMsg] = useState("");
 
   const [systemLight, setSystemLight] = useState(()=>{ try{ return window.matchMedia("(prefers-color-scheme: light)").matches; }catch(e){ return false; } });
   useEffect(()=>{
@@ -398,6 +402,38 @@ export default function App() {
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [activeGroup?.id]);
+
+  // ── Avisos push: estado y apertura desde la notificación ───────────────
+  useEffect(() => { getPushState().then(setPushState); }, [authUser?.id]);
+  useEffect(() => {
+    function openDay(day) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day || "")) return;
+      const d = parse(day);
+      setSelectedDate(day); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear());
+      setMainTab("agenda"); setView("day");
+    }
+    const fromUrl = new URLSearchParams(window.location.search).get("day");
+    if (fromUrl && activeGroup) { openDay(fromUrl); window.history.replaceState({}, "", "/"); }
+    const onMsg = e => {
+      if (e.data?.type === "open-day") {
+        try { openDay(new URL(e.data.url, window.location.origin).searchParams.get("day")); } catch (err) {}
+      }
+    };
+    navigator.serviceWorker?.addEventListener("message", onMsg);
+    return () => navigator.serviceWorker?.removeEventListener("message", onMsg);
+  }, [activeGroup?.id]);
+  async function togglePush() {
+    setPushBusy(true); setPushMsg("");
+    try {
+      if (pushState === "on") setPushState(await disablePush());
+      else {
+        const r = await enablePush(authUser.id);
+        setPushState(r);
+        if (r === "denied") setPushMsg("Permiso denegado. Habilitalo en los ajustes del navegador o del celular.");
+      }
+    } catch (e) { setPushMsg("No se pudo activar: " + (e.message || e)); }
+    setPushBusy(false);
+  }
 
   // ── Notification check: events with alarms ────────────────────────────
   useEffect(() => {
@@ -941,6 +977,26 @@ export default function App() {
               <button onClick={()=>{setScreen("groups");setShowGroupPanel(false);}} style={{background:T.gradient?"#ffffff14":"var(--border)",color:"var(--ga)",border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 12px",fontSize:12}}>Mis agendas</button>
               <button onClick={signOut} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"6px 12px",fontSize:12}}>Cerrar sesión</button>
             </div>
+          </div>
+          {/* Avisos en el celular */}
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🔔 Avisos en este dispositivo</div>
+            {pushState==="unsupported" || (isIOS() && !isStandalone()) ? (
+              <div style={{fontSize:11,color:"var(--g8)",lineHeight:1.5}}>
+                {isIOS() && !isStandalone()
+                  ? "En iPhone, primero instalá la app: en Safari tocá Compartir → “Agregar a pantalla de inicio”, abrila desde ahí y activá los avisos."
+                  : "Este navegador no admite avisos push."}
+              </div>
+            ) : (
+              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                <button onClick={togglePush} disabled={pushBusy||pushState==="denied"}
+                  style={{background:pushState==="on"?"#96CEB422":"#FF6B6B",color:pushState==="on"?"#96CEB4":"#fff",border:pushState==="on"?"1px solid #96CEB444":"none",borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",opacity:pushBusy?.6:1}}>
+                  {pushState==="on" ? "✓ Avisos activados · desactivar" : "Activar avisos"}
+                </button>
+                <span style={{fontSize:11,color:"var(--g8)"}}>{pushState==="denied" ? "Bloqueados en el navegador" : "Te avisamos de los eventos con alarma, a las 9:00."}</span>
+              </div>
+            )}
+            {pushMsg && <div style={{fontSize:11,color:"#FF6B6B",marginTop:6}}>{pushMsg}</div>}
           </div>
           {/* Theme selector */}
           <div>
