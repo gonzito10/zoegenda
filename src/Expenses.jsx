@@ -95,11 +95,11 @@ function calcBalance(expenses, settlements, members) {
   const share = {};
   members.forEach(m => { paid[m.id] = 0; share[m.id] = 0; });
 
-  const today = new Date().toISOString().slice(0, 10);
+  const todayMonth = new Date().toISOString().slice(0, 7); // "2026-05"
 
   expenses.forEach(exp => {
-    // Principio de devengado: solo incluir si la fecha de la cuota ya llegó
-    if (exp.date > today) return;
+    // Principio de devengado: incluir si el mes de la cuota ya llegó
+    if (exp.date.slice(0, 7) > todayMonth) return;
 
     const n = exp.split_between?.length || 1;
     const perPerson = exp.amount / n;

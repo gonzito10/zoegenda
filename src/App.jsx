@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "./supabase";
 import Expenses from "./Expenses";
 import Lists from "./Lists";
+import Notes from "./Notes";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const COLORS = ["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#98D8C8","#F7DC6F","#FFB347","#87CEEB"];
@@ -253,7 +254,7 @@ export default function App() {
   const [groupLoading,  setGroupLoading]  = useState(false);
 
   // Calendar
-  const [mainTab,      setMainTab]      = useState("agenda"); // agenda|expenses
+  const [mainTab,      setMainTab]      = useState("home"); // home|agenda|expenses|lists|notes
   const [events,       setEvents]       = useState([]);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear,  setCurrentYear]  = useState(today.getFullYear());
@@ -577,7 +578,7 @@ export default function App() {
             {groups.length>0&&(
               <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
                 {groups.map(g=>(
-                  <div key={g.id} onClick={()=>{setActiveGroup(g);setScreen("app");}} style={{display:"flex",alignItems:"center",gap:14,background:"#131318",border:"1px solid #1e1e2a",borderRadius:14,padding:"13px 16px",cursor:"pointer"}}>
+                  <div key={g.id} onClick={()=>{setActiveGroup(g);setMainTab("home");setScreen("app");}} style={{display:"flex",alignItems:"center",gap:14,background:"#131318",border:"1px solid #1e1e2a",borderRadius:14,padding:"13px 16px",cursor:"pointer"}}>
                     <div style={{width:40,height:40,borderRadius:10,background:"#FF6B6B22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>📅</div>
                     <div style={{flex:1}}>
                       <div style={{fontSize:15,fontWeight:600,color:"#e8e8f0"}}>{g.name}</div>
@@ -928,15 +929,19 @@ export default function App() {
         </div>
       )}
 
-      {/* ── MAIN TABS ── */}
-      <div style={{display:"flex",background:"#0a0a0e",borderBottom:"1px solid #1e1e2a",flexShrink:0}}>
-        {[["agenda","📅 Agenda"],["expenses","💸 Gastos"],["lists","📝 Listados"]].map(([v,l])=>(
-          <button key={v} onClick={()=>setMainTab(v)}
-            style={{flex:1,padding:"11px",fontSize:13,fontWeight:600,border:"none",borderBottom:`2px solid ${mainTab===v?"#FF6B6B":"transparent"}`,background:"transparent",color:mainTab===v?"#FF6B6B":"#555",cursor:"pointer"}}>
-            {l}
-          </button>
-        ))}
-      </div>
+      {/* ── MAIN TABS (ocultas en la pantalla de inicio) ── */}
+      {mainTab!=="home"&&(
+        <div style={{display:"flex",background:"#0a0a0e",borderBottom:"1px solid #1e1e2a",flexShrink:0}}>
+          <button onClick={()=>setMainTab("home")} title="Inicio"
+            style={{padding:"10px 14px",fontSize:15,border:"none",borderBottom:"2px solid transparent",background:"transparent",color:"#777",cursor:"pointer"}}>🏠</button>
+          {[["agenda","📅 Agenda"],["expenses","💸 Gastos"],["lists","📝 Listados"],["notes","📓 Notas"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setMainTab(v)}
+              style={{flex:1,padding:"10px 4px",fontSize:12,fontWeight:600,border:"none",borderBottom:`2px solid ${mainTab===v?"#FF6B6B":"transparent"}`,background:"transparent",color:mainTab===v?"#FF6B6B":"#555",cursor:"pointer"}}>
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── NOTIFICATION PANEL — solo en sección agenda ── */}
       {showNotifPanel&&notifications.length>0&&mainTab==="agenda"&&(
@@ -969,8 +974,32 @@ export default function App() {
         </div>
       )}
 
-      {/* ── BODY: sidebar + content ── */}
-      {mainTab==="expenses" ? (
+      {/* ── BODY ── */}
+      {mainTab==="home" ? (
+        <div style={{flex:1,overflowY:"auto",padding:"24px 16px 40px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+          <div style={{width:"100%",maxWidth:560}}>
+            <div style={{textAlign:"center",marginBottom:22}}>
+              <div style={{fontFamily:"Fraunces,serif",fontSize:24,fontWeight:600,color:"#fff"}}>Hola{profile?.display_name?`, ${profile.display_name}`:""}</div>
+              <div style={{fontSize:12,color:"#666",marginTop:4}}>{activeGroup?.name} · ¿A dónde querés ir?</div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {[
+                ["agenda","📅","Agenda","Eventos, rutinas y cumpleaños","#FF6B6B"],
+                ["expenses","💸","Gastos compartidos","Balance, cuotas y estadísticas","#96CEB4"],
+                ["lists","📝","Listados","Compras, arreglos y más","#FFB347"],
+                ["notes","📓","Notas","Texto libre con nombre","#DDA0DD"],
+              ].map(([v,icon,title,desc,color])=>(
+                <button key={v} onClick={()=>setMainTab(v)}
+                  style={{aspectRatio:"1 / 1",minHeight:150,borderRadius:18,border:`1px solid ${color}44`,background:`linear-gradient(145deg, ${color}22, #131318 70%)`,color:"#e8e8f0",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,padding:14,textAlign:"center"}}>
+                  <span style={{fontSize:46,lineHeight:1}}>{icon}</span>
+                  <span style={{fontFamily:"Fraunces,serif",fontSize:16,fontWeight:600,color:"#fff"}}>{title}</span>
+                  <span style={{fontSize:11,color:"#888",lineHeight:1.3}}>{desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : mainTab==="expenses" ? (
         <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
           <div style={{marginBottom:4,fontFamily:"Fraunces,serif",fontSize:18,fontWeight:600,color:"#fff"}}>Gastos compartidos</div>
           <div style={{fontSize:12,color:"#555",marginBottom:14}}>{activeGroup?.name}</div>
@@ -980,90 +1009,48 @@ export default function App() {
         <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
           <Lists groupId={activeGroup?.id} currentUserId={authUser?.id}/>
         </div>
-      ) : (<>
-      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
-
-        {/* SIDEBAR (desktop only) */}
-        <aside className="sidebar" style={{width:220,flexShrink:0,background:"#0a0a0e",borderRight:"1px solid #1e1e2a",display:"flex",flexDirection:"column",padding:"16px 12px",gap:4,overflowY:"auto"}}>
-          <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingLeft:8}}>Vistas</div>
-          {[["calendar","📅","Mes"],["routine","📅","Semana"],["day","🗓","Día"],["agenda","📋","Agenda"]].map(([v,icon,label])=>(
-            <button key={v} onClick={()=>setView(v)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:8,border:"none",background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#555",fontSize:13,fontWeight:view===v?600:400,textAlign:"left",width:"100%"}}>
-              <span style={{fontSize:15}}>{icon}</span>{label}
-            </button>
-          ))}
-          <div style={{height:1,background:"#1e1e2a",margin:"10px 0"}}/>
-          <div style={{fontSize:10,color:"#444",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:6,paddingLeft:8}}>Filtros</div>
-          <div style={{display:"flex",flexDirection:"column",gap:3}}>
-            {[["all","Todos",null],...groupMembers.map(m=>[m.id,m.display_name,m])].map(([id,label,m])=>{
-              const on=filterUser===id;
-              return <div key={id} onClick={()=>setFilterUser(id)} style={{padding:"6px 10px",borderRadius:8,fontSize:12,cursor:"pointer",background:on?(m?m.color+"22":"#1e1e2a"):"transparent",color:on?(m?m.color:"#fff"):"#555",display:"flex",alignItems:"center",gap:7}}>
-                {m&&<div style={{width:10,height:10,borderRadius:"50%",background:m.color,flexShrink:0}}/>}{label}
-              </div>;
-            })}
-          </div>
-          <div style={{height:1,background:"#1e1e2a",margin:"6px 0"}}/>
-          <div style={{display:"flex",flexDirection:"column",gap:3}}>
-            {CATEGORIES.map(c=>(
-              <div key={c.id} onClick={()=>setFilterCat(filterCat===c.id?"all":c.id)} style={{padding:"6px 10px",borderRadius:8,fontSize:12,cursor:"pointer",background:filterCat===c.id?c.color+"22":"transparent",color:filterCat===c.id?c.color:"#555",display:"flex",alignItems:"center",gap:7}}>
-                <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>{c.label}
+      ) : mainTab==="notes" ? (
+        <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
+          <Notes groupId={activeGroup?.id} currentUserId={authUser?.id}/>
+        </div>
+      ) : (
+        /* ── AGENDA: solo calendario + día ── */
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {view==="day" ? (
+            <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
+              {/* Back button */}
+              <button onClick={()=>setView("calendar")}
+                style={{display:"flex",alignItems:"center",gap:6,background:"transparent",border:"none",color:"#666",fontSize:13,cursor:"pointer",marginBottom:12,padding:0}}>
+                ← Volver al calendario
+              </button>
+              <DayContent/>
+            </div>
+          ) : (
+            <div style={{flex:1,overflowY:"auto",padding:"12px 12px 80px"}}>
+              {/* Filtros compactos */}
+              <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10,alignItems:"center"}}>
+                <Filters/>
               </div>
-            ))}
-          </div>
-          <div style={{flex:1}}/>
-
-        </aside>
-
-        {/* MAIN CONTENT */}
-        <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
-          {/* Mobile tabs + filters - portrait only */}
-          <div className="mobile-tabs" style={{display:"flex",flexDirection:"column",flexShrink:0}}>
-            <div style={{padding:"8px 16px 0",display:"flex",gap:4,overflowX:"auto"}}>
-              {[["calendar","📅 Mes"],["routine","📅 Semana"],["day","🗓 Día"],["agenda","📋 Agenda"]].map(([v,label])=>(
-                <button key={v} onClick={()=>setView(v)} style={{background:view===v?"#1e1e2a":"transparent",color:view===v?"#fff":"#666",padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:view===v?600:400,border:view===v?"1px solid #2a2a3a":"1px solid transparent",whiteSpace:"nowrap",flexShrink:0}}>
-                  {label}
-                </button>
-              ))}
+              <CalendarContent/>
             </div>
-            <div style={{padding:"6px 16px 8px",borderBottom:"1px solid #1a1a22",overflowX:"auto",display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
-              <Filters/>
-            </div>
-          </div>
-          {/* Desktop filters bar */}
-          <div className="desktop-filters" style={{padding:"8px 16px",borderBottom:"1px solid #1a1a22",flexShrink:0,overflowX:"auto"}}>
-            <Filters/>
-          </div>
+          )}
+        </div>
+      )}
 
-          {/* Scrollable content */}
-          <div style={{flex:1,overflowY:"auto",padding:"16px 16px 80px"}}>
-            {view==="calendar"&&<CalendarContent/>}
-            {view==="agenda"&&<AgendaContent/>}
-            {view==="day"&&<DayContent/>}
-            {view==="routine"&&<WeeklyRoutineContent/>}
-          </div>
-        </main>
-      </div>
-
-      {/* ── BOTTOM NAV (mobile only) ── */}
-      <nav className="bottom-nav">
-        {[["calendar","📅","Mes"],["routine","📅","Semana"],["day","🗓","Día"],["agenda","📋","Agenda"]].map(([v,icon,label])=>(
-          <button key={v} className="bottom-nav-item" onClick={()=>setView(v)} style={{color:view===v?"#FF6B6B":"#555"}}>
-            <span style={{fontSize:20}}>{icon}</span>
-            <span style={{fontSize:9,fontWeight:view===v?700:400}}>{label}</span>
-          </button>
-        ))}
-
-      </nav>
-      </>) } {/* end mainTab===agenda */}
-
-      {/* ── FAB universal ── */}
+      {/* ── FAB ── */}
       {mainTab==="expenses"
         ? <button onClick={()=>{ document.dispatchEvent(new CustomEvent("openExpenseModal")); }}
             style={{position:"fixed",bottom:20,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
         : mainTab==="lists"
         ? <button onClick={()=>{ document.dispatchEvent(new CustomEvent("openListModal")); }}
             style={{position:"fixed",bottom:20,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-        : <button onClick={()=>openNew(null)}
+        : mainTab==="notes"
+        ? <button onClick={()=>{ document.dispatchEvent(new CustomEvent("openNoteModal")); }}
             style={{position:"fixed",bottom:20,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+        : mainTab==="agenda"&&view==="calendar"
+        ? <button onClick={()=>openNew(null)}
+            style={{position:"fixed",bottom:20,right:20,width:52,height:52,borderRadius:"50%",background:"#FF6B6B",border:"none",color:"#fff",fontSize:26,cursor:"pointer",boxShadow:"0 4px 20px #FF6B6B44",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+        : null
       }
 
       {/* ── EVENT MODAL ── */}
