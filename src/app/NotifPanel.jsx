@@ -1,7 +1,7 @@
 import Icon from "./Icon";
 
 export default function NotifPanel({ ctx }) {
-  const { cat, mainTab, notifications, setSelectedDate, setShowNotifPanel, setView, showNotifPanel } = ctx;
+  const { cat, mainTab, notifications, setCurrentMonth, setCurrentYear, setSelectedDate, setShowNotifPanel, setView, showNotifPanel } = ctx;
   return (
     <>
       {showNotifPanel&&notifications.length>0&&mainTab==="agenda"&&(
@@ -19,7 +19,7 @@ export default function NotifPanel({ ctx }) {
               return (
                 <div key={ev.id} onClick={()=>{
                   const d = ev._alarmDate || ev.date;
-                  setSelectedDate(d); setView("day"); setShowNotifPanel(false);
+                  setSelectedDate(d); setCurrentMonth(Number(d.slice(5,7))-1); setCurrentYear(Number(d.slice(0,4))); setView("day"); setShowNotifPanel(false);
                 }}
                   style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#ffffff08",cursor:"pointer",border:"1px solid #3a2a00"}}>
                   <span style={{fontSize:14}}>{cat(ev.category).icon}</span>

@@ -1,14 +1,18 @@
 import { DAYS_ES, MONTHS_ES } from "./constants";
 import { fmt } from "./utils";
-import EventChip from "./EventChip";
 import Icon from "./Icon";
 
-// Calendario mensual. En celular cada día muestra hasta 3 puntos de color (uno por evento, color de su categoría);
-// en pantallas anchas se mantienen los chips con texto. El detalle se ve al tocar el día.
+// Calendario mensual: cada día muestra solo los íconos de sus eventos (sin texto ni horario).
+// Al tocar un día se elige esa fecha y el detalle aparece justo debajo del calendario (DayContent).
 const navBtn = {background:"var(--card2)",color:"var(--ga)",width:44,height:44,borderRadius:12,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"};
+const MAX_ICONS = 5;
 
 export default function CalendarContent({ ctx }) {
-  const { cat, currentMonth, currentYear, daysInMonth, eventsForDate, firstDay, nextMonth, prevMonth, selectedDate, setSelectedDate, setView, today } = ctx;
+  const { cat, currentMonth, currentYear, daysInMonth, eventsForDate, firstDay, nextMonth, prevMonth, selectedDate, setSelectedDate, today } = ctx;
+  function pick(dateStr){
+    setSelectedDate(dateStr);
+    setTimeout(()=>document.getElementById("day-detail")?.scrollIntoView({behavior:"smooth",block:"nearest"}), 50);
+  }
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
@@ -26,19 +30,18 @@ export default function CalendarContent({ ctx }) {
           const dateStr=`${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
           const dayEvs=eventsForDate(dateStr);
           const isToday=dateStr===fmt(today); const isSelected=dateStr===selectedDate;
+          const shown = dayEvs.length>MAX_ICONS ? dayEvs.slice(0,MAX_ICONS-1) : dayEvs;
+          const extra = dayEvs.length - shown.length;
+          const label = `${day} de ${MONTHS_ES[currentMonth]}${dayEvs.length?`, ${dayEvs.length} ${dayEvs.length===1?"evento":"eventos"}`:""}`;
           return (
-            <div key={day} className="day-cell" onClick={()=>{setSelectedDate(dateStr);setView("day");}}
-              style={{height:64,padding:"6px 3px",borderRadius:10,background:isSelected?"var(--card2)":"var(--card)",border:isSelected?"1px solid var(--border3)":"1px solid var(--card2)",overflow:"hidden",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-              <div style={{width:26,height:26,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:isToday?700:500,background:isToday?"#FF6B6B":"transparent",color:isToday?"#1A0B0B":"var(--text)",flexShrink:0}}>{day}</div>
-              <div className="cal-dots" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,minHeight:8}}>
-                {dayEvs.slice(0,3).map(ev=><span key={ev.id} style={{width:8,height:8,borderRadius:"50%",background:cat(ev.category).color,flexShrink:0}}/>)}
-                {dayEvs.length>3&&<span style={{fontSize:12,color:"var(--g8)",lineHeight:1}}>+{dayEvs.length-3}</span>}
-              </div>
-              <div className="cal-chips" style={{width:"100%"}}>
-                {dayEvs.slice(0,2).map(ev=><EventChip ctx={ctx} key={ev.id} ev={ev} dateStr={dateStr}/>)}
-                {dayEvs.length>2&&<div style={{fontSize:8,color:"var(--g5)"}}>+{dayEvs.length-2}</div>}
-              </div>
-            </div>
+            <button key={day} type="button" className="day-cell" onClick={()=>pick(dateStr)} aria-label={label} aria-pressed={isSelected}
+              style={{height:76,padding:"6px 3px",borderRadius:10,font:"inherit",color:"inherit",background:isSelected?"var(--card2)":"var(--card)",border:isSelected?"1.5px solid var(--g8)":"1px solid var(--card2)",overflow:"hidden",display:"flex",flexDirection:"column",alignItems:"center",gap:4,cursor:"pointer"}}>
+              <span style={{width:26,height:26,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:isToday?700:500,background:isToday?"#FF6B6B":"transparent",color:isToday?"#1A0B0B":"var(--text)",flexShrink:0}}>{day}</span>
+              <span style={{display:"flex",flexWrap:"wrap",justifyContent:"center",alignContent:"flex-start",gap:1,fontSize:12,lineHeight:"15px",width:"100%"}}>
+                {shown.map(ev=><span key={ev.id}>{cat(ev.category).icon}</span>)}
+                {extra>0&&<span style={{fontSize:12,color:"var(--g8)",fontWeight:600}}>+{extra}</span>}
+              </span>
+            </button>
           );
         })}
       </div>

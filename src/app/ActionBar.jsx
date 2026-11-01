@@ -3,12 +3,12 @@
 const open = name => () => document.dispatchEvent(new CustomEvent(name));
 
 export default function ActionBar({ ctx }) {
-  const { mainTab, openNew, view } = ctx;
+  const { mainTab, openNew } = ctx;
   let action = null;
   if (mainTab==="expenses") action = ["Nuevo gasto", open("openExpenseModal")];
   else if (mainTab==="lists") action = ["Nuevo listado", open("openListModal")];
   else if (mainTab==="notes") action = ["Nueva nota", open("openNoteModal")];
-  else if (mainTab==="agenda" && view==="calendar") action = ["Nuevo evento", () => openNew(null)];
+  else if (mainTab==="agenda") action = ["Nuevo evento", () => openNew(null)];
   if (!action) return null;
   const [label, onClick] = action;
   return (

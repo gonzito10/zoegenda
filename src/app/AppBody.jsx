@@ -1,4 +1,3 @@
-import Icon from "./Icon";
 import Filters from "./Filters";
 import CalendarContent from "./CalendarContent";
 import DayContent from "./DayContent";
@@ -8,7 +7,7 @@ import Notes from "../Notes";
 import HomeContent from "./HomeContent";
 
 export default function AppBody({ ctx }) {
-  const { activeGroup, authUser, groupMembers, mainTab, setView, view } = ctx;
+  const { activeGroup, authUser, groupMembers, mainTab } = ctx;
   return (
     <>
       {mainTab==="home" ? (
@@ -28,26 +27,15 @@ export default function AppBody({ ctx }) {
           <Notes groupId={activeGroup?.id} currentUserId={authUser?.id}/>
         </div>
       ) : (
-        /* ── AGENDA: solo calendario + día ── */
-        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          {view==="day" ? (
-            <div style={{flex:1,overflowY:"auto",padding:"16px 16px 24px"}}>
-              {/* Back button */}
-              <button onClick={()=>setView("calendar")}
-                style={{display:"flex",alignItems:"center",gap:6,background:"transparent",border:"none",color:"var(--g6)",fontSize:13,cursor:"pointer",marginBottom:12,padding:0}}>
-                <Icon name="chevronLeft" size={16}/> Volver al calendario
-              </button>
-              <DayContent ctx={ctx} ctx={ctx}/>
-            </div>
-          ) : (
-            <div style={{flex:1,overflowY:"auto",padding:"12px 12px 24px"}}>
-              {/* Filtros compactos */}
-              <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10,alignItems:"center"}}>
-                <Filters ctx={ctx} ctx={ctx}/>
-              </div>
-              <CalendarContent ctx={ctx} ctx={ctx}/>
-            </div>
-          )}
+        /* ── AGENDA: calendario con el detalle del día justo debajo ── */
+        <div style={{flex:1,overflowY:"auto",padding:"12px 12px 24px"}}>
+          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10,alignItems:"center"}}>
+            <Filters ctx={ctx}/>
+          </div>
+          <CalendarContent ctx={ctx}/>
+          <div id="day-detail" style={{marginTop:16,paddingTop:16,borderTop:"1px solid var(--border)"}}>
+            <DayContent ctx={ctx}/>
+          </div>
         </div>
       )}
     </>

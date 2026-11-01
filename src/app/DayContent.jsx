@@ -1,19 +1,22 @@
 import { DAYS_FULL, MONTHS_ES } from "./constants";
 import { fmt, parse } from "./utils";
+import Icon from "./Icon";
 
 export default function DayContent({ ctx }) {
-  const { cat, member, openEdit, openNew, selectedDate, selectedDayEvents, setSelectedDate } = ctx;
+  const { cat, member, openEdit, openNew, selectedDate, selectedDayEvents, setCurrentMonth, setCurrentYear, setSelectedDate } = ctx;
+  const arrow = {background:"var(--card2)",color:"var(--ga)",width:44,height:44,borderRadius:12,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"};
+  const go = n => { const d=parse(selectedDate); d.setDate(d.getDate()+n); setSelectedDate(fmt(d)); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); };
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-        <button onClick={()=>{const d=parse(selectedDate);d.setDate(d.getDate()-1);setSelectedDate(fmt(d));}} style={{background:"var(--card2)",color:"var(--ga)",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>‹</button>
+        <button onClick={()=>go(-1)} aria-label="Día anterior" style={arrow}><Icon name="chevronLeft" size={20}/></button>
         <div style={{flex:1,textAlign:"center"}}>
           <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)"}}>{parse(selectedDate).getDate()} de {MONTHS_ES[parse(selectedDate).getMonth()]}</div>
           <div style={{fontSize:12,color:"var(--g5)"}}>{DAYS_FULL[parse(selectedDate).getDay()]}</div>
         </div>
-        <button onClick={()=>{const d=parse(selectedDate);d.setDate(d.getDate()+1);setSelectedDate(fmt(d));}} style={{background:"var(--card2)",color:"var(--ga)",padding:"5px 11px",borderRadius:8,fontSize:16,border:"none"}}>›</button>
+        <button onClick={()=>go(1)} aria-label="Día siguiente" style={arrow}><Icon name="chevronRight" size={20}/></button>
       </div>
-      {selectedDayEvents.length===0&&<div style={{textAlign:"center",color:"var(--g4)",padding:"50px 0",fontSize:14}}>Sin eventos<div style={{marginTop:14}}><button onClick={()=>openNew(selectedDate)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"7px 18px",cursor:"pointer",fontSize:12}}>+ Agregar</button></div></div>}
+      {selectedDayEvents.length===0&&<div style={{textAlign:"center",color:"var(--g4)",padding:"20px 0",fontSize:14}}>Sin eventos<div style={{marginTop:14}}><button onClick={()=>openNew(selectedDate)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"7px 18px",cursor:"pointer",fontSize:12}}>+ Agregar</button></div></div>}
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {selectedDayEvents.map(ev=>(
           <div key={ev.id} onClick={()=>openEdit(ev)} style={{background:"var(--card)",borderRadius:12,padding:"12px 16px",cursor:"pointer",border:"1px solid var(--border)",borderLeft:`4px solid ${cat(ev.category).color}`}}>
