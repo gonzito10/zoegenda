@@ -116,7 +116,10 @@ export default function Lists({ groupId, currentUserId }) {
     loadLists(groupId).then(async ls => {
       const withDefault = await ensureShoppingList(groupId, currentUserId, ls);
       setLists(withDefault);
-      if (withDefault.length > 0) setActiveList(withDefault[0].id);
+      const nav = window.__zgNav;
+      const target = nav?.type === "list" ? withDefault.find(x => x.id === nav.id) : null;
+      if (target) window.__zgNav = null;
+      if (withDefault.length > 0) setActiveList((target || withDefault[0]).id);
       setLoading(false);
     });
     const sub = supabase.channel(`lists-${groupId}`)
@@ -129,7 +132,9 @@ export default function Lists({ groupId, currentUserId }) {
         if (activeRef.current) loadItems(activeRef.current).then(setItems);
       })
       .subscribe();
-    return () => supabase.removeChannel(sub);
+    const nav = e => { if (e.detail?.type === "list") { setLists(ls => { if (ls.some(x => x.id === e.detail.id)) { window.__zgNav = null; setActiveList(e.detail.id); } return ls; }); } };
+    document.addEventListener("zgNavigate", nav);
+    return () => { supabase.removeChannel(sub); document.removeEventListener("zgNavigate", nav); };
   // eslint-disable-next-line
   }, [groupId]);
 

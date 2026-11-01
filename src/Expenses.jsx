@@ -57,6 +57,10 @@ async function loadRecurring(groupId){
   const { data } = await supabase.from("recurring_expenses").select("*").eq("group_id", groupId).order("created_at");
   return data || [];
 }
+async function loadBudgets(groupId){
+  const { data } = await supabase.from("category_budgets").select("*").eq("group_id", groupId);
+  return data || [];
+}
 async function loadSettlements(groupId){
   const { data } = await supabase.from("settlements").select("*").eq("group_id", groupId).order("date", { ascending:false });
   return data || [];
@@ -186,6 +190,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
   const [tags,         setTags]         = useState([]);
   const [tagRelations, setTagRelations] = useState([]); // [{expense_id, tag_id}]
   const [recurring,    setRecurring]    = useState([]);
+  const [budgets,      setBudgets]      = useState([]);
   const [subTab,       setSubTab]       = useState("balance");
   const [selMonth,     setSelMonth]     = useState(null);
   const [showModal,    setShowModal]    = useState(false);
@@ -194,6 +199,15 @@ export default function Expenses({ groupId, members, currentUserId }) {
 
   const today = new Date();
   const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}`;
+
+  // Navegación desde el buscador general
+  useEffect(() => {
+    const apply = d => { if (d?.type === "expense" && d.date) { window.__zgNav = null; setSubTab("history"); setSelMonth(d.date.slice(0,7)); } };
+    apply(window.__zgNav);
+    const h = ev => apply(ev.detail);
+    document.addEventListener("zgNavigate", h);
+    return () => document.removeEventListener("zgNavigate", h);
+  }, []);
 
   // Listen for FAB click from parent
   useEffect(() => {
@@ -206,8 +220,9 @@ export default function Expenses({ groupId, members, currentUserId }) {
   useEffect(() => {
     if(!groupId) return;
     setLoading(true);
-    Promise.all([loadExpenses(groupId), loadCustomCats(groupId), loadSettlements(groupId), loadTags(groupId), loadTagRelations(groupId), loadRecurring(groupId)])
-      .then(([exps, cats, setts, tgs, rels, recs]) => {
+    Promise.all([loadExpenses(groupId), loadCustomCats(groupId), loadSettlements(groupId), loadTags(groupId), loadTagRelations(groupId), loadRecurring(groupId), loadBudgets(groupId)])
+      .then(([exps, cats, setts, tgs, rels, recs, buds]) => {
+        setBudgets(buds);
         setRecurring(recs);
         setExpenses(exps);
         setCustomCats(cats);
@@ -225,6 +240,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
     const sub = supabase.channel(`expenses-${groupId}`)
       .on("postgres_changes", { event:"*", schema:"public", table:"expenses",    filter:`group_id=eq.${groupId}` }, () => loadExpenses(groupId).then(setExpenses))
       .on("postgres_changes", { event:"*", schema:"public", table:"settlements", filter:`group_id=eq.${groupId}` }, () => loadSettlements(groupId).then(setSettlements))
+      .on("postgres_changes", { event:"*", schema:"public", table:"category_budgets", filter:`group_id=eq.${groupId}` }, () => loadBudgets(groupId).then(setBudgets))
       .on("postgres_changes", { event:"*", schema:"public", table:"recurring_expenses", filter:`group_id=eq.${groupId}` }, () => loadRecurring(groupId).then(setRecurring))
       .on("postgres_changes", { event:"*", schema:"public", table:"expense_tags", filter:`group_id=eq.${groupId}` }, () => loadTags(groupId).then(setTags))
       .on("postgres_changes", { event:"*", schema:"public", table:"expense_tag_relations" }, () => loadTagRelations(groupId).then(setTagRelations))
@@ -245,6 +261,18 @@ export default function Expenses({ groupId, members, currentUserId }) {
     ...DEFAULT_CATS,
     ...customCats.map(c => ({ id:c.id, label:c.label, icon:c.icon, color:c.color }))
   ], [customCats]);
+
+  // Gasto del mes actual por categoría + estado de presupuesto
+  const monthSpend = useMemo(() => {
+    const m = {};
+    expenses.forEach(e => { if (e.date.slice(0,7) === currentMonthKey) m[e.category] = (m[e.category]||0) + e.amount; });
+    return m;
+  }, [expenses, currentMonthKey]);
+  const budgetRows = useMemo(() => budgets.map(b => {
+    const spent = monthSpend[b.category] || 0;
+    return { ...b, spent, pct: spent / b.amount * 100 };
+  }).sort((a,b) => b.pct - a.pct), [budgets, monthSpend]);
+  const budgetColor = pct => pct >= 100 ? "#FF6B6B" : pct >= 80 ? "#FFB347" : "#96CEB4";
 
   function getCat(id){ return allCats.find(c=>c.id===id) || { label:id, icon:"📌", color:"var(--g8)" }; }
   function getMember(id){ return members.find(m=>m.id===id) || { display_name:"?", color:"var(--g8)", avatar:"?" }; }
@@ -324,6 +352,16 @@ export default function Expenses({ groupId, members, currentUserId }) {
       <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 14px",marginBottom:12,fontSize:11,color:"var(--g5)",display:"flex",alignItems:"center",gap:6}}>
         <span>📊</span> Balance acumulado histórico — incluye todos los meses
       </div>
+      {budgetRows.filter(b=>b.pct>=80).map(b=>{
+        const c = getCat(b.category);
+        return (
+          <div key={b.id} onClick={()=>setSubTab("budget")}
+            style={{background:budgetColor(b.pct)+"18",border:`1px solid ${budgetColor(b.pct)}55`,borderRadius:10,padding:"9px 13px",marginBottom:8,fontSize:12,display:"flex",alignItems:"center",gap:8,cursor:"pointer",color:budgetColor(b.pct)}}>
+            <span>{b.pct>=100?"🚨":"⚠️"}</span>
+            <span style={{flex:1}}><strong>{c.icon} {c.label}</strong>: {b.pct>=100?`superaste el presupuesto (${fmtMoney(b.spent)} de ${fmtMoney(b.amount)})`:`vas por el ${Math.round(b.pct)}% del presupuesto del mes`}</span>
+          </div>
+        );
+      })}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
         {members.map(m=>{
           const b = balance[m.id] || 0;
@@ -744,6 +782,68 @@ export default function Expenses({ groupId, members, currentUserId }) {
     );
   };
 
+  // ── Presupuesto ───────────────────────────────────────────────────────
+  const BudgetTab = () => {
+    const [cat, setCat] = useState("");
+    const [amt, setAmt] = useState("");
+    const [editId, setEditId] = useState(null);
+    const free = allCats.filter(c => !budgets.some(b => b.category === c.id));
+    async function addBudget(){
+      const amount = parseFloat(String(amt).replace(",", "."));
+      if(!cat || !(amount>0)) return;
+      await supabase.from("category_budgets").upsert({ group_id: groupId, category: cat, amount }, { onConflict: "group_id,category" });
+      setBudgets(await loadBudgets(groupId)); setCat(""); setAmt(""); setEditId(null);
+    }
+    async function removeBudget(b){
+      if(!window.confirm("¿Quitar el presupuesto de esta categoría?")) return;
+      await supabase.from("category_budgets").delete().eq("id", b.id);
+      setBudgets(await loadBudgets(groupId));
+    }
+    return (
+      <div>
+        <div style={{fontSize:11,color:"var(--g5)",lineHeight:1.5,marginBottom:12}}>
+          Límite mensual por categoría ({monthLabel(currentMonthKey)}). Te avisamos al llegar al 80% y al superarlo.
+        </div>
+        {budgetRows.length === 0 && (
+          <div style={{textAlign:"center",color:"var(--g4)",padding:"24px 10px",fontSize:13}}>Todavía no definiste presupuestos.</div>
+        )}
+        {budgetRows.map(b=>{
+          const c = getCat(b.category); const col = budgetColor(b.pct);
+          return (
+            <div key={b.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:"11px 13px",marginBottom:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <span style={{fontSize:18}}>{c.icon}</span>
+                <span style={{flex:1,fontSize:13,fontWeight:600}}>{c.label}</span>
+                <span style={{fontSize:12,fontWeight:700,color:col}}>{Math.round(b.pct)}%</span>
+                <button onClick={()=>{setEditId(b.id);setCat(b.category);setAmt(String(b.amount));}} style={{background:"transparent",border:"none",color:"var(--g8)",fontSize:14,cursor:"pointer",padding:"2px 5px"}}>✎</button>
+                <button onClick={()=>removeBudget(b)} style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:14,cursor:"pointer",padding:"2px 5px"}}>🗑</button>
+              </div>
+              <div style={{height:8,borderRadius:6,background:"var(--border)",overflow:"hidden"}}>
+                <div style={{width:`${Math.min(100,b.pct)}%`,height:"100%",background:col,borderRadius:6,transition:"width .3s"}}/>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--g5)",marginTop:6}}>
+                <span>Gastado {fmtMoney(b.spent)}</span>
+                <span>{b.spent<=b.amount?`Quedan ${fmtMoney(b.amount-b.spent)}`:`Excedido ${fmtMoney(b.spent-b.amount)}`} · Límite {fmtMoney(b.amount)}</span>
+              </div>
+            </div>
+          );
+        })}
+        <div style={{background:"var(--card)",border:"1px dashed var(--border2)",borderRadius:12,padding:12,marginTop:12}}>
+          <div style={{fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>{editId?"Editar límite":"Nuevo límite mensual"}</div>
+          <div style={{display:"flex",gap:8}}>
+            <select value={cat} onChange={e=>setCat(e.target.value)} disabled={!!editId} style={{...inp,flex:2,cursor:"pointer"}}>
+              <option value="">Categoría…</option>
+              {(editId ? allCats : free).map(c=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+            </select>
+            <input value={amt} onChange={e=>setAmt(e.target.value)} inputMode="decimal" placeholder="Monto" style={{...inp,flex:1.3}}/>
+            <button onClick={addBudget} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"0 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}>OK</button>
+          </div>
+          {editId && <button onClick={()=>{setEditId(null);setCat("");setAmt("");}} style={{marginTop:8,background:"transparent",border:"none",color:"var(--g6)",fontSize:11,cursor:"pointer"}}>Cancelar edición</button>}
+        </div>
+      </div>
+    );
+  };
+
   // ── Expense Modal ──────────────────────────────────────────────────────
   const ExpenseModal = () => {
     const isNew = !editExp?.id;
@@ -950,6 +1050,12 @@ export default function Expenses({ groupId, members, currentUserId }) {
                 </div>
               </div>
 
+              {(()=>{ const br = budgetRows.find(b=>b.category===form.category); if(!br) return null;
+                const extra = parseFloat(form.amount)||0; const after = (br.spent + (isNew?extra:0)) / br.amount * 100; const col = budgetColor(after);
+                return <div style={{marginTop:8,fontSize:11,color:col,background:col+"15",border:`1px solid ${col}44`,borderRadius:8,padding:"6px 10px"}}>
+                  🎯 Presupuesto del mes: {fmtMoney(br.spent)}{isNew&&extra>0?` + ${fmtMoney(extra)}`:""} de {fmtMoney(br.amount)} ({Math.round(after)}%)
+                </div>; })()}
+
               {/* Add custom category */}
               {showAddCat && (
                 <div style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:12,padding:12,marginTop:8,display:"flex",flexDirection:"column",gap:10}}>
@@ -1057,7 +1163,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
     <div style={{paddingBottom:80}}>
       {/* Sub tabs */}
       <div style={{display:"flex",gap:4,marginBottom:14}}>
-        {[["balance","⚖️ Balance"],["history","📋 Historial"],["stats","📊 Estadísticas"],["recurring","🔁 Recurrentes"]].map(([v,l])=>(
+        {[["balance","⚖️ Balance"],["history","📋 Historial"],["stats","📊 Estadísticas"],["recurring","🔁 Recurrentes"],["budget","🎯 Presupuesto"]].map(([v,l])=>(
           <button key={v} onClick={()=>setSubTab(v)}
             style={{padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:600,border:`1px solid ${subTab===v?"var(--border2)":"transparent"}`,background:subTab===v?"var(--border)":"transparent",color:subTab===v?"var(--title)":"var(--g5)",cursor:"pointer"}}>
             {l}
@@ -1069,6 +1175,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
       {subTab==="history" && <HistoryTab/>}
       {subTab==="stats"   && <StatsTab/>}
       {subTab==="recurring" && <RecurringTab/>}
+      {subTab==="budget" && <BudgetTab/>}
 
       {showModal && <ExpenseModal/>}
     </div>

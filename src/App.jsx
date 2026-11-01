@@ -4,6 +4,7 @@ import { supabase } from "./supabase";
 import Expenses from "./Expenses";
 import Lists from "./Lists";
 import Notes from "./Notes";
+import Search from "./Search";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const COLORS = ["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#98D8C8","#F7DC6F","#FFB347","#87CEEB"];
@@ -261,6 +262,21 @@ export default function App() {
   const [pushState, setPushState] = useState("off"); // on | off | denied | unsupported
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMsg, setPushMsg] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  function goTo(type, p) {
+    setShowSearch(false);
+    if (type === "event") {
+      if (!p.date) return;
+      const d = parse(p.date);
+      setSelectedDate(p.date); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear());
+      setMainTab("agenda"); setView("day"); return;
+    }
+    const tab = type === "expense" ? "expenses" : type === "list" ? "lists" : "notes";
+    const detail = { type, ...p };
+    window.__zgNav = detail;
+    setMainTab(tab);
+    setTimeout(() => document.dispatchEvent(new CustomEvent("zgNavigate", { detail })), 80);
+  }
 
   const [systemLight, setSystemLight] = useState(()=>{ try{ return window.matchMedia("(prefers-color-scheme: light)").matches; }catch(e){ return false; } });
   useEffect(()=>{
@@ -953,6 +969,7 @@ export default function App() {
           <div style={{width:22,height:22,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff"}}>{profile?.avatar}</div>
           <span style={{fontSize:11,color:"#ccc",fontWeight:500,maxWidth:55,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.display_name}</span>
         </div>
+          <button onClick={()=>setShowSearch(true)} title="Buscar" style={{background:"transparent",border:"1px solid var(--border2)",borderRadius:8,width:30,height:30,fontSize:14,cursor:"pointer",color:"var(--ga)",flexShrink:0}}>🔍</button>
         {notifications.length>0&&(
           <button onClick={()=>{setMainTab("agenda");setView("agenda");setShowNotifPanel(p=>!p);setShowGroupPanel(false);}} style={{position:"relative",background:showNotifPanel?"#FFB34722":"transparent",border:`1px solid ${showNotifPanel?"#FFB34744":"var(--border2)"}`,borderRadius:9,padding:"7px 10px",fontSize:15,flexShrink:0,cursor:"pointer"}}>
             🔔
@@ -1032,6 +1049,7 @@ export default function App() {
       )}
 
       {/* ── NOTIFICATION PANEL — solo en sección agenda ── */}
+      {showSearch && <Search groupId={activeGroup?.id} events={events} onGo={goTo} onClose={()=>setShowSearch(false)}/>}
       {showNotifPanel&&notifications.length>0&&mainTab==="agenda"&&(
         <div className="panel-anim" style={{background:"#1a1200",borderBottom:"1px solid #3a2a00",padding:"12px 16px",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
