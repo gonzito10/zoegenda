@@ -282,15 +282,23 @@ export default function Expenses({ groupId, members, currentUserId }) {
 
   // ── settle debt ────────────────────────────────────────────────────────
   async function handleSettle(debt){
+    const from = getMember(debt.from), to = getMember(debt.to);
+    if(!window.confirm(`¿Registrar que ${from.display_name} le pagó ${fmtMoney(debt.amount)} a ${to.display_name}? El balance quedará en cero.`)) return;
     await saveSettlement({
       group_id: groupId,
       from_user: debt.from,
       to_user: debt.to,
       amount: debt.amount,
-      date: new Date().toISOString().slice(0,10),
+      date: localToday(),
     });
     const setts = await loadSettlements(groupId);
     setSettlements(setts);
+  }
+  async function handleDeleteSettlement(st){
+    const from = getMember(st.from_user), to = getMember(st.to_user);
+    if(!window.confirm(`¿Eliminar el pago de ${fmtMoney(st.amount)} de ${from.display_name} a ${to.display_name}? La deuda volverá a aparecer.`)) return;
+    await supabase.from("settlements").delete().eq("id", st.id);
+    setSettlements(await loadSettlements(groupId));
   }
 
   // ── Month selector ─────────────────────────────────────────────────────
@@ -350,7 +358,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
               <div style={{fontSize:13,fontWeight:700,color:"#FF6B6B",marginRight:8}}>{fmtMoney(d.amount)}</div>
               <button onClick={()=>handleSettle(d)}
                 style={{background:"#96CEB422",color:"#96CEB4",border:"1px solid #96CEB444",borderRadius:7,padding:"4px 10px",fontSize:11,fontWeight:600,whiteSpace:"nowrap"}}>
-                ✓ Pagar
+                ✓ Saldar
               </button>
             </div>
           );
@@ -360,6 +368,27 @@ export default function Expenses({ groupId, members, currentUserId }) {
       {debts.length === 0 && monthTotal > 0 && (
         <div style={{textAlign:"center",color:"#96CEB4",padding:"20px 0",fontSize:13}}>✓ Todo al día</div>
       )}
+
+
+      {/* Historial de pagos */}
+      {settlements.length > 0 && <>
+        <div style={{fontSize:10,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"20px 0 8px"}}>Historial de pagos</div>
+        {[...settlements].sort((a,b)=> b.date.localeCompare(a.date) || String(b.created_at||"").localeCompare(String(a.created_at||""))).map(st=>{
+          const from = getMember(st.from_user), to = getMember(st.to_user);
+          return (
+            <div key={st.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",gap:10,marginBottom:5}}>
+              <div style={{width:24,height:24,borderRadius:"50%",background:from.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",flexShrink:0}}>{from.avatar}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12}}>{from.display_name} → <strong style={{color:to.color}}>{to.display_name}</strong></div>
+                <div style={{fontSize:10,color:"var(--g5)",marginTop:1}}>📅 {fmtDay(st.date)}</div>
+              </div>
+              <div style={{fontSize:13,fontWeight:700,color:"#96CEB4"}}>{fmtMoney(st.amount)}</div>
+              <button onClick={()=>handleDeleteSettlement(st)} title="Eliminar pago"
+                style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:14,cursor:"pointer",padding:"4px 6px"}}>🗑</button>
+            </div>
+          );
+        })}
+      </>}
 
       {/* Active installments this month */}
       {monthExpenses.filter(e=>e.installments>1).length > 0 && <>
