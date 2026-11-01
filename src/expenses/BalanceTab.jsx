@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { fmtMoney, fmtDay } from "./helpers";
 
 export default function BalanceTab({ ctx }) {
-  const { balance, budgetColor, budgetRows, debts, expenses, getCat, getMember, handleDeleteSettlement, handleSettle, members, monthExpenses, monthTotal, setSubTab, settlements } = ctx;
+  const { balance, budgetColor, budgetRows, currentMonthKey, debts, expenses, getCat, getMember, handleSettle, members, monthExpenses, monthTotal, recurring, setSubTab } = ctx;
   const totalHistorico = useMemo(() => expenses.reduce((s,e)=>s+e.amount,0), []);
   return (
   <div>
@@ -65,26 +65,6 @@ export default function BalanceTab({ ctx }) {
     )}
 
 
-    {/* Historial de pagos */}
-    {settlements.length > 0 && <>
-      <div style={{fontSize:10,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"20px 0 8px"}}>Historial de pagos</div>
-      {[...settlements].sort((a,b)=> b.date.localeCompare(a.date) || String(b.created_at||"").localeCompare(String(a.created_at||""))).map(st=>{
-        const from = getMember(st.from_user), to = getMember(st.to_user);
-        return (
-          <div key={st.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",gap:10,marginBottom:5}}>
-            <div style={{width:24,height:24,borderRadius:"50%",background:from.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",flexShrink:0}}>{from.avatar}</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12}}>{from.display_name} → <strong style={{color:to.color}}>{to.display_name}</strong></div>
-              <div style={{fontSize:10,color:"var(--g5)",marginTop:1}}>📅 {fmtDay(st.date)}</div>
-            </div>
-            <div style={{fontSize:13,fontWeight:700,color:"#96CEB4"}}>{fmtMoney(st.amount)}</div>
-            <button onClick={()=>handleDeleteSettlement(st)} title="Eliminar pago"
-              style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:14,cursor:"pointer",padding:"4px 6px"}}>🗑</button>
-          </div>
-        );
-      })}
-    </>}
-
     {/* Active installments this month */}
     {monthExpenses.filter(e=>e.installments>1).length > 0 && <>
       <div style={{fontSize:10,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>Cuotas activas</div>
@@ -103,6 +83,32 @@ export default function BalanceTab({ ctx }) {
             <div style={{textAlign:"right",flexShrink:0}}>
               <div style={{fontSize:14,fontWeight:700,color:"#DDA0DD"}}>{fmtMoney(e.amount)}</div>
               <div style={{fontSize:10,color:"var(--g5)"}}>÷{e.split_between?.length||1} = {fmtMoney(e.amount/(e.split_between?.length||1))} c/u</div>
+            </div>
+          </div>
+        );
+      })}
+    </>}
+    {/* Gastos recurrentes */}
+    {recurring.filter(r=>r.active).length > 0 && <>
+      <div style={{fontSize:10,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>Gastos recurrentes</div>
+      {recurring.filter(r=>r.active).map(r=>{
+        const c = getCat(r.category);
+        const loaded = expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey);
+        return (
+          <div key={r.id} onClick={()=>setSubTab("recurring")}
+            style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6,cursor:"pointer"}}>
+            <div style={{width:34,height:34,borderRadius:9,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.description}</div>
+              <div style={{fontSize:11,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                {getMember(r.paid_by).display_name}
+                <span style={{background:"#4ECDC422",color:"#4ECDC4",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>🔁 Día {r.day_of_month}</span>
+                <span style={{background:loaded?"#96CEB422":"var(--card2)",color:loaded?"#96CEB4":"var(--g5)",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>{loaded?"✓ Cargado este mes":"Pendiente"}</span>
+              </div>
+            </div>
+            <div style={{textAlign:"right",flexShrink:0}}>
+              <div style={{fontSize:14,fontWeight:700,color:"#4ECDC4"}}>{fmtMoney(r.amount)}</div>
+              <div style={{fontSize:10,color:"var(--g5)"}}>÷{r.split_between?.length||1} = {fmtMoney(r.amount/(r.split_between?.length||1))} c/u</div>
             </div>
           </div>
         );

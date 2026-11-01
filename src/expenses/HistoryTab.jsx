@@ -2,17 +2,18 @@ import { fmtMoney, fmtDay, isVisibleInHistory } from "./helpers";
 import MonthSelect from "./MonthSelect";
 
 export default function HistoryTab({ ctx }) {
-  const { activeMonth, getCat, getMember, monthExpenses, setEditExp, setSelMonth, setShowModal, tagRelations, tags } = ctx;
+  const { activeMonth, getCat, getMember, handleDeleteSettlement, settlements, monthExpenses, setEditExp, setSelMonth, setShowModal, tagRelations, tags } = ctx;
   // Más reciente primero; las cuotas futuras se ocultan hasta que llegue su fecha
   const historyExpenses = monthExpenses
     .filter(isVisibleInHistory)
     .sort((a,b) => b.date.localeCompare(a.date) || (b.created_at||"").localeCompare(a.created_at||""));
+  const monthSettlements = settlements.filter(s=>s.date.slice(0,7)===activeMonth);
   const historyTotal = historyExpenses.reduce((sum,e)=>sum+e.amount,0);
   return (
   <div>
     <MonthSelect ctx={ctx} value={activeMonth} onChange={v=>setSelMonth(v==="all"?null:v)}/>
     {historyExpenses.length === 0
-      ? <div style={{textAlign:"center",color:"var(--g4)",padding:"50px 0",fontSize:14}}>No hay gastos este mes</div>
+      ? <div style={{textAlign:"center",color:"var(--g4)",padding:monthSettlements.length?"24px 0":"50px 0",fontSize:14}}>No hay gastos este mes</div>
       : <>
         <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",fontSize:12}}>
           <span style={{color:"var(--g5)"}}>Total del mes</span>
@@ -48,6 +49,25 @@ export default function HistoryTab({ ctx }) {
         })}
       </>
     }
+    {monthSettlements.length > 0 && <>
+      <div style={{fontSize:10,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"18px 0 8px"}}>Pagos</div>
+      {[...monthSettlements].sort((a,b)=> b.date.localeCompare(a.date) || String(b.created_at||"").localeCompare(String(a.created_at||""))).map(st=>{
+        const from = getMember(st.from_user), to = getMember(st.to_user);
+        return (
+          <div key={st.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",gap:10,marginBottom:5}}>
+            <div style={{width:24,height:24,borderRadius:"50%",background:from.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",flexShrink:0}}>{from.avatar}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12}}>{from.display_name} → <strong style={{color:to.color}}>{to.display_name}</strong></div>
+              <div style={{fontSize:10,color:"var(--g5)",marginTop:1}}>📅 {fmtDay(st.date)}</div>
+            </div>
+            <div style={{fontSize:13,fontWeight:700,color:"#96CEB4"}}>{fmtMoney(st.amount)}</div>
+            <button onClick={()=>handleDeleteSettlement(st)} title="Eliminar pago"
+              style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:14,cursor:"pointer",padding:"4px 6px"}}>🗑</button>
+          </div>
+        );
+      })}
+    </>}
+
   </div>
   );
 }
