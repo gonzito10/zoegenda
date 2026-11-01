@@ -156,3 +156,22 @@ export function calcDebts(balance, members) {
 }
 
 // ── Pie chart ──────────────────────────────────────────────────────────────
+
+// ── Historial por categoría (para decidir presupuestos) ──────────────────
+export function prevMonthKeys(currentKey, n){
+  const [y,m] = currentKey.split("-").map(Number);
+  const out = [];
+  for(let i=n;i>=1;i--){ const d = new Date(y, m-1-i, 1); out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`); }
+  return out;
+}
+// Últimos n meses COMPLETOS (sin el actual) desde el primer mes con datos; los meses sin gasto cuentan como 0
+export function categoryHistory(expenses, catId, currentKey, n){
+  const first = expenses.reduce((mn,e)=> (!mn || e.date<mn) ? e.date : mn, null)?.slice(0,7);
+  const keys = prevMonthKeys(currentKey, n).filter(k => !first || k >= first);
+  const totals = keys.map(k => ({ key:k, total: expenses.filter(e=>e.category===catId && e.date.slice(0,7)===k).reduce((s,e)=>s+e.amount,0) }));
+  const sum = totals.reduce((s,t)=>s+t.total,0);
+  const avg = totals.length ? sum/totals.length : 0;
+  let max = null, min = null;
+  totals.forEach(t => { if(!max || t.total>max.total) max=t; if(!min || t.total<min.total) min=t; });
+  return { totals, avg, max, min, months: totals.length };
+}
