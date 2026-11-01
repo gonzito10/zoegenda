@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import { isStandalone, isIOS } from "../push.js";
 import { THEMES, getTheme, themeBgStyle } from "./constants";
 
@@ -24,7 +25,7 @@ export default function ProfilePanel({ ctx }) {
           </div>
           {/* Avisos en el celular */}
           <div style={{marginBottom:14}}>
-            <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🔔 Avisos en este dispositivo</div>
+            <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}><Icon name="bell" size={14}/> Avisos en este dispositivo</div>
             {pushState==="unsupported" || (isIOS() && !isStandalone()) ? (
               <div style={{fontSize:12,color:"var(--g8)",lineHeight:1.5}}>
                 {isIOS() && !isStandalone()
@@ -44,7 +45,7 @@ export default function ProfilePanel({ ctx }) {
           </div>
           {/* Theme selector */}
           <div>
-            <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🎨 Tema personal</div>
+            <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}><Icon name="palette" size={14}/> Tema personal</div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {THEMES.map(t=>{
                 const active=themeId===t.id;

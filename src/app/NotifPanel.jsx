@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 
 export default function NotifPanel({ ctx }) {
   const { cat, mainTab, notifications, setSelectedDate, setShowNotifPanel, setView, showNotifPanel } = ctx;
@@ -7,7 +8,7 @@ export default function NotifPanel({ ctx }) {
         <div className="panel-anim" style={{background:"#1a1200",borderBottom:"1px solid #3a2a00",padding:"12px 16px",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
             <div style={{display:"flex",alignItems:"center",gap:7}}>
-              <span style={{fontSize:16}}>🔔</span>
+              <Icon name="bell" size={18}/>
               <span style={{fontSize:12,fontWeight:700,color:"#FFB347"}}>{notifications.length} alarma{notifications.length!==1?"s":""} próxima{notifications.length!==1?"s":""}</span>
             </div>
             <button onClick={()=>setShowNotifPanel(false)} style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:16,cursor:"pointer",lineHeight:1}}>×</button>

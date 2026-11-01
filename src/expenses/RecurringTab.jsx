@@ -1,3 +1,4 @@
+import Icon from "../app/Icon";
 import { useState } from "react";
 import { supabase } from "../supabase";
 import { inp, fmtMoney, loadRecurring } from "./helpers";
@@ -25,7 +26,7 @@ export default function RecurringTab({ ctx }) {
   }
   if(recurring.length===0) return (
     <div style={{textAlign:"center",color:"var(--g4)",padding:"40px 20px",fontSize:13,lineHeight:1.6}}>
-      Todavía no hay gastos recurrentes.<br/>Al crear un gasto, activá <b>🔁 Se repite todos los meses</b> y se cargará solo cada mes.
+      Todavía no hay gastos recurrentes.<br/>Al crear un gasto, activá <b><Icon name="repeat" size={14}/> Se repite todos los meses</b> y se cargará solo cada mes.
     </div>
   );
   return (
@@ -80,9 +81,9 @@ export default function RecurringTab({ ctx }) {
               <div style={{fontSize:15,fontWeight:700,fontFamily:"Fraunces,serif"}}>{fmtMoney(r.amount)}</div>
             </div>
             <div style={{display:"flex",gap:6,marginTop:9,justifyContent:"flex-end"}}>
-              <button onClick={()=>startEdit(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}>✎ Editar</button>
-              <button onClick={()=>toggleActive(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}>{r.active?"⏸ Pausar":"▶ Reanudar"}</button>
-              <button onClick={()=>removeRule(r)} style={{background:"#FF6B6B11",color:"#FF6B6B",border:"1px solid #FF6B6B33",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}>🗑 Eliminar</button>
+              <button onClick={()=>startEdit(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}><Icon name="edit" size={14}/> Editar</button>
+              <button onClick={()=>toggleActive(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}>{r.active?<><Icon name="pause" size={14}/> Pausar</>:<><Icon name="play" size={14}/> Reanudar</>}</button>
+              <button onClick={()=>removeRule(r)} style={{background:"#FF6B6B11",color:"#FF6B6B",border:"1px solid #FF6B6B33",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}><Icon name="trash" size={14}/> Eliminar</button>
             </div>
           </div>
         );

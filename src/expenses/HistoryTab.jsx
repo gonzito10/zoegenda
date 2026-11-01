@@ -1,3 +1,4 @@
+import Icon from "../app/Icon";
 import { fmtMoney, fmtDay, isVisibleInHistory } from "./helpers";
 import MonthSelect from "./MonthSelect";
 
@@ -30,13 +31,13 @@ export default function HistoryTab({ ctx }) {
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textDecoration:e.settled?"line-through":"none"}}>{e.description}</div>
                 <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
-                  <span style={{color:"#8a8a9a",fontWeight:600}}>📅 {fmtDay(e.date)}</span> · {payer.display_name} · {c.label}
+                  <span style={{color:"#8a8a9a",fontWeight:600}}><Icon name="calendar" size={13}/> {fmtDay(e.date)}</span> · {payer.display_name} · {c.label}
                   {e.installments>1&&<span style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>}
-                  {e.recurring_id&&<span style={{background:"#4ECDC422",color:"#4ECDC4",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>🔁 Mensual</span>}
+                  {e.recurring_id&&<span style={{background:"#4ECDC422",color:"#4ECDC4",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}><Icon name="repeat" size={12}/> Mensual</span>}
                   {e.settled&&<span style={{background:"#96CEB422",color:"#96CEB4",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>✓ Liquidado</span>}
                   {tagRelations.filter(r=>r.expense_id===e.id).map(r=>{
                     const tag = tags.find(t=>t.id===r.tag_id);
-                    return tag ? <span key={r.tag_id} style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:12}}>🏷 {tag.name}</span> : null;
+                    return tag ? <span key={r.tag_id} style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:12}}><Icon name="tag" size={12}/> {tag.name}</span> : null;
                   })}
                 </div>
               </div>
@@ -58,11 +59,11 @@ export default function HistoryTab({ ctx }) {
             <div style={{width:24,height:24,borderRadius:"50%",background:from.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",flexShrink:0}}>{from.avatar}</div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12}}>{from.display_name} → <strong style={{color:to.color}}>{to.display_name}</strong></div>
-              <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>📅 {fmtDay(st.date)}</div>
+              <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}><Icon name="calendar" size={13}/> {fmtDay(st.date)}</div>
             </div>
             <div style={{fontSize:13,fontWeight:700,color:"#96CEB4"}}>{fmtMoney(st.amount)}</div>
             <button onClick={()=>handleDeleteSettlement(st)} title="Eliminar pago"
-              style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:14,cursor:"pointer",padding:"4px 6px"}}>🗑</button>
+              style={{background:"transparent",border:"none",color:"var(--g6)",cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Eliminar pago"><Icon name="trash" size={17}/></button>
           </div>
         );
       })}

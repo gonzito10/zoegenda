@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import { CATEGORIES, DAYS_ES } from "./constants";
 import { inp, lbl } from "./styles";
 
@@ -95,7 +96,7 @@ export default function EventModal({ ctx }) {
               {/* Alarma — desactivada por defecto en rutinarios */}
               {editingEvent.category!=="birthday"&&(
                 <div style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"10px 13px"}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"var(--text)",marginBottom:7,display:"flex",alignItems:"center",gap:6}}>🔔 Alarma <span style={{fontSize:12,color:"var(--g4)",fontWeight:400}}>{editingEvent.recurring?"(desactivada por defecto en rutinarios)":""}</span></div>
+                  <div style={{fontSize:12,fontWeight:600,color:"var(--text)",marginBottom:7,display:"flex",alignItems:"center",gap:6}}><Icon name="bell" size={14}/> Alarma <span style={{fontSize:12,color:"var(--g4)",fontWeight:400}}>{editingEvent.recurring?"(desactivada por defecto en rutinarios)":""}</span></div>
                   <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                     {[["","Sin alarma"],["1","1 día antes"],["2","2 días antes"],["7","1 semana antes"]].map(([v,l])=>(
                       <div key={v} onClick={()=>setEditingEvent(ev=>({...ev,alarmDays:v}))}

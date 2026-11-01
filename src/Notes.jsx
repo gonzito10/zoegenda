@@ -1,3 +1,4 @@
+import Icon from "./app/Icon";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
 
@@ -174,7 +175,7 @@ export default function Notes({ groupId, currentUserId }) {
     <div>
       {notes.length === 0 && (
         <div style={{textAlign:"center",color:"var(--g4)",padding:"60px 20px"}}>
-          <div style={{fontSize:32,marginBottom:12}}>📓</div>
+          <div style={{marginBottom:12,color:"var(--g5)",display:"flex",justifyContent:"center"}}><Icon name="note" size={36}/></div>
           <div style={{marginBottom:8,fontSize:14}}>No hay notas todavía</div>
           <div style={{fontSize:12,color:"var(--g3)",marginBottom:20}}>Tocá + para crear la primera</div>
         </div>
@@ -188,7 +189,7 @@ export default function Notes({ groupId, currentUserId }) {
           return (
             <div key={n.id} onClick={()=>selectNote(n)}
               style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:on?col+"22":"var(--card2)",color:on?col:"var(--g5)",border:`1px solid ${on?col+"66":(n.color?col+"33":"var(--border2)")}`,display:"flex",alignItems:"center",gap:5}}>
-              {n.pinned && <span style={{fontSize:12}}>📌</span>}
+              {n.pinned && <span style={{display:"flex",color:"var(--warn)"}}><Icon name="pin" size={13}/></span>}
               {n.color && !on && <span style={{width:7,height:7,borderRadius:"50%",background:col}}/>}
               {n.title}
               {left !== null && <span style={{fontSize:12,opacity:.7}}>☑ {left}</span>}
@@ -211,7 +212,7 @@ export default function Notes({ groupId, currentUserId }) {
             ) : (
               <div onClick={()=>{setTitleDraft(currentNote.title);setEditingTitle(true);}}
                 style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"var(--title)",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                {currentNote.title} <span style={{fontSize:12,color:"var(--g3)"}}>✎</span>
+                {currentNote.title} <span style={{color:"var(--g5)"}}><Icon name="edit" size={13}/></span>
               </div>
             )}
             <div style={{fontSize:12,color:"var(--g4)",marginTop:2}}>
@@ -220,9 +221,9 @@ export default function Notes({ groupId, currentUserId }) {
             </div>
           </div>
           <button onClick={()=>patchNote({pinned:!currentNote.pinned})} title={currentNote.pinned?"Quitar fijado":"Fijar nota"}
-            style={{background:currentNote.pinned?"#FFB34722":"transparent",border:`1px solid ${currentNote.pinned?"#FFB34755":"var(--border2)"}`,color:currentNote.pinned?"#FFB347":"var(--g8)",borderRadius:8,fontSize:13,cursor:"pointer",padding:"6px 9px",flexShrink:0,marginLeft:8}}>📌</button>
+            style={{background:currentNote.pinned?"#FFB34722":"transparent",border:`1px solid ${currentNote.pinned?"#FFB34755":"var(--border2)"}`,color:currentNote.pinned?"#FFB347":"var(--g8)",borderRadius:8,cursor:"pointer",padding:"8px 10px",flexShrink:0,marginLeft:8,display:"flex"}}><Icon name="pin" size={17}/></button>
           <button onClick={()=>setShowDelete(currentNote.id)}
-            title="Eliminar nota" style={{background:"#FF6B6B11",border:"1px solid #FF6B6B33",color:"#FF6B6B",borderRadius:8,fontSize:13,cursor:"pointer",padding:"6px 10px",flexShrink:0,marginLeft:8}}>🗑 Eliminar</button>
+            title="Eliminar nota" style={{background:"#FF6B6B11",border:"1px solid #FF6B6B33",color:"#FF6B6B",borderRadius:8,fontSize:13,cursor:"pointer",padding:"8px 10px",flexShrink:0,marginLeft:8,display:"flex",alignItems:"center",gap:6}}><Icon name="trash" size={16}/> Eliminar</button>
         </div>
       )}
 

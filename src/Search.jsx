@@ -1,3 +1,4 @@
+import Icon from "./app/Icon";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 
@@ -76,18 +77,18 @@ export default function Search({ groupId, events, onGo, onClose }) {
       <div style={{flex:1,overflowY:"auto",padding:"14px 14px 40px",maxWidth:600,width:"100%",margin:"0 auto"}}>
         {!res && <div style={{textAlign:"center",color:"var(--g4)",fontSize:13,padding:"40px 10px"}}>{busy ? "Buscando…" : "Escribí al menos 2 letras."}</div>}
         {res && total === 0 && <div style={{textAlign:"center",color:"var(--g4)",fontSize:13,padding:"40px 10px"}}>{busy ? "Buscando…" : `Sin resultados para “${q.trim()}”.`}</div>}
-        {res && res.events.length > 0 && <Section title="📅 Eventos">
-          {res.events.map(e => <Row key={e.id} icon="📅" title={e.title} sub={`${e.date ? fmtDay(e.date) : ""}${e.time ? " · " + e.time : ""}${e.recurring ? " · 🔁 rutina" : ""}`} onClick={() => onGo("event", { date: e.date })}/>)}
+        {res && res.events.length > 0 && <Section title={<><Icon name="calendar" size={14}/> Eventos</>}>
+          {res.events.map(e => <Row key={e.id} icon={<Icon name="calendar" size={18}/>} title={e.title} sub={`${e.date ? fmtDay(e.date) : ""}${e.time ? " · " + e.time : ""}${e.recurring ? " · rutina" : ""}`} onClick={() => onGo("event", { date: e.date })}/>)}
         </Section>}
-        {res && res.expenses.length > 0 && <Section title="💸 Gastos">
-          {res.expenses.map(e => <Row key={e.id} icon="💸" title={e.description} sub={`📅 ${fmtDay(e.date)}`} right={fmtMoney(e.amount)} onClick={() => onGo("expense", { date: e.date })}/>)}
+        {res && res.expenses.length > 0 && <Section title={<><Icon name="wallet" size={14}/> Gastos</>}>
+          {res.expenses.map(e => <Row key={e.id} icon={<Icon name="wallet" size={18}/>} title={e.description} sub={fmtDay(e.date)} right={fmtMoney(e.amount)} onClick={() => onGo("expense", { date: e.date })}/>)}
         </Section>}
-        {res && (res.items.length > 0 || res.lists.length > 0) && <Section title="📝 Listados">
+        {res && (res.items.length > 0 || res.lists.length > 0) && <Section title={<><Icon name="list" size={14}/> Listados</>}>
           {res.lists.map(l => <Row key={l.id} icon={l.icon || "📋"} title={l.name} sub="Listado" onClick={() => onGo("list", { id: l.id })}/>)}
           {res.items.map(i => <Row key={i.id} icon="•" title={i.text} sub={`${i.list?.icon || ""} ${i.list?.name || ""}${i.selected ? " · seleccionado" : ""}`} onClick={() => onGo("list", { id: i.list_id })}/>)}
         </Section>}
-        {res && res.notes.length > 0 && <Section title="📓 Notas">
-          {res.notes.map(n => <Row key={n.id} icon={n.kind === "checklist" ? "☑" : "📓"} title={n.title} sub={snippet(n.content, q.trim())} onClick={() => onGo("note", { id: n.id })}/>)}
+        {res && res.notes.length > 0 && <Section title={<><Icon name="note" size={14}/> Notas</>}>
+          {res.notes.map(n => <Row key={n.id} icon={<Icon name={n.kind === "checklist" ? "check" : "note"} size={18}/>} title={n.title} sub={snippet(n.content, q.trim())} onClick={() => onGo("note", { id: n.id })}/>)}
         </Section>}
       </div>
     </div>

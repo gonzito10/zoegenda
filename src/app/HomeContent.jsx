@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { DAYS_FULL, MONTHS_ES } from "./constants";
@@ -58,10 +59,10 @@ export default function HomeContent({ ctx }) {
   const alertColor = sum?.alert?.pct >= 100 ? "var(--danger)" : "var(--warn)";
 
   const cards = [
-    ["agenda", "📅", "Agenda", plural(weekCount, "evento", "eventos"), "próximos 7 días", "#FF6B6B", "var(--text)"],
-    ["expenses", "💸", "Gastos", !sum ? "…" : debt ? fmtMoney(debtTotal) : "Al día", !sum ? "" : debt ? `${member(debt.from).display_name} le debe a ${member(debt.to).display_name}${sum.debts.length > 1 ? " y más" : ""}` : "sin deudas pendientes", "#96CEB4", debt ? "var(--warn)" : "var(--ok)"],
-    ["lists", "📝", "Listados", !sum ? "…" : `${sum.toBuy} para comprar`, !sum ? "" : plural(sum.tasks, "tarea pendiente", "tareas pendientes"), "#FFB347", "var(--text)"],
-    ["notes", "📓", "Notas", !sum ? "…" : plural(sum.notes, "nota", "notas"), !sum ? "" : plural(sum.pinned, "fijada", "fijadas"), "#DDA0DD", "var(--text)"],
+    ["agenda", "calendar", "Agenda", plural(weekCount, "evento", "eventos"), "próximos 7 días", "#FF6B6B", "var(--text)"],
+    ["expenses", "wallet", "Gastos", !sum ? "…" : debt ? fmtMoney(debtTotal) : "Al día", !sum ? "" : debt ? `${member(debt.from).display_name} le debe a ${member(debt.to).display_name}${sum.debts.length > 1 ? " y más" : ""}` : "sin deudas pendientes", "#96CEB4", debt ? "var(--warn)" : "var(--ok)"],
+    ["lists", "list", "Listados", !sum ? "…" : `${sum.toBuy} para comprar`, !sum ? "" : plural(sum.tasks, "tarea pendiente", "tareas pendientes"), "#FFB347", "var(--text)"],
+    ["notes", "note", "Notas", !sum ? "…" : plural(sum.notes, "nota", "notas"), !sum ? "" : plural(sum.pinned, "fijada", "fijadas"), "#DDA0DD", "var(--text)"],
   ];
 
   return (
@@ -98,12 +99,12 @@ export default function HomeContent({ ctx }) {
         {sum?.alert && (
           <button onClick={() => setMainTab("expenses")}
             style={{display:"flex",alignItems:"center",gap:12,minHeight:60,padding:"10px 14px",borderRadius:16,textAlign:"left",cursor:"pointer",color:"var(--text)",background:`color-mix(in srgb, ${alertColor} 12%, transparent)`,border:`1px solid color-mix(in srgb, ${alertColor} 45%, transparent)`}}>
-            <span style={{fontSize:22}}>{sum.alert.pct >= 100 ? "🚨" : "⚠️"}</span>
+            <span style={{display:"flex",color:alertColor}}><Icon name={sum.alert.pct >= 100 ? "alertCircle" : "alert"} size={24}/></span>
             <span style={{display:"flex",flexDirection:"column",flex:1,minWidth:0}}>
               <span style={{fontSize:15,fontWeight:600,color:"var(--title)"}}>{sum.alert.pct >= 100 ? `${sum.alert.label}: superaste el límite` : `${sum.alert.label} al ${Math.round(sum.alert.pct)}%`}</span>
               <span style={{fontSize:13,color:"var(--g8)"}}>del presupuesto de {MONTHS_ES[now.getMonth()].toLowerCase()}</span>
             </span>
-            <span style={{color:"var(--g6)",fontSize:20}}>›</span>
+            <span style={{color:"var(--g6)",display:"flex"}}><Icon name="chevronRight" size={20}/></span>
           </button>
         )}
 
@@ -112,7 +113,7 @@ export default function HomeContent({ ctx }) {
           {cards.map(([v, icon, title, datum, sub, color, datumColor]) => (
             <button key={v} onClick={() => setMainTab(v)}
               style={{minHeight:172,borderRadius:20,border:`1px solid ${color}44`,background:`linear-gradient(145deg, ${color}22, var(--card) 70%)`,color:"var(--text)",cursor:"pointer",display:"flex",flexDirection:"column",gap:12,padding:16,textAlign:"left"}}>
-              <span style={{width:44,height:44,borderRadius:14,background:`${color}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{icon}</span>
+              <span style={{width:44,height:44,borderRadius:14,background:`${color}33`,display:"flex",alignItems:"center",justifyContent:"center",color:`color-mix(in srgb, ${color} 70%, var(--title))`}}><Icon name={icon} size={24}/></span>
               <span style={{marginTop:"auto",display:"flex",flexDirection:"column",gap:2}}>
                 <span style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"var(--title)"}}>{title}</span>
                 <span style={{fontSize:15,fontWeight:600,color:datumColor}}>{datum}</span>

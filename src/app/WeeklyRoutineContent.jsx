@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import { useMemo } from "react";
 import { fmt, expandRecurring } from "./utils";
 
@@ -43,7 +44,7 @@ export default function WeeklyRoutineContent({ ctx }) {
 
   if (!hasAny) return (
     <div style={{textAlign:"center",color:"var(--g4)",padding:"60px 20px",fontSize:14}}>
-      <div style={{fontSize:32,marginBottom:12}}>📅</div>
+      <div style={{marginBottom:12,color:"var(--g5)",display:"flex",justifyContent:"center"}}><Icon name="calendar" size={36}/></div>
       <div style={{marginBottom:8}}>No hay actividades esta semana</div>
       <button onClick={()=>openNew(null)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontSize:13}}>+ Agregar</button>
     </div>

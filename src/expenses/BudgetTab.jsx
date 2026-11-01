@@ -1,3 +1,4 @@
+import Icon from "../app/Icon";
 import { useState, useRef } from "react";
 import { supabase } from "../supabase";
 import { inp, fmtMoney, monthLabel, loadBudgets, categoryHistory } from "./helpers";
@@ -45,7 +46,7 @@ export default function BudgetTab({ ctx }) {
         Límite mensual por categoría ({monthLabel(currentMonthKey)}). Te avisamos al llegar al 80% y al superarlo.
       </div>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:12,flexWrap:"wrap"}}>
-        <span style={{fontSize:12,color:"var(--g5)",flex:"1 1 100%"}}>📈 Comparar con el promedio de:</span>
+        <span style={{fontSize:12,color:"var(--g5)",flex:"1 1 100%"}}><Icon name="chart" size={15}/> Comparar con el promedio de:</span>
         {[3,6,12].map(n => <div key={n} onClick={()=>setPeriod(n)} style={chip(period===n)}>{n} meses</div>)}
       </div>
       {budgetRows.length === 0 && (
@@ -61,8 +62,8 @@ export default function BudgetTab({ ctx }) {
               <span style={{fontSize:18}}>{c.icon}</span>
               <span style={{flex:1,fontSize:13,fontWeight:600}}>{c.label}</span>
               <span style={{fontSize:13,fontWeight:700,color:col}}>{b.pct>=100?"Superado":b.pct>=80?"Cerca del límite":"Va bien"} · {Math.round(b.pct)}%</span>
-              <button onClick={()=>fillForm(b.category, b.amount, b.id)} style={{background:"transparent",border:"none",color:"var(--g8)",fontSize:14,cursor:"pointer",padding:"2px 5px"}}>✎</button>
-              <button onClick={()=>removeBudget(b)} style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:14,cursor:"pointer",padding:"2px 5px"}}>🗑</button>
+              <button onClick={()=>fillForm(b.category, b.amount, b.id)} style={{background:"transparent",border:"none",color:"var(--g8)",fontSize:14,cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Editar límite"><Icon name="edit" size={17}/></button>
+              <button onClick={()=>removeBudget(b)} style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:14,cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Quitar límite"><Icon name="trash" size={17}/></button>
             </div>
             <div style={{height:10,borderRadius:6,background:"var(--border)",overflow:"hidden"}}>
               <div style={{width:`${Math.min(100,b.pct)}%`,height:"100%",background:col,borderRadius:6,transition:"width .3s"}}/>
@@ -74,7 +75,7 @@ export default function BudgetTab({ ctx }) {
             {h.months > 0 && (
               <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid var(--border)"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,fontSize:12,color:"var(--g8)"}}>
-                  <span>📈 Promedio {h.months} {h.months===1?"mes":"meses"}: <strong style={{color:"var(--text)"}}>{fmtMoney(h.avg)}</strong>{h.max && <span style={{color:"var(--g5)"}}> · máx {fmtMoney(h.max.total)}</span>}</span>
+                  <span><Icon name="chart" size={14}/> Promedio {h.months} {h.months===1?"mes":"meses"}: <strong style={{color:"var(--text)"}}>{fmtMoney(h.avg)}</strong>{h.max && <span style={{color:"var(--g5)"}}> · máx {fmtMoney(h.max.total)}</span>}</span>
                   <span onClick={()=>setOpenId(isOpen?null:b.id)} style={{color:"#FF6B6B",cursor:"pointer",whiteSpace:"nowrap",fontWeight:600}}>{isOpen?"ocultar ▴":"ver meses ▾"}</span>
                 </div>
                 <div style={{fontSize:12,color:b.amount<h.avg?"#FFB347":"var(--g5)",marginTop:3}}>
@@ -119,7 +120,7 @@ export default function BudgetTab({ ctx }) {
             {catHist[3].months === 0 ? (
               <div style={{fontSize:12,color:"var(--g5)"}}>Todavía no hay meses anteriores con datos de esta categoría.</div>
             ) : <>
-              <div style={{fontSize:12,color:"var(--g8)",marginBottom:6}}>📈 Lo que gastaron en {getCat(cat).label}</div>
+              <div style={{fontSize:12,color:"var(--g8)",marginBottom:6}}><Icon name="chart" size={14}/> Lo que gastaron en {getCat(cat).label}</div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {[3,6].map(n => catHist[n].months > 0 && (
                   <div key={n} style={{flex:"1 1 0",minWidth:90,background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,padding:"7px 9px"}}>

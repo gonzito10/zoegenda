@@ -1,3 +1,4 @@
+import Icon from "./app/Icon";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 
@@ -253,7 +254,7 @@ export default function Lists({ groupId, currentUserId }) {
     <div>
       {lists.length === 0 && (
         <div style={{textAlign:"center",color:"var(--g4)",padding:"60px 20px"}}>
-          <div style={{fontSize:32,marginBottom:12}}>📝</div>
+          <div style={{marginBottom:12,color:"var(--g5)",display:"flex",justifyContent:"center"}}><Icon name="list" size={36}/></div>
           <div style={{marginBottom:8,fontSize:14}}>No hay listados todavía</div>
           <div style={{fontSize:12,color:"var(--g3)"}}>Tocá + para crear el primero</div>
         </div>
@@ -280,8 +281,8 @@ export default function Lists({ groupId, currentUserId }) {
             </div>
           </div>
           <div style={{display:"flex",gap:4,flexShrink:0}}>
-            <button onClick={()=>openEditModal(currentList)} style={{background:"transparent",border:"none",color:"var(--g5)",fontSize:16,cursor:"pointer",padding:"4px 8px"}}>✎</button>
-            <button onClick={()=>setShowDelete(currentList.id)} style={{background:"transparent",border:"none",color:"var(--g8)",fontSize:18,cursor:"pointer",padding:"4px 8px"}}>🗑</button>
+            <button onClick={()=>openEditModal(currentList)} style={{background:"transparent",border:"none",color:"var(--g5)",cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Editar listado"><Icon name="edit" size={18}/></button>
+            <button onClick={()=>setShowDelete(currentList.id)} style={{background:"transparent",border:"none",color:"var(--g8)",cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Eliminar listado"><Icon name="trash" size={18}/></button>
           </div>
         </div>
 
@@ -377,7 +378,7 @@ export default function Lists({ groupId, currentUserId }) {
               {T.hasQty && item.quantity!=null && <span style={{fontSize:12,color:"var(--g5)",flexShrink:0}}>{fmtQty(item.quantity)} {item.unit||""}</span>}
             </div>
             <button onClick={()=>handleDeleteItem(item)} title="Eliminar elemento"
-              style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:15,cursor:"pointer",padding:"6px 8px",flexShrink:0}}>🗑</button>
+              style={{background:"transparent",border:"none",color:"var(--g6)",cursor:"pointer",padding:"8px",flexShrink:0,display:"flex"}} aria-label="Eliminar"><Icon name="trash" size={17}/></button>
           </div>
         ))}
       </>)}

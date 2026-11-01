@@ -1,3 +1,4 @@
+import Icon from "../app/Icon";
 import { useState } from "react";
 import { supabase } from "../supabase";
 import { ICON_OPTIONS, inp, lbl, fmtMoney, loadExpenses, loadCustomCats, saveExpense, deleteExpense, saveCustomCat, loadTagRelations, saveTag, saveTagRelations } from "./helpers";
@@ -151,7 +152,7 @@ export default function ExpenseModal({ ctx }) {
           <div onClick={()=>{ setInstallments(v=>!v); setRecurringOn(false); }}
             style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
             <div>
-              <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>💳 Compra en cuotas</div>
+              <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}><Icon name="card" size={16}/> Compra en cuotas</div>
               <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>Se genera un gasto automático por mes</div>
             </div>
             <div style={{width:36,height:20,borderRadius:10,background:installments?"#DDA0DD":"var(--border2)",position:"relative",transition:"background .2s",flexShrink:0}}>
@@ -163,7 +164,7 @@ export default function ExpenseModal({ ctx }) {
             <div onClick={()=>setRecurringOn(v=>!v)}
               style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
               <div>
-                <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>🔁 Se repite todos los meses</div>
+                <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}><Icon name="repeat" size={16}/> Se repite todos los meses</div>
                 <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>
                   {recurringOn && form.date ? `Se carga solo el día ${parseInt(form.date.slice(8,10))} de cada mes` : "Alquiler, expensas, suscripciones…"}
                 </div>
@@ -211,7 +212,7 @@ export default function ExpenseModal({ ctx }) {
             {(()=>{ const br = budgetRows.find(b=>b.category===form.category); if(!br) return null;
               const extra = parseFloat(form.amount)||0; const after = (br.spent + (isNew?extra:0)) / br.amount * 100; const col = budgetColor(after);
               return <div style={{marginTop:8,fontSize:13,color:col,background:`color-mix(in srgb, ${col} 12%, transparent)`,border:`1px solid color-mix(in srgb, ${col} 40%, transparent)`,borderRadius:8,padding:"6px 10px"}}>
-                🎯 Presupuesto del mes: {fmtMoney(br.spent)}{isNew&&extra>0?` + ${fmtMoney(extra)}`:""} de {fmtMoney(br.amount)} ({Math.round(after)}%)
+                <Icon name="target" size={15}/> Presupuesto del mes: {fmtMoney(br.spent)}{isNew&&extra>0?` + ${fmtMoney(extra)}`:""} de {fmtMoney(br.amount)} ({Math.round(after)}%)
               </div>; })()}
 
             {/* Add custom category */}
@@ -273,7 +274,7 @@ export default function ExpenseModal({ ctx }) {
 
           {/* Tags (optional) */}
           <div>
-            <label style={lbl}>🏷 Etiquetas <span style={{fontWeight:400,textTransform:"none",letterSpacing:0,color:"var(--g3)"}}>(opcional)</span></label>
+            <label style={lbl}><Icon name="tag" size={13}/> Etiquetas <span style={{fontWeight:400,textTransform:"none",letterSpacing:0,color:"var(--g3)"}}>(opcional)</span></label>
             <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
               {tags.map(t=>{
                 const on = selectedTags.includes(t.id);

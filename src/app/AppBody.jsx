@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import Filters from "./Filters";
 import CalendarContent from "./CalendarContent";
 import DayContent from "./DayContent";
@@ -34,7 +35,7 @@ export default function AppBody({ ctx }) {
               {/* Back button */}
               <button onClick={()=>setView("calendar")}
                 style={{display:"flex",alignItems:"center",gap:6,background:"transparent",border:"none",color:"var(--g6)",fontSize:13,cursor:"pointer",marginBottom:12,padding:0}}>
-                ← Volver al calendario
+                <Icon name="chevronLeft" size={16}/> Volver al calendario
               </button>
               <DayContent ctx={ctx} ctx={ctx}/>
             </div>

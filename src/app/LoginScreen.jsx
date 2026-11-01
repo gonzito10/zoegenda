@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import { BASE_CSS, inp, lbl, Logo } from "./styles";
 
 export default function LoginScreen({ ctx }) {
@@ -8,7 +9,7 @@ export default function LoginScreen({ ctx }) {
       <style>{BASE_CSS}</style>
       <div style={{maxWidth:400,width:"100%"}}>
         <div style={{textAlign:"center",marginBottom:32}}>
-          <div style={{fontSize:44,marginBottom:12}}>📅</div>
+          <div style={{marginBottom:12,color:"#FF6B6B",display:"flex",justifyContent:"center"}}><Icon name="calendar" size={48}/></div>
           <Logo size={32}/>
           <p style={{color:"var(--g5)",fontSize:13,marginTop:8}}>Agenda compartida en tiempo real</p>
         </div>

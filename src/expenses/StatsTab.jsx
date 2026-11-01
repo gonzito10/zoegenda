@@ -1,3 +1,4 @@
+import Icon from "../app/Icon";
 import { useState } from "react";
 import { fmtMoney } from "./helpers";
 import MonthSelect from "./MonthSelect";
@@ -94,7 +95,7 @@ export default function StatsTab({ ctx }) {
               <div key={tag.id} style={{marginBottom:24}}>
                 {/* Tag header */}
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                  <div style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:700}}>🏷 {tag.name}</div>
+                  <div style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:700}}><Icon name="tag" size={13}/> {tag.name}</div>
                   <div style={{fontSize:12,color:"var(--g5)"}}>{fmtMoney(tTotal)}</div>
                 </div>
                 {/* Pie + leyenda */}

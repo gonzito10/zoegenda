@@ -1,3 +1,4 @@
+import Icon from "../app/Icon";
 import { useMemo } from "react";
 import { fmtMoney, fmtDay } from "./helpers";
 import RecurringTab from "./RecurringTab";
@@ -27,14 +28,14 @@ export default function BalanceTab({ ctx }) {
       );
     })}
     <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 14px",marginBottom:12,fontSize:13,color:"var(--g5)",display:"flex",alignItems:"center",gap:6}}>
-      <span>📊</span> Balance acumulado histórico — incluye todos los meses
+      <Icon name="chart" size={16}/> Balance acumulado histórico — incluye todos los meses
     </div>
     {budgetRows.filter(b=>b.pct>=80).map(b=>{
       const c = getCat(b.category);
       return (
         <div key={b.id} onClick={()=>setSubTab("budget")}
           style={{background:`color-mix(in srgb, ${budgetColor(b.pct)} 14%, transparent)`,border:`1px solid color-mix(in srgb, ${budgetColor(b.pct)} 45%, transparent)`,borderRadius:10,padding:"10px 13px",marginBottom:8,fontSize:13,display:"flex",alignItems:"center",gap:8,cursor:"pointer",color:budgetColor(b.pct),minHeight:44}}>
-          <span>{b.pct>=100?"🚨":"⚠️"}</span>
+          <Icon name={b.pct>=100?"alertCircle":"alert"} size={18}/>
           <span style={{flex:1}}><strong>{c.icon} {c.label}</strong>: {b.pct>=100?`superaste el presupuesto (${fmtMoney(b.spent)} de ${fmtMoney(b.amount)})`:`vas por el ${Math.round(b.pct)}% del presupuesto del mes`}</span>
         </div>
       );
@@ -54,14 +55,14 @@ export default function BalanceTab({ ctx }) {
         );
       })}
       <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
-        <div style={{fontSize:12,color:"var(--g6)",marginBottom:4}}>💰 Total histórico</div>
+        <div style={{fontSize:12,color:"var(--g6)",marginBottom:4}}><Icon name="wallet" size={15}/> Total histórico</div>
         <div style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"var(--text)"}}>{fmtMoney(totalHistorico)}</div>
         <div style={{fontSize:12,color:"var(--g5)",marginTop:3}}>Todos los meses</div>
       </div>
     </div>
 
     {debts.length === 0 && monthTotal > 0 && (
-      <div style={{textAlign:"center",color:"var(--ok)",padding:"20px 0",fontSize:15,fontWeight:600}}>✓ Todo al día</div>
+      <div style={{textAlign:"center",color:"var(--ok)",padding:"20px 0",fontSize:15,fontWeight:600}}><Icon name="check" size={18}/> Todo al día</div>
     )}
 
 
