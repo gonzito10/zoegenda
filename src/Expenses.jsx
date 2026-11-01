@@ -108,10 +108,11 @@ function calcBalance(expenses, settlements, members) {
     // Principio de devengado: incluir si el mes de la cuota ya llegó
     if (exp.date.slice(0, 7) > todayMonth) return;
 
-    const n = exp.split_between?.length || 1;
-    const perPerson = exp.amount / n;
+    // Si no hay nadie en la división, el gasto es del que pagó (no genera deuda)
+    const split = exp.split_between?.length ? exp.split_between : [exp.paid_by];
+    const perPerson = exp.amount / split.length;
     if (paid[exp.paid_by] !== undefined) paid[exp.paid_by] += exp.amount;
-    exp.split_between?.forEach(uid => {
+    split.forEach(uid => {
       if (share[uid] !== undefined) share[uid] += perPerson;
     });
   });
@@ -659,6 +660,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
 
     async function handleSave(){
       if(!form.description.trim() || !form.amount) return;
+      if(!form.split_between?.length){ alert("Marcá al menos una persona entre quienes se divide el gasto."); return; }
       setSaving(true);
       const base = {
         ...form,
