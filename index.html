@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ZoeGens</title>
-    <meta name="description" content="Agenda compartida en tiempo real" />
+    <meta name="description" content="Gestión compartida del hogar" />
     <link rel="icon" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="manifest" href="/manifest.json" />
@@ -13,10 +13,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ZoeGens" />
     <style>
-      :root{--bg:#0f0f13;--card:#131318;--card2:#1a1a22;--border:#1e1e2a;--border2:#2a2a3a;--border3:#3a3a4a;--text:#e8e8f0;--title:#fff;--bar:#0a0a0e;--g3:#333;--g4:#80808c;--g5:#8e8e9a;--g6:#9c9ca8;--g8:#b0b0bb;--ga:#c6c6d0;--ok:#5CCB8B;--warn:#F2B84B;--danger:#F0605A}
+      :root{--bg:#0f0f13;--card:#131318;--card2:#1a1a22;--border:#1e1e2a;--border2:#2a2a3a;--border3:#3a3a4a;--text:#e8e8f0;--title:#fff;--bar:#0a0a0e;--g3:#333;--g4:#80808c;--g5:#8e8e9a;--g6:#9c9ca8;--g8:#b0b0bb;--ga:#c6c6d0;--ok:#5CCB8B;--warn:#F2B84B;--danger:#F0605A;--coral:#FF6B6B;--violet:#DDA0DD;--teal:#4ECDC4}
       * { box-sizing: border-box; margin: 0; padding: 0; }
       html, body { height: 100%; background: var(--bg); overflow-x: hidden; }
       #root { height: 100%; }
+
+      /* Meandro (greca) fino: divisor decorativo */
+      .meander { flex-shrink: 0; height: 10px; background: var(--border3); opacity: .55;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath d='M0 9.2h16M3 9.2V1.2h10v5.6H7V4' fill='none' stroke='black' stroke-width='1.2'/%3E%3C/svg%3E") repeat-x center / 16px 10px;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath d='M0 9.2h16M3 9.2V1.2h10v5.6H7V4' fill='none' stroke='black' stroke-width='1.2'/%3E%3C/svg%3E") repeat-x center / 16px 10px; }
 
       /* Portrait mobile: sin sidebar, sin bottom nav, con tabs arriba */
       .sidebar { display: none !important; }

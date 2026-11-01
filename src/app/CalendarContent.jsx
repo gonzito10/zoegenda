@@ -4,7 +4,7 @@ import Icon from "./Icon";
 
 // Calendario mensual: cada día muestra solo los íconos de sus eventos (sin texto ni horario).
 // Al tocar un día se elige esa fecha y el detalle aparece justo debajo del calendario (DayContent).
-const navBtn = {background:"var(--card2)",color:"var(--ga)",width:44,height:44,borderRadius:12,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"};
+const navBtn = {background:"var(--card2)",color:"var(--ga)",width:44,height:44,borderRadius:10,border:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"};
 const MAX_ICONS = 5;
 
 export default function CalendarContent({ ctx }) {

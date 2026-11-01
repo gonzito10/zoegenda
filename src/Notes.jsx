@@ -181,14 +181,14 @@ export default function Notes({ groupId, currentUserId }) {
         </div>
       )}
       {/* Selector de notas */}
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
         {notes.map(n => {
           const on = activeNote === n.id;
           const col = n.color || "#FF6B6B";
           const left = n.kind === "checklist" ? parseChecklist(n.content).filter(i => !i.done).length : null;
           return (
             <div key={n.id} onClick={()=>selectNote(n)}
-              style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:on?col+"22":"var(--card2)",color:on?col:"var(--g5)",border:`1px solid ${on?col+"66":(n.color?col+"33":"var(--border2)")}`,display:"flex",alignItems:"center",gap:5}}>
+              style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:on?col+"22":"var(--card2)",color:on?col:"var(--g5)",border:`1px solid ${on?col+"66":(n.color?col+"33":"var(--border2)")}`,display:"flex",alignItems:"center",gap:8}}>
               {n.pinned && <span style={{display:"flex",color:"var(--warn)"}}><Icon name="pin" size={13}/></span>}
               {n.color && !on && <span style={{width:7,height:7,borderRadius:"50%",background:col}}/>}
               {n.title}
@@ -203,15 +203,15 @@ export default function Notes({ groupId, currentUserId }) {
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
           <div style={{flex:1,minWidth:0}}>
             {editingTitle ? (
-              <div style={{display:"flex",gap:6}}>
+              <div style={{display:"flex",gap:8}}>
                 <input value={titleDraft} onChange={e=>setTitleDraft(e.target.value)}
                   onKeyDown={e=>{if(e.key==="Enter")handleSaveTitle();if(e.key==="Escape")setEditingTitle(false);}}
                   style={{...inp,fontSize:16,fontWeight:600,flex:1}} autoFocus/>
-                <button onClick={handleSaveTitle} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:8,padding:"0 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>OK</button>
+                <button onClick={handleSaveTitle} style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"0 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>OK</button>
               </div>
             ) : (
               <div onClick={()=>{setTitleDraft(currentNote.title);setEditingTitle(true);}}
-                style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"var(--title)",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"var(--title)",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
                 {currentNote.title} <span style={{color:"var(--g5)"}}><Icon name="edit" size={13}/></span>
               </div>
             )}
@@ -221,15 +221,15 @@ export default function Notes({ groupId, currentUserId }) {
             </div>
           </div>
           <button onClick={()=>patchNote({pinned:!currentNote.pinned})} title={currentNote.pinned?"Quitar fijado":"Fijar nota"}
-            style={{background:currentNote.pinned?"#FFB34722":"transparent",border:`1px solid ${currentNote.pinned?"#FFB34755":"var(--border2)"}`,color:currentNote.pinned?"#FFB347":"var(--g8)",borderRadius:8,cursor:"pointer",padding:"8px 10px",flexShrink:0,marginLeft:8,display:"flex"}}><Icon name="pin" size={17}/></button>
+            style={{background:currentNote.pinned?"#FFB34722":"transparent",border:`1px solid ${currentNote.pinned?"#FFB34755":"var(--border2)"}`,color:currentNote.pinned?"var(--warn)":"var(--g8)",borderRadius:10,cursor:"pointer",padding:"8px 10px",flexShrink:0,marginLeft:8,display:"flex"}}><Icon name="pin" size={17}/></button>
           <button onClick={()=>setShowDelete(currentNote.id)}
-            title="Eliminar nota" style={{background:"#FF6B6B11",border:"1px solid #FF6B6B33",color:"#FF6B6B",borderRadius:8,fontSize:13,cursor:"pointer",padding:"8px 10px",flexShrink:0,marginLeft:8,display:"flex",alignItems:"center",gap:6}}><Icon name="trash" size={16}/> Eliminar</button>
+            title="Eliminar nota" style={{background:"#FF6B6B11",border:"1px solid #FF6B6B33",color:"var(--coral)",borderRadius:10,fontSize:13,cursor:"pointer",padding:"8px 10px",flexShrink:0,marginLeft:8,display:"flex",alignItems:"center",gap:8}}><Icon name="trash" size={16}/> Eliminar</button>
         </div>
       )}
 
       {/* Color de la nota */}
       {currentNote && (
-        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
           <div onClick={()=>patchNote({color:null})} title="Sin color"
             style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${!currentNote.color?"var(--title)":"var(--border2)"}`,cursor:"pointer",fontSize:10,color:"var(--g6)",display:"flex",alignItems:"center",justifyContent:"center"}}>∅</div>
           {NOTE_COLORS.map(c=>(
@@ -241,10 +241,10 @@ export default function Notes({ groupId, currentUserId }) {
 
       {/* Contenido */}
       {activeNote && currentNote?.kind === "checklist" ? (
-        <div style={{background:"var(--card)",border:`1px solid ${currentNote.color?currentNote.color+"55":"var(--border)"}`,borderRadius:12,padding:12}}>
+        <div style={{background:"var(--card)",border:`1px solid ${currentNote.color?currentNote.color+"55":"var(--border)"}`,borderRadius:10,padding:12}}>
           {checklistItems.length === 0 && <div style={{textAlign:"center",color:"var(--g4)",fontSize:12,padding:"10px 0"}}>Agregá el primer ítem abajo</div>}
           {checklistItems.map((it, idx) => (
-            <div key={idx} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 2px",borderBottom:"1px solid var(--border)"}}>
+            <div key={idx} style={{display:"flex",alignItems:"center",gap:12,padding:"7px 2px",borderBottom:"1px solid var(--border)"}}>
               <div onClick={()=>setChecklist(checklistItems.map((x,i)=>i===idx?{...x,done:!x.done}:x))}
                 style={{width:20,height:20,borderRadius:6,flexShrink:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",fontWeight:700,background:it.done?(currentNote.color||"#96CEB4"):"transparent",border:`2px solid ${it.done?(currentNote.color||"#96CEB4"):"var(--border3)"}`}}>{it.done?"✓":""}</div>
               <input value={it.text} onChange={e=>setChecklist(checklistItems.map((x,i)=>i===idx?{...x,text:e.target.value}:x))}
@@ -256,11 +256,11 @@ export default function Notes({ groupId, currentUserId }) {
           <div style={{display:"flex",gap:8,marginTop:10}}>
             <input value={newItem} onChange={e=>setNewItem(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addChecklistItem()}
               placeholder="Nuevo ítem..." style={{...inp,flex:1,padding:"9px 12px"}}/>
-            <button onClick={addChecklistItem} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"0 16px",fontSize:18,fontWeight:700,cursor:"pointer"}}>+</button>
+            <button onClick={addChecklistItem} style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"0 16px",fontSize:18,fontWeight:700,cursor:"pointer"}}>+</button>
           </div>
           {checklistItems.some(i=>i.done) && (
             <button onClick={()=>setChecklist(checklistItems.filter(i=>!i.done))}
-              style={{marginTop:10,background:"#96CEB422",color:"#96CEB4",border:"1px solid #96CEB444",borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Quitar completados</button>
+              style={{marginTop:10,background:"#96CEB422",color:"var(--ok)",border:"1px solid #96CEB444",borderRadius:10,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Quitar completados</button>
           )}
         </div>
       ) : activeNote && (
@@ -293,7 +293,7 @@ export default function Notes({ groupId, currentUserId }) {
               <div style={{display:"flex",gap:8}}>
                 {[["text","📝 Texto libre"],["checklist","☑ Checklist"]].map(([v,l])=>(
                   <div key={v} onClick={()=>setNewKind(v)}
-                    style={{flex:1,textAlign:"center",padding:"9px",borderRadius:10,fontSize:12,fontWeight:newKind===v?700:500,cursor:"pointer",background:newKind===v?"#FF6B6B22":"var(--card2)",color:newKind===v?"#FF6B6B":"var(--g6)",border:`1px solid ${newKind===v?"#FF6B6B55":"var(--border2)"}`}}>{l}</div>
+                    style={{flex:1,textAlign:"center",padding:"9px",borderRadius:10,fontSize:12,fontWeight:newKind===v?700:500,cursor:"pointer",background:newKind===v?"#FF6B6B22":"var(--card2)",color:newKind===v?"var(--coral)":"var(--g6)",border:`1px solid ${newKind===v?"#FF6B6B55":"var(--border2)"}`}}>{l}</div>
                 ))}
               </div>
             </div>
@@ -307,7 +307,7 @@ export default function Notes({ groupId, currentUserId }) {
               </div>
             </div>
             <button onClick={handleCreate}
-              style={{width:"100%",background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+              style={{width:"100%",background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer"}}>
               Crear nota
             </button>
           </div>
@@ -323,7 +323,7 @@ export default function Notes({ groupId, currentUserId }) {
             <div style={{fontSize:13,color:"var(--g6)",marginBottom:20}}>Esta acción no se puede deshacer.</div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>setShowDelete(null)} style={{flex:1,background:"var(--border)",color:"var(--ga)",border:"none",borderRadius:10,padding:"10px",fontSize:13,cursor:"pointer"}}>Cancelar</button>
-              <button onClick={()=>handleDeleteNote(showDelete)} style={{flex:1,background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Eliminar</button>
+              <button onClick={()=>handleDeleteNote(showDelete)} style={{flex:1,background:"#FF6B6B22",color:"var(--coral)",border:"1px solid #FF6B6B44",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Eliminar</button>
             </div>
           </div>
         </div>

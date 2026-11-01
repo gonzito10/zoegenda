@@ -176,15 +176,15 @@ export default function ExpenseModal({ ctx }) {
           )}
 
           {installments && (
-            <div style={{background:"#DDA0DD11",border:"1px solid #DDA0DD33",borderRadius:10,padding:12,display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{background:"#DDA0DD11",border:"1px solid #DDA0DD33",borderRadius:10,padding:12,display:"flex",flexDirection:"column",gap:12}}>
               <div>
-                <label style={{...lbl,color:"#DDA0DD"}}>Cantidad de cuotas</label>
+                <label style={{...lbl,color:"var(--violet)"}}>Cantidad de cuotas</label>
                 <input type="number" value={form.installments} onChange={e=>setForm(f=>({...f,installments:e.target.value}))} placeholder="Ej: 12" min={2} max={60} style={{...inp,background:"var(--bg)"}}/>
               </div>
               {perCuota && (
                 <div style={{background:"var(--bg)",border:"1px solid #DDA0DD33",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                   <span style={{fontSize:12,color:"var(--g8)"}}>Monto por cuota</span>
-                  <span style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"#DDA0DD"}}>{fmtMoney(perCuota)}</span>
+                  <span style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"var(--violet)"}}>{fmtMoney(perCuota)}</span>
                 </div>
               )}
             </div>
@@ -211,13 +211,13 @@ export default function ExpenseModal({ ctx }) {
 
             {(()=>{ const br = budgetRows.find(b=>b.category===form.category); if(!br) return null;
               const extra = parseFloat(form.amount)||0; const after = (br.spent + (isNew?extra:0)) / br.amount * 100; const col = budgetColor(after);
-              return <div style={{marginTop:8,fontSize:13,color:col,background:`color-mix(in srgb, ${col} 12%, transparent)`,border:`1px solid color-mix(in srgb, ${col} 40%, transparent)`,borderRadius:8,padding:"6px 10px"}}>
+              return <div style={{marginTop:8,fontSize:13,color:col,background:`color-mix(in srgb, ${col} 12%, transparent)`,border:`1px solid color-mix(in srgb, ${col} 40%, transparent)`,borderRadius:10,padding:"6px 10px"}}>
                 <Icon name="target" size={15}/> Presupuesto del mes: {fmtMoney(br.spent)}{isNew&&extra>0?` + ${fmtMoney(extra)}`:""} de {fmtMoney(br.amount)} ({Math.round(after)}%)
               </div>; })()}
 
             {/* Add custom category */}
             {showAddCat && (
-              <div style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:12,padding:12,marginTop:8,display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:12,marginTop:8,display:"flex",flexDirection:"column",gap:12}}>
                 <input value={newCatLabel} onChange={e=>setNewCatLabel(e.target.value)} placeholder="Nombre de la categoría" style={inp}/>
                 <div>
                   <label style={lbl}>Elegí un ícono</label>
@@ -228,7 +228,7 @@ export default function ExpenseModal({ ctx }) {
                         <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                           {g.icons.map(ico=>(
                             <div key={ico} onClick={()=>setNewCatIcon(ico)}
-                              style={{width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:18,cursor:"pointer",background:newCatIcon===ico?"#FF6B6B22":"var(--card2)",border:`1.5px solid ${newCatIcon===ico?"#FF6B6B":"transparent"}`}}>
+                              style={{width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:10,fontSize:18,cursor:"pointer",background:newCatIcon===ico?"#FF6B6B22":"var(--card2)",border:`1.5px solid ${newCatIcon===ico?"#FF6B6B":"transparent"}`}}>
                               {ico}
                             </div>
                           ))}
@@ -238,12 +238,12 @@ export default function ExpenseModal({ ctx }) {
                   </div>
                 </div>
                 {newCatIcon && (
-                  <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 12px",display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 12px",display:"flex",alignItems:"center",gap:12}}>
                     <span style={{fontSize:22}}>{newCatIcon}</span>
                     <span style={{fontSize:12,color:newCatLabel?"var(--text)":"var(--g5)"}}>{newCatLabel||"Sin nombre"}</span>
                   </div>
                 )}
-                <button onClick={handleAddCat} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"9px",fontSize:13,fontWeight:700}}>Agregar categoría</button>
+                <button onClick={handleAddCat} style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"9px",fontSize:13,fontWeight:700}}>Agregar categoría</button>
               </div>
             )}
           </div>
@@ -263,7 +263,7 @@ export default function ExpenseModal({ ctx }) {
               const on = form.split_between?.includes(m.id);
               return (
                 <div key={m.id} onClick={()=>toggleMember(m.id)}
-                  style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:on?"#FF6B6B11":"var(--bg)",border:`1px solid ${on?"#FF6B6B33":"var(--border)"}`,cursor:"pointer",marginBottom:5}}>
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:10,background:on?"#FF6B6B11":"var(--bg)",border:`1px solid ${on?"#FF6B6B33":"var(--border)"}`,cursor:"pointer",marginBottom:5}}>
                   <div style={{width:16,height:16,borderRadius:4,border:`1.5px solid ${on?"#FF6B6B":"var(--border2)"}`,background:on?"#FF6B6B":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",flexShrink:0}}>{on?"✓":""}</div>
                   <div style={{width:22,height:22,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff"}}>{m.avatar}</div>
                   <span style={{fontSize:13}}>{m.display_name}</span>
@@ -291,7 +291,7 @@ export default function ExpenseModal({ ctx }) {
               </div>
             </div>
             {showNewTag && (
-              <div style={{display:"flex",gap:6}}>
+              <div style={{display:"flex",gap:8}}>
                 <input value={newTagName} onChange={e=>setNewTagName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleAddTag()} placeholder="Nombre de etiqueta" style={{...inp,flex:1}}/>
                 <button onClick={handleAddTag} style={{background:"#DDA0DD",color:"#fff",border:"none",borderRadius:10,padding:"0 14px",fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
               </div>
@@ -300,7 +300,7 @@ export default function ExpenseModal({ ctx }) {
 
           {/* Save / Delete */}
           <button onClick={handleSave} disabled={saving}
-            style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:11,fontSize:14,fontWeight:700,opacity:saving?.6:1}}>
+            style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:11,fontSize:14,fontWeight:700,opacity:saving?.6:1}}>
             {saving?"Guardando...":(isNew?"Registrar gasto":"Guardar cambios")}
           </button>
           {!isNew && (

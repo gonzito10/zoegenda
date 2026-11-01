@@ -46,7 +46,7 @@ export default function WeeklyRoutineContent({ ctx }) {
     <div style={{textAlign:"center",color:"var(--g4)",padding:"60px 20px",fontSize:14}}>
       <div style={{marginBottom:12,color:"var(--g5)",display:"flex",justifyContent:"center"}}><Icon name="calendar" size={36}/></div>
       <div style={{marginBottom:8}}>No hay actividades esta semana</div>
-      <button onClick={()=>openNew(null)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontSize:13}}>+ Agregar</button>
+      <button onClick={()=>openNew(null)} style={{background:"#FF6B6B22",color:"var(--coral)",border:"1px solid #FF6B6B44",borderRadius:10,padding:"8px 20px",cursor:"pointer",fontSize:13}}>+ Agregar</button>
     </div>
   );
 
@@ -59,8 +59,8 @@ export default function WeeklyRoutineContent({ ctx }) {
         return (
           <div key={dateStr} style={{marginBottom:18}}>
             {/* Cabecera del día */}
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-              <div style={{width:38,height:38,borderRadius:9,background:isToday?"#FF6B6B":"var(--card2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
+              <div style={{width:38,height:38,borderRadius:10,background:isToday?"#FF6B6B":"var(--card2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <span style={{fontSize:11,fontWeight:700,color:isToday?"var(--title)":"var(--ga)",textTransform:"uppercase"}}>{DAYS_FULL_ES[dow].slice(0,3)}</span>
               </div>
               <div style={{flex:1,height:1,background:"var(--border)"}}/>
@@ -68,12 +68,12 @@ export default function WeeklyRoutineContent({ ctx }) {
             {/* Actividades del día */}
             {dayEvs.map(ev => (
               <div key={ev.id} className="agenda-event" onClick={()=>openEdit(ev)}
-                style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start",borderLeft:`3px solid ${cat(ev.category).color}`,marginBottom:5}}>
+                style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 12px",display:"flex",gap:12,alignItems:"flex-start",borderLeft:`3px solid ${cat(ev.category).color}`,marginBottom:5}}>
                 {ev.category!=="birthday" && <div style={{color:"var(--g8)",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>
                   {ev.time}{ev.timeEnd&&<span style={{color:"var(--g5)"}}>–{ev.timeEnd}</span>}
                 </div>}
                 <div style={{flex:1}}>
-                  <div style={{fontWeight:600,fontSize:13,color:"var(--text)",display:"flex",alignItems:"center",gap:5}}>
+                  <div style={{fontWeight:600,fontSize:13,color:"var(--text)",display:"flex",alignItems:"center",gap:8}}>
                     {cat(ev.category).icon} {ev.title}
                     {ev.recurring&&<span style={{fontSize:9,background:"var(--border2)",color:"var(--g8)",padding:"1px 5px",borderRadius:4}}>↻</span>}
                   </div>

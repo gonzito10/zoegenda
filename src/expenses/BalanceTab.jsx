@@ -21,13 +21,13 @@ export default function BalanceTab({ ctx }) {
             <div style={{width:28,height:28,borderRadius:"50%",background:to.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{to.avatar}</div>
           </div>
           <button onClick={()=>handleSettle(d)}
-            style={{marginTop:4,minHeight:48,borderRadius:14,border:"1.5px solid var(--warn)",background:"transparent",color:"var(--warn)",fontSize:15,fontWeight:700,cursor:"pointer"}}>
+            style={{marginTop:4,minHeight:48,borderRadius:16,border:"1.5px solid var(--warn)",background:"transparent",color:"var(--warn)",fontSize:15,fontWeight:700,cursor:"pointer"}}>
             Saldar
           </button>
         </div>
       );
     })}
-    <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 14px",marginBottom:12,fontSize:13,color:"var(--g5)",display:"flex",alignItems:"center",gap:6}}>
+    <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 14px",marginBottom:12,fontSize:13,color:"var(--g5)",display:"flex",alignItems:"center",gap:8}}>
       <Icon name="chart" size={16}/> Balance acumulado histórico — incluye todos los meses
     </div>
     {budgetRows.filter(b=>b.pct>=80).map(b=>{
@@ -44,8 +44,8 @@ export default function BalanceTab({ ctx }) {
       {members.map(m=>{
         const b = balance[m.id] || 0;
         return (
-          <div key={m.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
-            <div style={{fontSize:12,color:"var(--g6)",marginBottom:4,display:"flex",alignItems:"center",gap:6}}>
+          <div key={m.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:12}}>
+            <div style={{fontSize:12,color:"var(--g6)",marginBottom:4,display:"flex",alignItems:"center",gap:8}}>
               <div style={{width:16,height:16,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:6,fontWeight:700,color:"#fff"}}>{m.avatar}</div>
               {m.display_name}
             </div>
@@ -54,7 +54,7 @@ export default function BalanceTab({ ctx }) {
           </div>
         );
       })}
-      <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
+      <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:12}}>
         <div style={{fontSize:12,color:"var(--g6)",marginBottom:4}}><Icon name="wallet" size={15}/> Total histórico</div>
         <div style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"var(--text)"}}>{fmtMoney(totalHistorico)}</div>
         <div style={{fontSize:12,color:"var(--g5)",marginTop:3}}>Todos los meses</div>
@@ -72,17 +72,17 @@ export default function BalanceTab({ ctx }) {
       {monthExpenses.filter(e=>e.installments>1).map(e=>{
         const c = getCat(e.category);
         return (
-          <div key={e.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-            <div style={{width:34,height:34,borderRadius:9,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
+          <div key={e.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
+            <div style={{width:34,height:34,borderRadius:10,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.description}</div>
-              <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center"}}>
+              <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:8,alignItems:"center"}}>
                 {getMember(e.paid_by).display_name}
-                <span style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>
+                <span style={{background:"#DDA0DD22",color:"var(--violet)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>
               </div>
             </div>
             <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:14,fontWeight:700,color:"#DDA0DD"}}>{fmtMoney(e.amount)}</div>
+              <div style={{fontSize:14,fontWeight:700,color:"var(--violet)"}}>{fmtMoney(e.amount)}</div>
               <div style={{fontSize:12,color:"var(--g5)"}}>÷{e.split_between?.length||1} = {fmtMoney(e.amount/(e.split_between?.length||1))} c/u</div>
             </div>
           </div>

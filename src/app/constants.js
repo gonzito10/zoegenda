@@ -69,8 +69,8 @@ export const THEMES = [
   },
 ];
 // Grises de texto con contraste suficiente (≥4,5:1) y colores de estado: --ok (bien), --warn (deuda / cerca del límite), --danger (superado)
-export const DARK_VARS = {"--bg":"#0f0f13","--card":"#131318","--card2":"#1a1a22","--border":"#1e1e2a","--border2":"#2a2a3a","--border3":"#3a3a4a","--text":"#e8e8f0","--title":"#ffffff","--bar":"#0a0a0e","--g3":"#333","--g4":"#80808c","--g5":"#8e8e9a","--g6":"#9c9ca8","--g8":"#b0b0bb","--ga":"#c6c6d0","--ok":"#5CCB8B","--warn":"#F2B84B","--danger":"#F0605A"};
-export const LIGHT_VARS = {"--bg":"#f5f5f0","--card":"#ffffff","--card2":"#f0f0ea","--border":"#e0e0d8","--border2":"#cfcfc6","--border3":"#bdbdb3","--text":"#1a1a1a","--title":"#111111","--bar":"#ebebe4","--g3":"#c4c4bb","--g4":"#6e6e66","--g5":"#66665e","--g6":"#5e5e56","--g8":"#4e4e47","--ga":"#3e3e39","--ok":"#1F7A4A","--warn":"#9A5B00","--danger":"#C0392B"};
+export const DARK_VARS = {"--bg":"#0f0f13","--card":"#131318","--card2":"#1a1a22","--border":"#1e1e2a","--border2":"#2a2a3a","--border3":"#3a3a4a","--text":"#e8e8f0","--title":"#ffffff","--bar":"#0a0a0e","--g3":"#333","--g4":"#80808c","--g5":"#8e8e9a","--g6":"#9c9ca8","--g8":"#b0b0bb","--ga":"#c6c6d0","--ok":"#5CCB8B","--warn":"#F2B84B","--danger":"#F0605A","--coral":"#FF6B6B","--violet":"#DDA0DD","--teal":"#4ECDC4"};
+export const LIGHT_VARS = {"--bg":"#f5f5f0","--card":"#ffffff","--card2":"#f0f0ea","--border":"#e0e0d8","--border2":"#cfcfc6","--border3":"#bdbdb3","--text":"#1a1a1a","--title":"#111111","--bar":"#ebebe4","--g3":"#c4c4bb","--g4":"#6e6e66","--g5":"#66665e","--g6":"#5e5e56","--g8":"#4e4e47","--ga":"#3e3e39","--ok":"#1F7A4A","--warn":"#9A5B00","--danger":"#C0392B","--coral":"#C93C3C","--violet":"#8A4F9E","--teal":"#0F7A73"};
 export function resolveTheme(id, systemLight){
   if(id==="auto") return THEMES.find(t=>t.id===(systemLight?"light":"default"));
   return THEMES.find(t=>t.id===id) || THEMES[0];

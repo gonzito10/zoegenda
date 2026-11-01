@@ -261,10 +261,10 @@ export default function Lists({ groupId, currentUserId }) {
       )}
 
       {/* Selector de listados */}
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
         {lists.map(l => (
           <div key={l.id} onClick={()=>setActiveList(l.id)}
-            style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:activeList===l.id?"#FF6B6B22":"var(--card2)",color:activeList===l.id?"#FF6B6B":"var(--g5)",border:`1px solid ${activeList===l.id?"#FF6B6B44":"var(--border2)"}`,display:"flex",alignItems:"center",gap:5}}>
+            style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:activeList===l.id?"#FF6B6B22":"var(--card2)",color:activeList===l.id?"var(--coral)":"var(--g5)",border:`1px solid ${activeList===l.id?"#FF6B6B44":"var(--border2)"}`,display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:15}}>{l.icon||"📋"}</span>{l.name}
           </div>
         ))}
@@ -293,22 +293,22 @@ export default function Lists({ groupId, currentUserId }) {
               onKeyDown={e=>{ if(e.key==="Enter") handleCreateItem(); if(e.key==="Escape") setQuery(""); }}
               placeholder="Buscar o crear elemento (ej: Azúcar)" style={{...inp,flex:1}}/>
             <button onClick={handleCreateItem}
-              style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"0 16px",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
+              style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"0 16px",fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
           </div>
           {q && (
             <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:20,maxHeight:260,overflowY:"auto",background:"var(--card)",border:"1px solid var(--border2)",borderRadius:10,boxShadow:"0 8px 24px #0006"}}>
               {matches.map(item => (
                 <div key={item.id}
                   onClick={()=>{ if(!item.selected) patchItem(item.id,{selected:true,checked:false}); setQuery(""); }}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderBottom:"1px solid var(--border)",cursor:item.selected?"default":"pointer",opacity:item.selected?.5:1}}>
-                  <span style={{color:item.selected?"#96CEB4":"#FF6B6B",fontWeight:700,fontSize:15,lineHeight:1}}>{item.selected?"✓":"+"}</span>
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",borderBottom:"1px solid var(--border)",cursor:item.selected?"default":"pointer",opacity:item.selected?.5:1}}>
+                  <span style={{color:item.selected?"var(--ok)":"#FF6B6B",fontWeight:700,fontSize:15,lineHeight:1}}>{item.selected?"✓":"+"}</span>
                   <span style={{flex:1,fontSize:13,color:"var(--text)",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}}>{item.text}</span>
                   {item.selected && <span style={{fontSize:12,color:"var(--g5)",flexShrink:0}}>ya en {T.selectedTitle.toLowerCase()}</span>}
                 </div>
               ))}
               {!exactMatch && (
                 <div onClick={handleCreateItem}
-                  style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",color:"#FF6B6B",fontSize:13,cursor:"pointer",background:"#FF6B6B11"}}>
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",color:"var(--coral)",fontSize:13,cursor:"pointer",background:"#FF6B6B11"}}>
                   <span style={{fontWeight:700}}>+</span> Crear “{query.trim()}”
                 </div>
               )}
@@ -324,7 +324,7 @@ export default function Lists({ groupId, currentUserId }) {
           </div>
           {doneCount>0&&(
             <button onClick={handleClearDone}
-              style={{background:"#96CEB422",color:"#96CEB4",border:"1px solid #96CEB444",borderRadius:8,padding:"4px 10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{T.clearText}</button>
+              style={{background:"#96CEB422",color:"var(--ok)",border:"1px solid #96CEB444",borderRadius:10,padding:"4px 10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{T.clearText}</button>
           )}
         </div>
         {selectedItems.length===0 && (
@@ -332,13 +332,13 @@ export default function Lists({ groupId, currentUserId }) {
         )}
         {selectedItems.map(item => (
           <div key={item.id} style={{marginBottom:5}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:qtyEditId===item.id?"10px 10px 0 0":10,background:item.checked?"var(--bg)":"var(--card)",border:"1px solid var(--border)",opacity:item.checked?.6:1}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",borderRadius:qtyEditId===item.id?"10px 10px 0 0":10,background:item.checked?"var(--bg)":"var(--card)",border:"1px solid var(--border)",opacity:item.checked?.6:1}}>
               <div onClick={()=>patchItem(item.id,{checked:!item.checked})}
                 style={{width:22,height:22,borderRadius:"50%",flexShrink:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",fontWeight:700,background:item.checked?"#96CEB4":"transparent",border:`2px solid ${item.checked?"#96CEB4":"var(--border2)"}`}}>{item.checked?"✓":""}</div>
               <span style={{flex:1,fontSize:14,color:item.checked?"var(--g5)":"var(--text)",textDecoration:item.checked?"line-through":"none",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}}>{item.text}</span>
               {T.hasQty && (
                 <button onClick={()=>openQtyEditor(item)}
-                  style={{background:item.quantity!=null?"#FFB34722":"transparent",color:item.quantity!=null?"#FFB347":"var(--g4)",border:`1px ${item.quantity!=null?"solid":"dashed"} ${item.quantity!=null?"#FFB34744":"var(--border2)"}`,borderRadius:8,padding:"3px 9px",fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                  style={{background:item.quantity!=null?"#FFB34722":"transparent",color:item.quantity!=null?"var(--warn)":"var(--g4)",border:`1px ${item.quantity!=null?"solid":"dashed"} ${item.quantity!=null?"#FFB34744":"var(--border2)"}`,borderRadius:10,padding:"3px 9px",fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
                   {item.quantity!=null ? `${fmtQty(item.quantity)} ${item.unit||""}` : "+ cantidad"}
                 </button>
               )}
@@ -346,7 +346,7 @@ export default function Lists({ groupId, currentUserId }) {
                 style={{background:"transparent",border:"none",color:"var(--border3)",fontSize:18,cursor:"pointer",padding:"0 4px",lineHeight:1}}>×</button>
             </div>
             {T.hasQty && qtyEditId===item.id && (
-              <div style={{display:"flex",gap:6,padding:"10px 12px",background:"var(--bg)",border:"1px solid var(--border)",borderTop:"none",borderRadius:"0 0 10px 10px"}}>
+              <div style={{display:"flex",gap:8,padding:"10px 12px",background:"var(--bg)",border:"1px solid var(--border)",borderTop:"none",borderRadius:"0 0 10px 10px"}}>
                 <input value={qtyDraft} onChange={e=>setQtyDraft(e.target.value)} inputMode="decimal" placeholder="Cantidad" autoFocus
                   onKeyDown={e=>e.key==="Enter"&&saveQty(item)} style={{...inp,flex:1,padding:"8px 11px"}}/>
                 <select value={unitDraft} onChange={e=>setUnitDraft(e.target.value)}
@@ -354,7 +354,7 @@ export default function Lists({ groupId, currentUserId }) {
                   {UNITS.map(u=><option key={u} value={u}>{u}</option>)}
                 </select>
                 <button onClick={()=>saveQty(item)}
-                  style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"0 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>OK</button>
+                  style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"0 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>OK</button>
               </div>
             )}
           </div>
@@ -370,10 +370,10 @@ export default function Lists({ groupId, currentUserId }) {
           </div>
         )}
         {catalog.map(item => (
-          <div key={item.id} style={{display:"flex",alignItems:"center",gap:6,marginBottom:5}}>
+          <div key={item.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
             <div onClick={()=>patchItem(item.id,{selected:true,checked:false})}
-              style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,background:"var(--card)",border:"1px solid var(--border)",cursor:"pointer",minWidth:0}}>
-              <span style={{color:"#FF6B6B",fontWeight:700,fontSize:15,lineHeight:1}}>+</span>
+              style={{flex:1,display:"flex",alignItems:"center",gap:12,padding:"9px 12px",borderRadius:10,background:"var(--card)",border:"1px solid var(--border)",cursor:"pointer",minWidth:0}}>
+              <span style={{color:"var(--coral)",fontWeight:700,fontSize:15,lineHeight:1}}>+</span>
               <span style={{flex:1,fontSize:13,color:"var(--text)",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}}>{item.text}</span>
               {T.hasQty && item.quantity!=null && <span style={{fontSize:12,color:"var(--g5)",flexShrink:0}}>{fmtQty(item.quantity)} {item.unit||""}</span>}
             </div>
@@ -395,18 +395,18 @@ export default function Lists({ groupId, currentUserId }) {
 
             <div style={{marginBottom:14}}>
               <label style={lbl}>Tipo de listado</label>
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 {Object.entries(LIST_TYPES).map(([k,t])=>{
                   const on = modalType===k;
                   return (
                     <div key={k} onClick={()=>pickType(k)}
-                      style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:on?"#FF6B6B11":"var(--bg)",border:`1px solid ${on?"#FF6B6B55":"var(--border)"}`}}>
+                      style={{display:"flex",alignItems:"center",gap:12,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:on?"#FF6B6B11":"var(--bg)",border:`1px solid ${on?"#FF6B6B55":"var(--border)"}`}}>
                       <span style={{fontSize:20}}>{t.icon}</span>
                       <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:600,color:on?"#FF6B6B":"var(--text)"}}>{t.label}</div>
+                        <div style={{fontSize:13,fontWeight:600,color:on?"var(--coral)":"var(--text)"}}>{t.label}</div>
                         <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>{t.desc}</div>
                       </div>
-                      {on && <span style={{color:"#FF6B6B",fontSize:14}}>✓</span>}
+                      {on && <span style={{color:"var(--coral)",fontSize:14}}>✓</span>}
                     </div>
                   );
                 })}
@@ -422,7 +422,7 @@ export default function Lists({ groupId, currentUserId }) {
 
             <div style={{marginBottom:16}}>
               <label style={lbl}>Ícono</label>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6,maxHeight:170,overflowY:"auto"}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,maxHeight:170,overflowY:"auto"}}>
                 {LIST_ICONS.map((ico,idx)=>(
                   <div key={ico+idx} onClick={()=>{setModalIcon(ico);setIconTouched(true);}}
                     style={{width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:10,fontSize:20,cursor:"pointer",background:modalIcon===ico?"#FF6B6B22":"var(--card2)",border:`1.5px solid ${modalIcon===ico?"#FF6B6B":"transparent"}`}}>
@@ -432,12 +432,12 @@ export default function Lists({ groupId, currentUserId }) {
               </div>
             </div>
 
-            <div style={{background:"var(--bg)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+            <div style={{background:"var(--bg)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
               <span style={{fontSize:22}}>{modalIcon}</span>
               <span style={{fontSize:14,fontWeight:600,color:modalName?"var(--text)":"var(--g4)"}}>{modalName||"Sin nombre"}</span>
             </div>
             <button onClick={handleSaveList}
-              style={{width:"100%",background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+              style={{width:"100%",background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer"}}>
               {editingList?"Guardar cambios":"Crear listado"}
             </button>
           </div>
@@ -453,7 +453,7 @@ export default function Lists({ groupId, currentUserId }) {
             <div style={{fontSize:13,color:"var(--g6)",marginBottom:20}}>Se eliminarán también todos los elementos guardados. Esta acción no se puede deshacer.</div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>setShowDelete(null)} style={{flex:1,background:"var(--border)",color:"var(--ga)",border:"none",borderRadius:10,padding:"10px",fontSize:13,cursor:"pointer"}}>Cancelar</button>
-              <button onClick={()=>handleDeleteList(showDelete)} style={{flex:1,background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Eliminar</button>
+              <button onClick={()=>handleDeleteList(showDelete)} style={{flex:1,background:"#FF6B6B22",color:"var(--coral)",border:"1px solid #FF6B6B44",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Eliminar</button>
             </div>
           </div>
         </div>

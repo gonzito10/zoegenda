@@ -38,14 +38,14 @@ export default function BudgetTab({ ctx }) {
     await supabase.from("category_budgets").delete().eq("id", b.id);
     setBudgets(await loadBudgets(groupId));
   }
-  const chip = on => ({whiteSpace:"nowrap",padding:"4px 11px",borderRadius:20,fontSize:12,fontWeight:on?700:500,cursor:"pointer",background:on?"#FF6B6B22":"var(--card2)",color:on?"#FF6B6B":"var(--g6)",border:`1px solid ${on?"#FF6B6B55":"var(--border2)"}`});
+  const chip = on => ({whiteSpace:"nowrap",padding:"4px 11px",borderRadius:20,fontSize:12,fontWeight:on?700:500,cursor:"pointer",background:on?"#FF6B6B22":"var(--card2)",color:on?"var(--coral)":"var(--g6)",border:`1px solid ${on?"#FF6B6B55":"var(--border2)"}`});
 
   return (
     <div>
       <div style={{fontSize:12,color:"var(--g5)",lineHeight:1.5,marginBottom:10}}>
         Límite mensual por categoría ({monthLabel(currentMonthKey)}). Te avisamos al llegar al 80% y al superarlo.
       </div>
-      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
         <span style={{fontSize:12,color:"var(--g5)",flex:"1 1 100%"}}><Icon name="chart" size={15}/> Comparar con el promedio de:</span>
         {[3,6,12].map(n => <div key={n} onClick={()=>setPeriod(n)} style={chip(period===n)}>{n} meses</div>)}
       </div>
@@ -57,7 +57,7 @@ export default function BudgetTab({ ctx }) {
         const h = hist(b.category); const isOpen = openId === b.id;
         const barMax = Math.max(b.amount, ...h.totals.map(t => t.total), 1);
         return (
-          <div key={b.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:"11px 13px",marginBottom:8}}>
+          <div key={b.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"11px 13px",marginBottom:8}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
               <span style={{fontSize:18}}>{c.icon}</span>
               <span style={{flex:1,fontSize:13,fontWeight:600}}>{c.label}</span>
@@ -76,9 +76,9 @@ export default function BudgetTab({ ctx }) {
               <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid var(--border)"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,fontSize:12,color:"var(--g8)"}}>
                   <span><Icon name="chart" size={14}/> Promedio {h.months} {h.months===1?"mes":"meses"}: <strong style={{color:"var(--text)"}}>{fmtMoney(h.avg)}</strong>{h.max && <span style={{color:"var(--g5)"}}> · máx {fmtMoney(h.max.total)}</span>}</span>
-                  <span onClick={()=>setOpenId(isOpen?null:b.id)} style={{color:"#FF6B6B",cursor:"pointer",whiteSpace:"nowrap",fontWeight:600}}>{isOpen?"ocultar ▴":"ver meses ▾"}</span>
+                  <span onClick={()=>setOpenId(isOpen?null:b.id)} style={{color:"var(--coral)",cursor:"pointer",whiteSpace:"nowrap",fontWeight:600}}>{isOpen?"ocultar ▴":"ver meses ▾"}</span>
                 </div>
-                <div style={{fontSize:12,color:b.amount<h.avg?"#FFB347":"var(--g5)",marginTop:3}}>
+                <div style={{fontSize:12,color:b.amount<h.avg?"var(--warn)":"var(--g5)",marginTop:3}}>
                   {b.amount<h.avg ? `Tu límite está ${fmtMoney(h.avg-b.amount)} por debajo del promedio` : `Tu límite está ${fmtMoney(b.amount-h.avg)} por encima del promedio`}
                 </div>
                 {isOpen && (
@@ -94,7 +94,7 @@ export default function BudgetTab({ ctx }) {
                       ))}
                     </div>
                     <div style={{display:"flex",gap:12,fontSize:12,color:"var(--g5)",marginTop:6}}>
-                      <span style={{color:"#FF6B6B"}}>┄ Límite</span><span>┄ Promedio</span>
+                      <span style={{color:"var(--coral)"}}>┄ Límite</span><span>┄ Promedio</span>
                       {h.min && <span style={{marginLeft:"auto"}}>mín {fmtMoney(h.min.total)} ({shortMonth(h.min.key)})</span>}
                     </div>
                   </div>
@@ -105,7 +105,7 @@ export default function BudgetTab({ ctx }) {
         );
       })}
 
-      <div ref={formRef} style={{background:"var(--card)",border:"1px dashed var(--border2)",borderRadius:12,padding:12,marginTop:12}}>
+      <div ref={formRef} style={{background:"var(--card)",border:"1px dashed var(--border2)",borderRadius:10,padding:12,marginTop:12}}>
         <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>{editId?"Editar límite":"Nuevo límite mensual"}</div>
         <div style={{display:"flex",gap:8}}>
           <select value={cat} onChange={e=>setCat(e.target.value)} disabled={!!editId} style={{...inp,flex:2,cursor:"pointer"}}>
@@ -113,7 +113,7 @@ export default function BudgetTab({ ctx }) {
             {(editId ? allCats : free).map(c=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
           </select>
           <input value={amt} onChange={e=>setAmt(e.target.value)} inputMode="decimal" placeholder="Monto" style={{...inp,flex:1.3}}/>
-          <button onClick={addBudget} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"0 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}>OK</button>
+          <button onClick={addBudget} style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"0 16px",fontSize:13,fontWeight:700,cursor:"pointer"}}>OK</button>
         </div>
         {catHist && (
           <div style={{marginTop:10,background:"var(--bg)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 12px"}}>
@@ -123,10 +123,10 @@ export default function BudgetTab({ ctx }) {
               <div style={{fontSize:12,color:"var(--g8)",marginBottom:6}}><Icon name="chart" size={14}/> Lo que gastaron en {getCat(cat).label}</div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {[3,6].map(n => catHist[n].months > 0 && (
-                  <div key={n} style={{flex:"1 1 0",minWidth:90,background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,padding:"7px 9px"}}>
+                  <div key={n} style={{flex:"1 1 0",minWidth:90,background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"7px 9px"}}>
                     <div style={{fontSize:12,color:"var(--g5)"}}>Promedio {catHist[n].months} {catHist[n].months===1?"mes":"meses"}</div>
                     <div style={{fontSize:14,fontWeight:700,fontFamily:"Fraunces,serif"}}>{fmtMoney(catHist[n].avg)}</div>
-                    <div onClick={()=>setAmt(String(roundMoney(catHist[n].avg)))} style={{fontSize:12,color:"#FF6B6B",cursor:"pointer",fontWeight:600,marginTop:3}}>Usar este promedio</div>
+                    <div onClick={()=>setAmt(String(roundMoney(catHist[n].avg)))} style={{fontSize:12,color:"var(--coral)",cursor:"pointer",fontWeight:600,marginTop:3}}>Usar este promedio</div>
                   </div>
                 ))}
               </div>
@@ -144,11 +144,11 @@ export default function BudgetTab({ ctx }) {
         <div style={{marginTop:16}}>
           <div style={{fontSize:12,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Categorías sin límite · promedio {period} meses</div>
           {suggestions.map(({c,h})=>(
-            <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"9px 12px",marginBottom:5}}>
+            <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"9px 12px",marginBottom:5}}>
               <span style={{fontSize:16}}>{c.icon}</span>
               <span style={{flex:1,fontSize:13,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.label}</span>
               <span style={{fontSize:13,fontWeight:700}}>{fmtMoney(h.avg)}</span>
-              <button onClick={()=>fillForm(c.id, roundMoney(h.avg), null)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"4px 10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Fijar límite</button>
+              <button onClick={()=>fillForm(c.id, roundMoney(h.avg), null)} style={{background:"#FF6B6B22",color:"var(--coral)",border:"1px solid #FF6B6B44",borderRadius:10,padding:"4px 10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Fijar límite</button>
             </div>
           ))}
         </div>

@@ -33,7 +33,7 @@ export default function StatsTab({ ctx }) {
       <div style={{marginBottom:6}}>
         <div onClick={onToggle} style={{cursor:"pointer",padding:"10px 12px",borderRadius:isOpen?"10px 10px 0 0":10,background:isOpen?c.color+"22":"var(--card)",border:`1px solid ${isOpen?c.color+"44":"var(--border)"}`,borderBottom:isOpen?"none":""}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-            <div style={{fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
+            <div style={{fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:17}}>{c.icon}</span>{c.label}
               <span style={{fontSize:12,color:"var(--g5)",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
             </div>
@@ -54,7 +54,7 @@ export default function StatsTab({ ctx }) {
                 const payer = getMember(e.paid_by);
                 return (
                   <div key={e.id} onClick={()=>{setEditExp(e);setShowModal(true);}}
-                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:8,background:"var(--card)",border:"1px solid var(--card2)",cursor:"pointer"}}>
+                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:10,background:"var(--card)",border:"1px solid var(--card2)",cursor:"pointer"}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:12,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.description}</div>
                       <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>{e.date} · {payer.display_name}{e.installments>1?` · Cuota ${e.installment_number}/${e.installments}`:""}</div>
@@ -73,11 +73,11 @@ export default function StatsTab({ ctx }) {
   return (
     <div>
       {/* Sub-view tabs */}
-      <div style={{display:"flex",gap:6,marginBottom:14}}>
+      <div style={{display:"flex",gap:8,marginBottom:14}}>
         {[["month","Este mes"],["annual","Anual"],...(tags.length>0?[["tags","Por etiqueta"]]:[])]
           .map(([v,l])=>(
             <button key={v} onClick={()=>{setStatsView(v);setOpenCat(null);setOpenTagCat({});}}
-              style={{padding:"5px 14px",borderRadius:8,fontSize:12,fontWeight:600,border:"1px solid",borderColor:statsView===v?"var(--border2)":"transparent",background:statsView===v?"var(--border)":"transparent",color:statsView===v?"var(--title)":"var(--g5)",cursor:"pointer"}}>
+              style={{padding:"5px 14px",borderRadius:10,fontSize:12,fontWeight:600,border:"1px solid",borderColor:statsView===v?"var(--border2)":"transparent",background:statsView===v?"var(--border)":"transparent",color:statsView===v?"var(--title)":"var(--g5)",cursor:"pointer"}}>
               {l}
             </button>
           ))
@@ -95,15 +95,15 @@ export default function StatsTab({ ctx }) {
               <div key={tag.id} style={{marginBottom:24}}>
                 {/* Tag header */}
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                  <div style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:700}}><Icon name="tag" size={13}/> {tag.name}</div>
+                  <div style={{background:"#DDA0DD22",color:"var(--violet)",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:700}}><Icon name="tag" size={13}/> {tag.name}</div>
                   <div style={{fontSize:12,color:"var(--g5)"}}>{fmtMoney(tTotal)}</div>
                 </div>
                 {/* Pie + leyenda */}
-                <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:16,marginBottom:10,display:"flex",alignItems:"center",gap:16}}>
+                <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:16,marginBottom:10,display:"flex",alignItems:"center",gap:16}}>
                   <PieChart cats={tCats} total={tTotal}/>
-                  <div style={{display:"flex",flexDirection:"column",gap:7,flex:1}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:8,flex:1}}>
                     {tCats.map(c=>(
-                      <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:7}}>
+                      <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:8}}>
                         <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>
                         <div style={{flex:1,fontSize:12,color:"var(--ga)"}}>{c.icon} {c.label}</div>
                         <div style={{fontSize:12,fontWeight:700,color:c.color}}>{((c.amount/tTotal)*100).toFixed(1)}%</div>
@@ -132,7 +132,7 @@ export default function StatsTab({ ctx }) {
       {statsView!=="tags" && (cats.length === 0
         ? <div style={{textAlign:"center",color:"var(--g4)",padding:"50px 0",fontSize:14}}>Sin datos para mostrar</div>
         : <>
-          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:14,marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:14,marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
               <div style={{fontSize:12,color:"var(--g5)",marginBottom:4}}>{statsView==="annual"?"Total anual":"Total del mes"}</div>
               <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:700}}>{fmtMoney(total)}</div>
@@ -142,11 +142,11 @@ export default function StatsTab({ ctx }) {
               <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:700}}>{cats.length}</div>
             </div>
           </div>
-          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:16,marginBottom:14,display:"flex",alignItems:"center",gap:16}}>
+          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:16,marginBottom:14,display:"flex",alignItems:"center",gap:16}}>
             <PieChart cats={cats} total={total}/>
-            <div style={{display:"flex",flexDirection:"column",gap:7,flex:1}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8,flex:1}}>
               {cats.map(c=>(
-                <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:7}}>
+                <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:8}}>
                   <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>
                   <div style={{flex:1,fontSize:12,color:"var(--ga)"}}>{c.icon} {c.label}</div>
                   <div style={{fontSize:12,fontWeight:700,color:c.color}}>{((c.amount/total)*100).toFixed(1)}%</div>

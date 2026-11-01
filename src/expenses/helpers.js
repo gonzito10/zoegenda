@@ -1,12 +1,12 @@
 import { supabase } from "../supabase";
 
 export const DEFAULT_CATS = [
-  { id:"supermarket", label:"Supermercado",       icon:"🛒", color:"#FF6B6B" },
-  { id:"home",        label:"Hogar",              icon:"🏠", color:"#4ECDC4" },
+  { id:"supermarket", label:"Supermercado",       icon:"🛒", color:"var(--coral)" },
+  { id:"home",        label:"Hogar",              icon:"🏠", color:"var(--teal)" },
   { id:"services",    label:"Servicios",          icon:"⚡", color:"#FFEAA7" },
-  { id:"outings",     label:"Salidas",            icon:"🍕", color:"#96CEB4" },
-  { id:"electronics", label:"Electrónica",        icon:"📱", color:"#DDA0DD" },
-  { id:"appliances",  label:"Electrodomésticos",  icon:"🫧", color:"#FFB347" },
+  { id:"outings",     label:"Salidas",            icon:"🍕", color:"var(--ok)" },
+  { id:"electronics", label:"Electrónica",        icon:"📱", color:"var(--violet)" },
+  { id:"appliances",  label:"Electrodomésticos",  icon:"🫧", color:"var(--warn)" },
 ];
 
 export const ICON_OPTIONS = [
@@ -24,7 +24,7 @@ export const ICON_OPTIONS = [
 
 export const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-export const inp  = {background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",color:"var(--text)",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
+export const inp  = {background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",color:"var(--text)",fontSize:16,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
 export const lbl  = {fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
 
 // ── Helpers ────────────────────────────────────────────────────────────────

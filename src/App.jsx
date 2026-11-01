@@ -305,7 +305,7 @@ export default function App() {
   // ── Event CRUD ───────────────────────────────────────────────────────────
   function openNew(date) {
     const d = date ? parse(date) : parse(selectedDate);
-    setEditingEvent({ id:null, title:"", date:date||selectedDate, time:"09:00", timeEnd:"", category:"work", attendees:[authUser.id], notes:"", color:"#FF6B6B", recurring:false, recurringDays:[d.getDay()], recurringEnd:"", birthdayPerson:"", alarmDays:"" });
+    setEditingEvent({ id:null, title:"", date:date||selectedDate, time:"09:00", timeEnd:"", category:"work", attendees:[authUser.id], notes:"", color:"var(--coral)", recurring:false, recurringDays:[d.getDay()], recurringEnd:"", birthdayPerson:"", alarmDays:"" });
     setShowEventModal(true);
   }
   function openEdit(ev) {

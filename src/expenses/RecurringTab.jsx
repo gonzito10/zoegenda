@@ -35,7 +35,7 @@ export default function RecurringTab({ ctx }) {
       {recurring.map(r=>{
         const c = getCat(r.category); const payer = getMember(r.paid_by);
         if(editId===r.id && f) return (
-          <div key={r.id} style={{background:"var(--card)",border:"1px solid #4ECDC444",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8}}>
+          <div key={r.id} style={{background:"var(--card)",border:"1px solid #4ECDC444",borderRadius:10,padding:12,display:"flex",flexDirection:"column",gap:8}}>
             <input value={f.description} onChange={e=>setF(x=>({...x,description:e.target.value}))} placeholder="Descripción" style={inp}/>
             <div style={{display:"flex",gap:8}}>
               <input value={f.amount} onChange={e=>setF(x=>({...x,amount:e.target.value}))} inputMode="decimal" placeholder="Monto" style={{...inp,flex:2}}/>
@@ -48,14 +48,14 @@ export default function RecurringTab({ ctx }) {
               );})}
             </div>
             <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase"}}>Pagó</div>
-            <div style={{display:"flex",gap:6}}>
+            <div style={{display:"flex",gap:8}}>
               {members.map(m=>(
                 <div key={m.id} onClick={()=>setF(x=>({...x,paid_by:m.id}))}
                   style={{padding:"5px 12px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:f.paid_by===m.id?700:400,background:f.paid_by===m.id?m.color+"33":"var(--card2)",color:f.paid_by===m.id?m.color:"var(--g6)",border:`1px solid ${f.paid_by===m.id?m.color+"66":"var(--border)"}`}}>{m.display_name}</div>
               ))}
             </div>
             <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase"}}>Dividir entre</div>
-            <div style={{display:"flex",gap:6}}>
+            <div style={{display:"flex",gap:8}}>
               {members.map(m=>{ const on=f.split_between.includes(m.id); return (
                 <div key={m.id} onClick={()=>setF(x=>({...x,split_between:on?x.split_between.filter(u=>u!==m.id):[...x.split_between,m.id]}))}
                   style={{padding:"5px 12px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:on?700:400,background:on?m.color+"33":"var(--card2)",color:on?m.color:"var(--g6)",border:`1px solid ${on?m.color+"66":"var(--border)"}`}}>{m.display_name}</div>
@@ -63,27 +63,27 @@ export default function RecurringTab({ ctx }) {
             </div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>setEditId(null)} style={{flex:1,background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:10,padding:"9px",fontSize:12,cursor:"pointer"}}>Cancelar</button>
-              <button onClick={saveEdit} style={{flex:1,background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"9px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Guardar</button>
+              <button onClick={saveEdit} style={{flex:1,background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"9px",fontSize:12,fontWeight:700,cursor:"pointer"}}>Guardar</button>
             </div>
           </div>
         );
         return (
-          <div key={r.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:"11px 13px",opacity:r.active?1:.55}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div key={r.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"11px 13px",opacity:r.active?1:.55}}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
               <span style={{fontSize:20}}>{c.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:14,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.description}</div>
-                <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                     <span>Día {r.day_of_month} de cada mes · {payer.display_name} · ÷{r.split_between?.length||1}{!r.active&&" · en pausa"}</span>
                     {r.active && <span style={{background:expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"#96CEB422":"var(--card2)",color:expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"#96CEB4":"var(--g5)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>{expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"✓ Cargado este mes":"Pendiente"}</span>}
                   </div>
               </div>
               <div style={{fontSize:15,fontWeight:700,fontFamily:"Fraunces,serif"}}>{fmtMoney(r.amount)}</div>
             </div>
-            <div style={{display:"flex",gap:6,marginTop:9,justifyContent:"flex-end"}}>
-              <button onClick={()=>startEdit(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}><Icon name="edit" size={14}/> Editar</button>
-              <button onClick={()=>toggleActive(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}>{r.active?<><Icon name="pause" size={14}/> Pausar</>:<><Icon name="play" size={14}/> Reanudar</>}</button>
-              <button onClick={()=>removeRule(r)} style={{background:"#FF6B6B11",color:"#FF6B6B",border:"1px solid #FF6B6B33",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}><Icon name="trash" size={14}/> Eliminar</button>
+            <div style={{display:"flex",gap:8,marginTop:9,justifyContent:"flex-end"}}>
+              <button onClick={()=>startEdit(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:10,padding:"4px 10px",fontSize:12,cursor:"pointer"}}><Icon name="edit" size={14}/> Editar</button>
+              <button onClick={()=>toggleActive(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:10,padding:"4px 10px",fontSize:12,cursor:"pointer"}}>{r.active?<><Icon name="pause" size={14}/> Pausar</>:<><Icon name="play" size={14}/> Reanudar</>}</button>
+              <button onClick={()=>removeRule(r)} style={{background:"#FF6B6B11",color:"var(--coral)",border:"1px solid #FF6B6B33",borderRadius:10,padding:"4px 10px",fontSize:12,cursor:"pointer"}}><Icon name="trash" size={14}/> Eliminar</button>
             </div>
           </div>
         );

@@ -113,7 +113,7 @@ export default function HomeContent({ ctx }) {
           {cards.map(([v, icon, title, datum, sub, color, datumColor]) => (
             <button key={v} onClick={() => setMainTab(v)}
               style={{minHeight:172,borderRadius:20,border:`1px solid ${color}44`,background:`linear-gradient(145deg, ${color}22, var(--card) 70%)`,color:"var(--text)",cursor:"pointer",display:"flex",flexDirection:"column",gap:12,padding:16,textAlign:"left"}}>
-              <span style={{width:44,height:44,borderRadius:14,background:`${color}33`,display:"flex",alignItems:"center",justifyContent:"center",color:`color-mix(in srgb, ${color} 70%, var(--title))`}}><Icon name={icon} size={24}/></span>
+              <span style={{width:44,height:44,borderRadius:16,background:`${color}33`,display:"flex",alignItems:"center",justifyContent:"center",color:`color-mix(in srgb, ${color} 70%, var(--title))`}}><Icon name={icon} size={24}/></span>
               <span style={{marginTop:"auto",display:"flex",flexDirection:"column",gap:2}}>
                 <span style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"var(--title)"}}>{title}</span>
                 <span style={{fontSize:15,fontWeight:600,color:datumColor}}>{datum}</span>

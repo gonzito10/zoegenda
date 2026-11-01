@@ -57,7 +57,7 @@ export default function Search({ groupId, events, onGo, onClose }) {
     </div>
   );
   const Row = ({ icon, title, sub, right, onClick }) => (
-    <div onClick={onClick} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,marginBottom:5,cursor:"pointer"}}>
+    <div onClick={onClick} style={{display:"flex",alignItems:"center",gap:12,padding:"9px 12px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,marginBottom:5,cursor:"pointer"}}>
       <span style={{fontSize:16,flexShrink:0}}>{icon}</span>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{title}</div>

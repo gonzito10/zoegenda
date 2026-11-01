@@ -16,7 +16,7 @@ export default function GroupsScreen({ ctx }) {
             {groups.length>0&&(
               <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
                 {groups.map(g=>(
-                  <div key={g.id} onClick={()=>{setActiveGroup(g);setMainTab("home");setScreen("app");}} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card)",border:"1px solid var(--border)",borderRadius:14,padding:"13px 16px",cursor:"pointer"}}>
+                  <div key={g.id} onClick={()=>{setActiveGroup(g);setMainTab("home");setScreen("app");}} style={{display:"flex",alignItems:"center",gap:16,background:"var(--card)",border:"1px solid var(--border)",borderRadius:16,padding:"13px 16px",cursor:"pointer"}}>
                     <div style={{width:40,height:40,borderRadius:10,background:"#FF6B6B22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>📅</div>
                     <div style={{flex:1}}>
                       <div style={{fontSize:15,fontWeight:600,color:"var(--text)"}}>{g.name}</div>
@@ -29,8 +29,8 @@ export default function GroupsScreen({ ctx }) {
             )}
 
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              <button onClick={()=>{setGroupAction("create");setGroupError("");}} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:12,padding:"12px",fontSize:14,fontWeight:700}}>+ Crear nueva agenda</button>
-              <button onClick={()=>{setGroupAction("join");setGroupError("");}} style={{background:"transparent",color:"var(--g6)",border:"1px solid var(--border2)",borderRadius:12,padding:"12px",fontSize:13}}>Unirme con código</button>
+              <button onClick={()=>{setGroupAction("create");setGroupError("");}} style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700}}>+ Crear nueva agenda</button>
+              <button onClick={()=>{setGroupAction("join");setGroupError("");}} style={{background:"transparent",color:"var(--g6)",border:"1px solid var(--border2)",borderRadius:10,padding:"12px",fontSize:13}}>Unirme con código</button>
             </div>
             {groups.length>0&&<button onClick={()=>setScreen("app")} style={{background:"transparent",border:"none",color:"var(--g4)",fontSize:12,marginTop:16,width:"100%"}}>← Volver a la agenda</button>}
           </>
@@ -44,8 +44,8 @@ export default function GroupsScreen({ ctx }) {
                 <label style={lbl}>Nombre de la agenda</label>
                 <input value={groupName} onChange={e=>{setGroupName(e.target.value);setGroupError("");}} onKeyDown={e=>e.key==="Enter"&&handleCreateGroup()} placeholder="Ej: Familia, Trabajo, Amigos..." style={inp} autoFocus/>
               </div>
-              {groupError&&<div style={{fontSize:12,color:"#FF6B6B",background:"#FF6B6B11",padding:"8px 12px",borderRadius:8}}>{groupError}</div>}
-              <button onClick={handleCreateGroup} disabled={groupLoading} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,opacity:groupLoading?.6:1}}>
+              {groupError&&<div style={{fontSize:12,color:"var(--coral)",background:"#FF6B6B11",padding:"8px 12px",borderRadius:10}}>{groupError}</div>}
+              <button onClick={handleCreateGroup} disabled={groupLoading} style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,opacity:groupLoading?.6:1}}>
                 {groupLoading?"Creando...":"Crear agenda"}
               </button>
             </div>
@@ -60,8 +60,8 @@ export default function GroupsScreen({ ctx }) {
                 <label style={lbl}>Código del grupo</label>
                 <input value={groupCode} onChange={e=>{setGroupCode(e.target.value.toUpperCase());setGroupError("");}} onKeyDown={e=>e.key==="Enter"&&handleJoinGroup()} placeholder="Ej: AB12CD" maxLength={6} style={{...inp,textTransform:"uppercase",letterSpacing:4,fontSize:18,textAlign:"center"}} autoFocus/>
               </div>
-              {groupError&&<div style={{fontSize:12,color:"#FF6B6B",background:"#FF6B6B11",padding:"8px 12px",borderRadius:8}}>{groupError}</div>}
-              <button onClick={handleJoinGroup} disabled={groupLoading} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,opacity:groupLoading?.6:1}}>
+              {groupError&&<div style={{fontSize:12,color:"var(--coral)",background:"#FF6B6B11",padding:"8px 12px",borderRadius:10}}>{groupError}</div>}
+              <button onClick={handleJoinGroup} disabled={groupLoading} style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,opacity:groupLoading?.6:1}}>
                 {groupLoading?"Buscando...":"Unirme"}
               </button>
             </div>

@@ -33,7 +33,7 @@ export default function HistoryTab({ ctx }) {
     {historyExpenses.length === 0
       ? <div style={{textAlign:"center",color:"var(--g4)",padding:monthSettlements.length?"24px 0":"50px 0",fontSize:14}}>No hay gastos este mes</div>
       : <>
-        <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",fontSize:12}}>
+        <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",fontSize:12}}>
           <span style={{color:"var(--g5)"}}>Total del mes</span>
           <strong style={{color:"var(--text)"}}>{fmtMoney(historyTotal)}</strong>
         </div>
@@ -49,18 +49,18 @@ export default function HistoryTab({ ctx }) {
           const perPerson = e.amount / (e.split_between?.length || 1);
           return (
             <div key={e.id} onClick={()=>{ setEditExp(e); setShowModal(true); }}
-              style={{background:e.settled?"var(--bg)":"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6,cursor:"pointer",opacity:e.settled?0.5:1}}>
-              <div style={{width:34,height:34,borderRadius:9,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
+              style={{background:e.settled?"var(--bg)":"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:12,marginBottom:6,cursor:"pointer",opacity:e.settled?0.5:1}}>
+              <div style={{width:34,height:34,borderRadius:10,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textDecoration:e.settled?"line-through":"none"}}>{e.description}</div>
-                <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                   <span>{payer.display_name} · {c.label}</span>
-                  {e.installments>1&&<span style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>}
-                  {e.recurring_id&&<span style={{background:"#4ECDC422",color:"#4ECDC4",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}><Icon name="repeat" size={12}/> Mensual</span>}
-                  {e.settled&&<span style={{background:"#96CEB422",color:"#96CEB4",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>✓ Liquidado</span>}
+                  {e.installments>1&&<span style={{background:"#DDA0DD22",color:"var(--violet)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>}
+                  {e.recurring_id&&<span style={{background:"#4ECDC422",color:"var(--teal)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}><Icon name="repeat" size={12}/> Mensual</span>}
+                  {e.settled&&<span style={{background:"#96CEB422",color:"var(--ok)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>✓ Liquidado</span>}
                   {tagRelations.filter(r=>r.expense_id===e.id).map(r=>{
                     const tag = tags.find(t=>t.id===r.tag_id);
-                    return tag ? <span key={r.tag_id} style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:12}}><Icon name="tag" size={12}/> {tag.name}</span> : null;
+                    return tag ? <span key={r.tag_id} style={{background:"#DDA0DD22",color:"var(--violet)",padding:"1px 6px",borderRadius:10,fontSize:12}}><Icon name="tag" size={12}/> {tag.name}</span> : null;
                   })}
                 </div>
               </div>
@@ -80,13 +80,13 @@ export default function HistoryTab({ ctx }) {
       {[...monthSettlements].sort((a,b)=> b.date.localeCompare(a.date) || String(b.created_at||"").localeCompare(String(a.created_at||""))).map(st=>{
         const from = getMember(st.from_user), to = getMember(st.to_user);
         return (
-          <div key={st.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",gap:10,marginBottom:5}}>
+          <div key={st.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",gap:12,marginBottom:5}}>
             <div style={{width:24,height:24,borderRadius:"50%",background:from.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",flexShrink:0}}>{from.avatar}</div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12}}>{from.display_name} → <strong style={{color:to.color}}>{to.display_name}</strong></div>
               <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}><Icon name="calendar" size={13}/> {fmtDay(st.date)}</div>
             </div>
-            <div style={{fontSize:13,fontWeight:700,color:"#96CEB4"}}>{fmtMoney(st.amount)}</div>
+            <div style={{fontSize:13,fontWeight:700,color:"var(--ok)"}}>{fmtMoney(st.amount)}</div>
             <button onClick={()=>handleDeleteSettlement(st)} title="Eliminar pago"
               style={{background:"transparent",border:"none",color:"var(--g6)",cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Eliminar pago"><Icon name="trash" size={17}/></button>
           </div>

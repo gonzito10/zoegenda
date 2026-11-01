@@ -16,11 +16,11 @@ export default function SetupScreen({ ctx }) {
             {setupName.trim()?initials(setupName):"?"}
           </div>
         </div>
-        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
           <div>
             <label style={lbl}>Tu nombre</label>
             <input value={setupName} onChange={e=>{setSetupName(e.target.value);setSetupError("");}} placeholder="Ej: Laura García" maxLength={20} style={inp} autoFocus/>
-            {setupError&&<div style={{fontSize:12,color:"#FF6B6B",marginTop:5}}>{setupError}</div>}
+            {setupError&&<div style={{fontSize:12,color:"var(--coral)",marginTop:5}}>{setupError}</div>}
           </div>
           <div>
             <label style={lbl}>Tu color</label>
@@ -28,7 +28,7 @@ export default function SetupScreen({ ctx }) {
               {COLORS.map(c=><div key={c} onClick={()=>setSetupColor(c)} style={{width:30,height:30,borderRadius:"50%",background:c,cursor:"pointer",border:setupColor===c?"3px solid var(--title)":"3px solid transparent",boxShadow:setupColor===c?`0 0 0 2px ${c}`:"none",transition:"all .15s"}}/>)}
             </div>
           </div>
-          <button onClick={saveProfile} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700}}>Guardar ✨</button>
+          <button onClick={saveProfile} style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700}}>Guardar ✨</button>
         </div>
       </div>
     </div>

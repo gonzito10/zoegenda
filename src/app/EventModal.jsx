@@ -27,7 +27,7 @@ export default function EventModal({ ctx }) {
                 <div style={{background:"#FFB34711",border:"1px solid #FFB34733",borderRadius:10,padding:"9px 12px",display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontSize:16}}>🎂</span>
                   <div>
-                    <div style={{fontSize:13,fontWeight:600,color:"#FFB347"}}>Se repite cada año</div>
+                    <div style={{fontSize:13,fontWeight:600,color:"var(--warn)"}}>Se repite cada año</div>
                     <div style={{fontSize:12,color:"#7a6020",marginTop:1}}>El cumpleaños se agrega automáticamente para siempre</div>
                   </div>
                 </div>
@@ -48,7 +48,7 @@ export default function EventModal({ ctx }) {
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
                         {DAYS_ES.map((d,i)=>{
                           const on=editingEvent.recurringDays?.includes(i);
-                          return <div key={i} className="dow-pill" onClick={()=>toggleRecurringDay(i)} style={{padding:"4px 9px",borderRadius:8,fontSize:12,fontWeight:on?700:400,background:on?"#FF6B6B33":"var(--card2)",color:on?"#FF6B6B":"var(--g5)",border:`1px solid ${on?"#FF6B6B44":"var(--border2)"}`}}>{d}</div>;
+                          return <div key={i} className="dow-pill" onClick={()=>toggleRecurringDay(i)} style={{padding:"4px 9px",borderRadius:10,fontSize:12,fontWeight:on?700:400,background:on?"#FF6B6B33":"var(--card2)",color:on?"var(--coral)":"var(--g5)",border:`1px solid ${on?"#FF6B6B44":"var(--border2)"}`}}>{d}</div>;
                         })}
                       </div>
                       <label style={lbl}>Fecha de fin (opcional)</label>
@@ -80,9 +80,9 @@ export default function EventModal({ ctx }) {
               </div>
               <div>
                 <label style={lbl}>Participantes</label>
-                <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                   {groupMembers.map(m=>(
-                    <div key={m.id} onClick={()=>toggleAttendee(m.id)} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 9px",borderRadius:20,cursor:"pointer",background:editingEvent.attendees?.includes(m.id)?m.color+"22":"var(--card2)",border:`1px solid ${editingEvent.attendees?.includes(m.id)?m.color+"44":"var(--border2)"}`}}>
+                    <div key={m.id} onClick={()=>toggleAttendee(m.id)} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 9px",borderRadius:20,cursor:"pointer",background:editingEvent.attendees?.includes(m.id)?m.color+"22":"var(--card2)",border:`1px solid ${editingEvent.attendees?.includes(m.id)?m.color+"44":"var(--border2)"}`}}>
                       <div style={{width:14,height:14,borderRadius:"50%",background:m.color,fontSize:6,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>{m.avatar}</div>
                       <span style={{fontSize:12,color:editingEvent.attendees?.includes(m.id)?m.color:"var(--g6)",fontWeight:editingEvent.attendees?.includes(m.id)?600:400}}>{m.display_name}</span>
                     </div>
@@ -96,11 +96,11 @@ export default function EventModal({ ctx }) {
               {/* Alarma — desactivada por defecto en rutinarios */}
               {editingEvent.category!=="birthday"&&(
                 <div style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"10px 13px"}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"var(--text)",marginBottom:7,display:"flex",alignItems:"center",gap:6}}><Icon name="bell" size={14}/> Alarma <span style={{fontSize:12,color:"var(--g4)",fontWeight:400}}>{editingEvent.recurring?"(desactivada por defecto en rutinarios)":""}</span></div>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                  <div style={{fontSize:12,fontWeight:600,color:"var(--text)",marginBottom:7,display:"flex",alignItems:"center",gap:8}}><Icon name="bell" size={14}/> Alarma <span style={{fontSize:12,color:"var(--g4)",fontWeight:400}}>{editingEvent.recurring?"(desactivada por defecto en rutinarios)":""}</span></div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                     {[["","Sin alarma"],["1","1 día antes"],["2","2 días antes"],["7","1 semana antes"]].map(([v,l])=>(
                       <div key={v} onClick={()=>setEditingEvent(ev=>({...ev,alarmDays:v}))}
-                        style={{padding:"4px 10px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:editingEvent.alarmDays===v?700:400,background:editingEvent.alarmDays===v?"#FFB34733":"var(--card2)",color:editingEvent.alarmDays===v?"#FFB347":"var(--g5)",border:`1px solid ${editingEvent.alarmDays===v?"#FFB34744":"var(--border2)"}`}}>
+                        style={{padding:"4px 10px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:editingEvent.alarmDays===v?700:400,background:editingEvent.alarmDays===v?"#FFB34733":"var(--card2)",color:editingEvent.alarmDays===v?"var(--warn)":"var(--g5)",border:`1px solid ${editingEvent.alarmDays===v?"#FFB34744":"var(--border2)"}`}}>
                         {l}
                       </div>
                     ))}
@@ -108,8 +108,8 @@ export default function EventModal({ ctx }) {
                 </div>
               )}
               <div style={{display:"flex",gap:8}}>
-                {editingEvent.id&&<button onClick={()=>{if(editingEvent.recurring)setDeleteDialog({baseId:editingEvent.id,isBase:true});else confirmDelete(editingEvent.id,null,null);}} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:10,padding:"9px 12px",fontSize:12,fontWeight:600}}>Eliminar</button>}
-                <button onClick={saveEvent} style={{flex:1,background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"10px",fontSize:14,fontWeight:700}}>{editingEvent.id?"Guardar":"Crear evento"}</button>
+                {editingEvent.id&&<button onClick={()=>{if(editingEvent.recurring)setDeleteDialog({baseId:editingEvent.id,isBase:true});else confirmDelete(editingEvent.id,null,null);}} style={{background:"#FF6B6B22",color:"var(--coral)",border:"1px solid #FF6B6B44",borderRadius:10,padding:"9px 12px",fontSize:12,fontWeight:600}}>Eliminar</button>}
+                <button onClick={saveEvent} style={{flex:1,background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"10px",fontSize:14,fontWeight:700}}>{editingEvent.id?"Guardar":"Crear evento"}</button>
               </div>
             </div>
           </div>
