@@ -31,7 +31,6 @@ export default function HeaderBar({ ctx }) {
           <span style={{width:36,height:36,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",boxShadow:showGroupPanel?"0 0 0 2px var(--coral)":"none"}}>{profile?.avatar}</span>
         </button>
       </header>
-      <div className="meander" aria-hidden="true"/>
     </>
   );
 }

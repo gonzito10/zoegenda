@@ -12,7 +12,6 @@ export default function LoginScreen({ ctx }) {
           <div style={{marginBottom:12,color:"var(--coral)",display:"flex",justifyContent:"center"}}><Icon name="calendar" size={48}/></div>
           <Logo size={32}/>
           <p style={{color:"var(--g8)",fontSize:15,marginTop:8}}>Gestión compartida del hogar</p>
-          <div className="meander" aria-hidden="true" style={{margin:"18px auto 0",maxWidth:220}}/>
         </div>
         <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:16,padding:24}}>
           <div style={{display:"flex",gap:4,marginBottom:22,background:"var(--bg)",borderRadius:10,padding:4}}>
