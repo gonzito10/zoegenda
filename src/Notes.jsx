@@ -171,7 +171,7 @@ export default function Notes({ groupId, currentUserId }) {
             </div>
           </div>
           <button onClick={()=>setShowDelete(currentNote.id)}
-            style={{background:"transparent",border:"none",color:"var(--border2)",fontSize:18,cursor:"pointer",padding:"4px 8px",flexShrink:0}}>🗑</button>
+            title="Eliminar nota" style={{background:"#FF6B6B11",border:"1px solid #FF6B6B33",color:"#FF6B6B",borderRadius:8,fontSize:13,cursor:"pointer",padding:"6px 10px",flexShrink:0,marginLeft:8}}>🗑 Eliminar</button>
         </div>
       )}
 

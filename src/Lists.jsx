@@ -276,7 +276,7 @@ export default function Lists({ groupId, currentUserId }) {
           </div>
           <div style={{display:"flex",gap:4,flexShrink:0}}>
             <button onClick={()=>openEditModal(currentList)} style={{background:"transparent",border:"none",color:"var(--g5)",fontSize:16,cursor:"pointer",padding:"4px 8px"}}>✎</button>
-            <button onClick={()=>setShowDelete(currentList.id)} style={{background:"transparent",border:"none",color:"var(--border2)",fontSize:18,cursor:"pointer",padding:"4px 8px"}}>🗑</button>
+            <button onClick={()=>setShowDelete(currentList.id)} style={{background:"transparent",border:"none",color:"var(--g8)",fontSize:18,cursor:"pointer",padding:"4px 8px"}}>🗑</button>
           </div>
         </div>
 
@@ -372,7 +372,7 @@ export default function Lists({ groupId, currentUserId }) {
               {T.hasQty && item.quantity!=null && <span style={{fontSize:10,color:"var(--g5)",flexShrink:0}}>{fmtQty(item.quantity)} {item.unit||""}</span>}
             </div>
             <button onClick={()=>handleDeleteItem(item)} title="Eliminar elemento"
-              style={{background:"transparent",border:"none",color:"var(--border3)",fontSize:15,cursor:"pointer",padding:"6px 8px",flexShrink:0}}>🗑</button>
+              style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:15,cursor:"pointer",padding:"6px 8px",flexShrink:0}}>🗑</button>
           </div>
         ))}
       </>)}
