@@ -3,7 +3,7 @@ import { supabase } from "../supabase";
 import { inp, fmtMoney, loadRecurring } from "./helpers";
 
 export default function RecurringTab({ ctx }) {
-  const { allCats, getCat, getMember, groupId, members, recurring, setRecurring } = ctx;
+  const { allCats, currentMonthKey, expenses, getCat, getMember, groupId, members, recurring, setRecurring } = ctx;
   const [editId, setEditId] = useState(null);
   const [f, setF] = useState(null);
   function startEdit(r){ setEditId(r.id); setF({ description:r.description, amount:String(r.amount), day_of_month:String(r.day_of_month), category:r.category, paid_by:r.paid_by, split_between:r.split_between||[] }); }
@@ -72,7 +72,10 @@ export default function RecurringTab({ ctx }) {
               <span style={{fontSize:20}}>{c.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:14,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.description}</div>
-                <div style={{fontSize:11,color:"var(--g5)",marginTop:2}}>Día {r.day_of_month} de cada mes · {payer.display_name} · ÷{r.split_between?.length||1}{!r.active&&" · en pausa"}</div>
+                <div style={{fontSize:11,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                    <span>Día {r.day_of_month} de cada mes · {payer.display_name} · ÷{r.split_between?.length||1}{!r.active&&" · en pausa"}</span>
+                    {r.active && <span style={{background:expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"#96CEB422":"var(--card2)",color:expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"#96CEB4":"var(--g5)",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>{expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"✓ Cargado este mes":"Pendiente"}</span>}
+                  </div>
               </div>
               <div style={{fontSize:15,fontWeight:700,fontFamily:"Fraunces,serif"}}>{fmtMoney(r.amount)}</div>
             </div>

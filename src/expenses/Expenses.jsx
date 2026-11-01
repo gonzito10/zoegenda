@@ -4,7 +4,6 @@ import { DEFAULT_CATS, fmtMoney, monthKey, localToday, isVisibleInHistory, loadE
 import BalanceTab from "./BalanceTab";
 import HistoryTab from "./HistoryTab";
 import StatsTab from "./StatsTab";
-import RecurringTab from "./RecurringTab";
 import BudgetTab from "./BudgetTab";
 import ExpenseModal from "./ExpenseModal";
 
@@ -197,7 +196,7 @@ export default function Expenses({ groupId, members, currentUserId }) {
     <div style={{paddingBottom:80}}>
       {/* Sub tabs */}
       <div style={{display:"flex",gap:4,marginBottom:14}}>
-        {[["balance","⚖️ Balance"],["history","📋 Historial"],["stats","📊 Estadísticas"],["recurring","🔁 Recurrentes"],["budget","🎯 Presupuesto"]].map(([v,l])=>(
+        {[["balance","⚖️ Balance"],["history","📋 Historial"],["stats","📊 Estadísticas"],["budget","🎯 Presupuesto"]].map(([v,l])=>(
           <button key={v} onClick={()=>setSubTab(v)}
             style={{padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:600,border:`1px solid ${subTab===v?"var(--border2)":"transparent"}`,background:subTab===v?"var(--border)":"transparent",color:subTab===v?"var(--title)":"var(--g5)",cursor:"pointer"}}>
             {l}
@@ -208,7 +207,6 @@ export default function Expenses({ groupId, members, currentUserId }) {
       {subTab==="balance" && <BalanceTab ctx={ctx}/>}
       {subTab==="history" && <HistoryTab ctx={ctx}/>}
       {subTab==="stats"   && <StatsTab ctx={ctx}/>}
-      {subTab==="recurring" && <RecurringTab ctx={ctx}/>}
       {subTab==="budget" && <BudgetTab ctx={ctx}/>}
 
       {showModal && <ExpenseModal ctx={ctx}/>}

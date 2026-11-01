@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { fmtMoney, fmtDay } from "./helpers";
+import RecurringTab from "./RecurringTab";
 
 export default function BalanceTab({ ctx }) {
   const { balance, budgetColor, budgetRows, currentMonthKey, debts, expenses, getCat, getMember, handleSettle, members, monthExpenses, monthTotal, recurring, setSubTab } = ctx;
@@ -88,31 +89,10 @@ export default function BalanceTab({ ctx }) {
         );
       })}
     </>}
-    {/* Gastos recurrentes */}
-    {recurring.filter(r=>r.active).length > 0 && <>
+    {/* Gastos recurrentes (con edición, pausa y eliminación) */}
+    {recurring.length > 0 && <>
       <div style={{fontSize:10,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>Gastos recurrentes</div>
-      {recurring.filter(r=>r.active).map(r=>{
-        const c = getCat(r.category);
-        const loaded = expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey);
-        return (
-          <div key={r.id} onClick={()=>setSubTab("recurring")}
-            style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,marginBottom:6,cursor:"pointer"}}>
-            <div style={{width:34,height:34,borderRadius:9,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.description}</div>
-              <div style={{fontSize:11,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
-                {getMember(r.paid_by).display_name}
-                <span style={{background:"#4ECDC422",color:"#4ECDC4",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>🔁 Día {r.day_of_month}</span>
-                <span style={{background:loaded?"#96CEB422":"var(--card2)",color:loaded?"#96CEB4":"var(--g5)",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>{loaded?"✓ Cargado este mes":"Pendiente"}</span>
-              </div>
-            </div>
-            <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:14,fontWeight:700,color:"#4ECDC4"}}>{fmtMoney(r.amount)}</div>
-              <div style={{fontSize:10,color:"var(--g5)"}}>÷{r.split_between?.length||1} = {fmtMoney(r.amount/(r.split_between?.length||1))} c/u</div>
-            </div>
-          </div>
-        );
-      })}
+      <RecurringTab ctx={ctx}/>
     </>}
   </div>
   );
