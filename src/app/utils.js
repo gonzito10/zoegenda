@@ -48,3 +48,12 @@ export function expandRecurring(ev, rangeStart, rangeEnd) {
 //   groups        (id uuid PK, name, code text unique, created_by uuid)
 //   group_members (group_id uuid, user_id uuid, PRIMARY KEY(group_id,user_id))
 //   events        (id uuid PK, group_id uuid, data jsonb)
+
+// Franja de color según quién asiste: un color si va una persona, tramos iguales si van varias.
+export function personStripe(ids, member, fallback){
+  const cols = (ids||[]).map(id => member(id).color).filter(Boolean);
+  if(!cols.length) return fallback;
+  if(cols.length===1) return cols[0];
+  const step = 100/cols.length;
+  return `linear-gradient(to bottom, ${cols.map((c,i)=>`${c} ${i*step}% ${(i+1)*step}%`).join(", ")})`;
+}

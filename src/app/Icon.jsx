@@ -25,6 +25,9 @@ const PATHS = {
   tag: <><path d="M3.5 12.2V5.5a2 2 0 0 1 2-2h6.7l8.3 8.3a2 2 0 0 1 0 2.8l-6 6a2 2 0 0 1-2.8 0z"/><circle cx="8" cy="8" r="1.2"/></>,
   palette: <><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.4 0 2-1 1.5-2-.6-1.3.2-2.5 1.6-2.5H17a3.5 3.5 0 0 0 3.5-3.5C20.5 7 16.8 3.5 12 3.5z"/><circle cx="8" cy="11" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/></>,
   pause: <path d="M9 5.5v13M15 5.5v13"/>,
+  filter: <path d="M4 6.5h16M7 12h10M10 17.5h4"/>,
+  chevronDown: <path d="M5.5 9.5L12 16l6.5-6.5"/>,
+  chevronUp: <path d="M5.5 14.5L12 8l6.5 6.5"/>,
   play: <path d="M8 5.5v13l10-6.5z"/>,
 };
 

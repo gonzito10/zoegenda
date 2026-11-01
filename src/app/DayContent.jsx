@@ -1,5 +1,5 @@
 import { DAYS_FULL, MONTHS_ES } from "./constants";
-import { fmt, parse } from "./utils";
+import { fmt, parse, personStripe } from "./utils";
 import Icon from "./Icon";
 
 export default function DayContent({ ctx }) {
@@ -19,7 +19,8 @@ export default function DayContent({ ctx }) {
       {selectedDayEvents.length===0&&<div style={{textAlign:"center",color:"var(--g4)",padding:"20px 0",fontSize:14}}>Sin eventos<div style={{marginTop:14}}><button onClick={()=>openNew(selectedDate)} style={{background:"#FF6B6B22",color:"#FF6B6B",border:"1px solid #FF6B6B44",borderRadius:8,padding:"7px 18px",cursor:"pointer",fontSize:12}}>+ Agregar</button></div></div>}
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
         {selectedDayEvents.map(ev=>(
-          <div key={ev.id} onClick={()=>openEdit(ev)} style={{background:"var(--card)",borderRadius:12,padding:"12px 16px",cursor:"pointer",border:"1px solid var(--border)",borderLeft:`4px solid ${cat(ev.category).color}`}}>
+          <div key={ev.id} onClick={()=>openEdit(ev)} style={{position:"relative",overflow:"hidden",background:"var(--card)",borderRadius:12,padding:"12px 16px 12px 22px",cursor:"pointer",border:"1px solid var(--border)"}}>
+            <div aria-hidden="true" style={{position:"absolute",left:0,top:0,bottom:0,width:6,background:personStripe(ev.attendees, member, cat(ev.category).color)}}/>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               {ev.category!=="birthday"&&<div style={{fontSize:16,fontWeight:700,color:cat(ev.category).color,fontFamily:"Fraunces,serif"}}>{ev.time}{ev.timeEnd&&<span style={{fontSize:12,fontWeight:400,color:cat(ev.category).color,opacity:.7}}>–{ev.timeEnd}</span>}</div>}
               <div style={{flex:1}}>

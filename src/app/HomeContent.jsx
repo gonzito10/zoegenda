@@ -2,7 +2,7 @@ import Icon from "./Icon";
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { DAYS_FULL, MONTHS_ES } from "./constants";
-import { fmt } from "./utils";
+import { fmt, personStripe } from "./utils";
 import { DEFAULT_CATS, fmtMoney, localToday, loadExpenses, loadCustomCats, loadSettlements, loadBudgets, calcBalance, calcDebts } from "../expenses/helpers";
 
 // Pantalla de inicio: resumen del día + las 4 secciones con su dato en vivo.
@@ -85,7 +85,7 @@ export default function HomeContent({ ctx }) {
             <button key={ev.id} onClick={() => setMainTab("agenda")}
               style={{width:"100%",display:"flex",alignItems:"center",gap:12,minHeight:56,background:"transparent",border:"none",borderTop:"1px solid var(--border)",color:"var(--text)",textAlign:"left",cursor:"pointer",padding:0}}>
               <span style={{width:48,fontSize:15,fontWeight:600,color:"var(--title)",fontVariantNumeric:"tabular-nums"}}>{ev.time || "—"}</span>
-              <span style={{width:4,height:30,borderRadius:2,background:cat(ev.category).color,flexShrink:0}}/>
+              <span style={{width:4,height:30,borderRadius:2,background:personStripe(ev.attendees, member, cat(ev.category).color),flexShrink:0}}/>
               <span style={{display:"flex",flexDirection:"column",minWidth:0}}>
                 <span style={{fontSize:15,fontWeight:600,color:"var(--title)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.title}</span>
                 {ev.attendees?.length > 0 && <span style={{fontSize:13,color:"var(--g6)"}}>{ev.attendees.map(id => member(id).display_name).join(" y ")}</span>}
