@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 
 const inp = {background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",color:"var(--text)",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
-const lbl = {fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
+const lbl = {fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
 
 const LIST_ICONS = [
   // Hogar y compras
@@ -276,7 +276,7 @@ export default function Lists({ groupId, currentUserId }) {
             <span style={{fontSize:24}}>{currentList.icon||"📋"}</span>
             <div style={{minWidth:0}}>
               <div style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"var(--title)"}}>{currentList.name}</div>
-              <div style={{fontSize:10,color:"var(--g5)",marginTop:1}}>Listado de {T.label.toLowerCase()}</div>
+              <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>Listado de {T.label.toLowerCase()}</div>
             </div>
           </div>
           <div style={{display:"flex",gap:4,flexShrink:0}}>
@@ -302,7 +302,7 @@ export default function Lists({ groupId, currentUserId }) {
                   style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderBottom:"1px solid var(--border)",cursor:item.selected?"default":"pointer",opacity:item.selected?.5:1}}>
                   <span style={{color:item.selected?"#96CEB4":"#FF6B6B",fontWeight:700,fontSize:15,lineHeight:1}}>{item.selected?"✓":"+"}</span>
                   <span style={{flex:1,fontSize:13,color:"var(--text)",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}}>{item.text}</span>
-                  {item.selected && <span style={{fontSize:10,color:"var(--g5)",flexShrink:0}}>ya en {T.selectedTitle.toLowerCase()}</span>}
+                  {item.selected && <span style={{fontSize:12,color:"var(--g5)",flexShrink:0}}>ya en {T.selectedTitle.toLowerCase()}</span>}
                 </div>
               ))}
               {!exactMatch && (
@@ -314,16 +314,16 @@ export default function Lists({ groupId, currentUserId }) {
             </div>
           )}
         </div>
-        <div style={{fontSize:10,color:"var(--g4)",marginBottom:16}}>Los elementos que crees quedan guardados para volver a usarlos.</div>
+        <div style={{fontSize:12,color:"var(--g4)",marginBottom:16}}>Los elementos que crees quedan guardados para volver a usarlos.</div>
 
         {/* Seleccionados: a comprar / a completar */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",margin:"4px 0 8px"}}>
-          <div style={{fontSize:10,color:"var(--g8)",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>
+          <div style={{fontSize:12,color:"var(--g8)",fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>
             {T.selectedTitle} {selectedItems.length>0&&<span style={{color:"var(--g5)",fontWeight:500}}>· {doneCount}/{selectedItems.length} {T.doneText}</span>}
           </div>
           {doneCount>0&&(
             <button onClick={handleClearDone}
-              style={{background:"#96CEB422",color:"#96CEB4",border:"1px solid #96CEB444",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{T.clearText}</button>
+              style={{background:"#96CEB422",color:"#96CEB4",border:"1px solid #96CEB444",borderRadius:8,padding:"4px 10px",fontSize:12,fontWeight:600,cursor:"pointer"}}>{T.clearText}</button>
           )}
         </div>
         {selectedItems.length===0 && (
@@ -337,7 +337,7 @@ export default function Lists({ groupId, currentUserId }) {
               <span style={{flex:1,fontSize:14,color:item.checked?"var(--g5)":"var(--text)",textDecoration:item.checked?"line-through":"none",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}}>{item.text}</span>
               {T.hasQty && (
                 <button onClick={()=>openQtyEditor(item)}
-                  style={{background:item.quantity!=null?"#FFB34722":"transparent",color:item.quantity!=null?"#FFB347":"var(--g4)",border:`1px ${item.quantity!=null?"solid":"dashed"} ${item.quantity!=null?"#FFB34744":"var(--border2)"}`,borderRadius:8,padding:"3px 9px",fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                  style={{background:item.quantity!=null?"#FFB34722":"transparent",color:item.quantity!=null?"#FFB347":"var(--g4)",border:`1px ${item.quantity!=null?"solid":"dashed"} ${item.quantity!=null?"#FFB34744":"var(--border2)"}`,borderRadius:8,padding:"3px 9px",fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
                   {item.quantity!=null ? `${fmtQty(item.quantity)} ${item.unit||""}` : "+ cantidad"}
                 </button>
               )}
@@ -360,7 +360,7 @@ export default function Lists({ groupId, currentUserId }) {
         ))}
 
         {/* Catálogo de elementos guardados */}
-        <div style={{fontSize:10,color:"var(--g8)",fontWeight:700,textTransform:"uppercase",letterSpacing:1,margin:"20px 0 8px"}}>
+        <div style={{fontSize:12,color:"var(--g8)",fontWeight:700,textTransform:"uppercase",letterSpacing:1,margin:"20px 0 8px"}}>
           {T.catalogTitle} <span style={{color:"var(--g5)",fontWeight:500}}>· tocá para agregar</span>
         </div>
         {catalog.length===0 && (
@@ -374,7 +374,7 @@ export default function Lists({ groupId, currentUserId }) {
               style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,background:"var(--card)",border:"1px solid var(--border)",cursor:"pointer",minWidth:0}}>
               <span style={{color:"#FF6B6B",fontWeight:700,fontSize:15,lineHeight:1}}>+</span>
               <span style={{flex:1,fontSize:13,color:"var(--text)",minWidth:0,overflow:"hidden",textOverflow:"ellipsis"}}>{item.text}</span>
-              {T.hasQty && item.quantity!=null && <span style={{fontSize:10,color:"var(--g5)",flexShrink:0}}>{fmtQty(item.quantity)} {item.unit||""}</span>}
+              {T.hasQty && item.quantity!=null && <span style={{fontSize:12,color:"var(--g5)",flexShrink:0}}>{fmtQty(item.quantity)} {item.unit||""}</span>}
             </div>
             <button onClick={()=>handleDeleteItem(item)} title="Eliminar elemento"
               style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:15,cursor:"pointer",padding:"6px 8px",flexShrink:0}}>🗑</button>
@@ -403,7 +403,7 @@ export default function Lists({ groupId, currentUserId }) {
                       <span style={{fontSize:20}}>{t.icon}</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:13,fontWeight:600,color:on?"#FF6B6B":"var(--text)"}}>{t.label}</div>
-                        <div style={{fontSize:10,color:"var(--g5)",marginTop:1}}>{t.desc}</div>
+                        <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>{t.desc}</div>
                       </div>
                       {on && <span style={{color:"#FF6B6B",fontSize:14}}>✓</span>}
                     </div>

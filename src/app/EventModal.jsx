@@ -27,7 +27,7 @@ export default function EventModal({ ctx }) {
                   <span style={{fontSize:16}}>🎂</span>
                   <div>
                     <div style={{fontSize:13,fontWeight:600,color:"#FFB347"}}>Se repite cada año</div>
-                    <div style={{fontSize:11,color:"#7a6020",marginTop:1}}>El cumpleaños se agrega automáticamente para siempre</div>
+                    <div style={{fontSize:12,color:"#7a6020",marginTop:1}}>El cumpleaños se agrega automáticamente para siempre</div>
                   </div>
                 </div>
               ) : (
@@ -35,7 +35,7 @@ export default function EventModal({ ctx }) {
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}} onClick={()=>setEditingEvent(ev=>({...ev,recurring:!ev.recurring}))}>
                     <div>
                       <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>↻ Evento rutinario</div>
-                      <div style={{fontSize:11,color:"var(--g5)",marginTop:1}}>Se repite semanalmente</div>
+                      <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>Se repite semanalmente</div>
                     </div>
                     <div style={{width:36,height:20,borderRadius:10,background:editingEvent.recurring?"#FF6B6B":"var(--border2)",position:"relative",transition:"background .2s",flexShrink:0}}>
                       <div style={{width:14,height:14,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:editingEvent.recurring?18:3,transition:"left .2s"}}/>
@@ -47,12 +47,12 @@ export default function EventModal({ ctx }) {
                       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
                         {DAYS_ES.map((d,i)=>{
                           const on=editingEvent.recurringDays?.includes(i);
-                          return <div key={i} className="dow-pill" onClick={()=>toggleRecurringDay(i)} style={{padding:"4px 9px",borderRadius:8,fontSize:11,fontWeight:on?700:400,background:on?"#FF6B6B33":"var(--card2)",color:on?"#FF6B6B":"var(--g5)",border:`1px solid ${on?"#FF6B6B44":"var(--border2)"}`}}>{d}</div>;
+                          return <div key={i} className="dow-pill" onClick={()=>toggleRecurringDay(i)} style={{padding:"4px 9px",borderRadius:8,fontSize:12,fontWeight:on?700:400,background:on?"#FF6B6B33":"var(--card2)",color:on?"#FF6B6B":"var(--g5)",border:`1px solid ${on?"#FF6B6B44":"var(--border2)"}`}}>{d}</div>;
                         })}
                       </div>
                       <label style={lbl}>Fecha de fin (opcional)</label>
                       <input type="date" value={editingEvent.recurringEnd||""} onChange={e=>setEditingEvent(ev=>({...ev,recurringEnd:e.target.value}))} style={{...inp,width:"auto"}}/>
-                      {!editingEvent.recurringEnd&&<div style={{fontSize:10,color:"var(--g4)",marginTop:3}}>Sin fecha de fin — se repite indefinidamente</div>}
+                      {!editingEvent.recurringEnd&&<div style={{fontSize:12,color:"var(--g4)",marginTop:3}}>Sin fecha de fin — se repite indefinidamente</div>}
                     </div>
                   )}
                 </div>
@@ -74,7 +74,7 @@ export default function EventModal({ ctx }) {
               <div>
                 <label style={lbl}>Categoría</label>
                 <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                  {CATEGORIES.map(c=><div key={c.id} onClick={()=>setEditingEvent(ev=>({...ev,category:c.id,color:c.color}))} style={{padding:"4px 9px",borderRadius:20,fontSize:11,cursor:"pointer",background:editingEvent.category===c.id?c.color+"33":"var(--card2)",color:editingEvent.category===c.id?c.color:"var(--g6)",border:`1px solid ${editingEvent.category===c.id?c.color+"44":"var(--border2)"}`,fontWeight:editingEvent.category===c.id?600:400}}>{c.icon} {c.label}</div>)}
+                  {CATEGORIES.map(c=><div key={c.id} onClick={()=>setEditingEvent(ev=>({...ev,category:c.id,color:c.color}))} style={{padding:"4px 9px",borderRadius:20,fontSize:12,cursor:"pointer",background:editingEvent.category===c.id?c.color+"33":"var(--card2)",color:editingEvent.category===c.id?c.color:"var(--g6)",border:`1px solid ${editingEvent.category===c.id?c.color+"44":"var(--border2)"}`,fontWeight:editingEvent.category===c.id?600:400}}>{c.icon} {c.label}</div>)}
                 </div>
               </div>
               <div>
@@ -83,7 +83,7 @@ export default function EventModal({ ctx }) {
                   {groupMembers.map(m=>(
                     <div key={m.id} onClick={()=>toggleAttendee(m.id)} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 9px",borderRadius:20,cursor:"pointer",background:editingEvent.attendees?.includes(m.id)?m.color+"22":"var(--card2)",border:`1px solid ${editingEvent.attendees?.includes(m.id)?m.color+"44":"var(--border2)"}`}}>
                       <div style={{width:14,height:14,borderRadius:"50%",background:m.color,fontSize:6,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>{m.avatar}</div>
-                      <span style={{fontSize:11,color:editingEvent.attendees?.includes(m.id)?m.color:"var(--g6)",fontWeight:editingEvent.attendees?.includes(m.id)?600:400}}>{m.display_name}</span>
+                      <span style={{fontSize:12,color:editingEvent.attendees?.includes(m.id)?m.color:"var(--g6)",fontWeight:editingEvent.attendees?.includes(m.id)?600:400}}>{m.display_name}</span>
                     </div>
                   ))}
                 </div>
@@ -95,11 +95,11 @@ export default function EventModal({ ctx }) {
               {/* Alarma — desactivada por defecto en rutinarios */}
               {editingEvent.category!=="birthday"&&(
                 <div style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"10px 13px"}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"var(--text)",marginBottom:7,display:"flex",alignItems:"center",gap:6}}>🔔 Alarma <span style={{fontSize:10,color:"var(--g4)",fontWeight:400}}>{editingEvent.recurring?"(desactivada por defecto en rutinarios)":""}</span></div>
+                  <div style={{fontSize:12,fontWeight:600,color:"var(--text)",marginBottom:7,display:"flex",alignItems:"center",gap:6}}>🔔 Alarma <span style={{fontSize:12,color:"var(--g4)",fontWeight:400}}>{editingEvent.recurring?"(desactivada por defecto en rutinarios)":""}</span></div>
                   <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                     {[["","Sin alarma"],["1","1 día antes"],["2","2 días antes"],["7","1 semana antes"]].map(([v,l])=>(
                       <div key={v} onClick={()=>setEditingEvent(ev=>({...ev,alarmDays:v}))}
-                        style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:editingEvent.alarmDays===v?700:400,background:editingEvent.alarmDays===v?"#FFB34733":"var(--card2)",color:editingEvent.alarmDays===v?"#FFB347":"var(--g5)",border:`1px solid ${editingEvent.alarmDays===v?"#FFB34744":"var(--border2)"}`}}>
+                        style={{padding:"4px 10px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:editingEvent.alarmDays===v?700:400,background:editingEvent.alarmDays===v?"#FFB34733":"var(--card2)",color:editingEvent.alarmDays===v?"#FFB347":"var(--g5)",border:`1px solid ${editingEvent.alarmDays===v?"#FFB34744":"var(--border2)"}`}}>
                         {l}
                       </div>
                     ))}

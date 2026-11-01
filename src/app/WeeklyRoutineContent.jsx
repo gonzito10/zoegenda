@@ -50,7 +50,7 @@ export default function WeeklyRoutineContent({ ctx }) {
   );
 
   return (
-    <div style={{padding:"16px 16px 80px"}}>
+    <div style={{padding:"16px 16px 24px"}}>
       {weekDays.map(({dow, dateStr, date}) => {
         const dayEvs = byDay[dateStr] || [];
         if (dayEvs.length === 0) return null;

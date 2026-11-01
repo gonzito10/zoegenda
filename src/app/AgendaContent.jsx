@@ -25,14 +25,14 @@ export default function AgendaContent({ ctx }) {
             {eventsForDate(dateStr).map(ev=>(
               <div key={ev.id} className="agenda-event" onClick={()=>openEdit(ev)}
                 style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 12px",display:"flex",gap:10,alignItems:"flex-start",borderLeft:`3px solid ${cat(ev.category).color}`,marginBottom:5}}>
-                {ev.category!=="birthday"&&<div style={{color:"var(--g8)",fontSize:11,minWidth:34,paddingTop:1,fontWeight:500}}>{ev.time}{ev.timeEnd&&<span style={{color:"var(--g5)"}}>–{ev.timeEnd}</span>}</div>}
+                {ev.category!=="birthday"&&<div style={{color:"var(--g8)",fontSize:12,minWidth:34,paddingTop:1,fontWeight:500}}>{ev.time}{ev.timeEnd&&<span style={{color:"var(--g5)"}}>–{ev.timeEnd}</span>}</div>}
                 <div style={{flex:1}}>
                   <div style={{fontWeight:600,fontSize:13,color:"var(--text)",display:"flex",alignItems:"center",gap:5}}>
-                    {ev.title}{ev.recurring&&<span style={{fontSize:9,background:"var(--border2)",color:"var(--g8)",padding:"1px 5px",borderRadius:4}}>↻</span>}
+                    {ev.title}{ev.recurring&&<span style={{fontSize:12,background:"var(--border2)",color:"var(--g8)",padding:"1px 5px",borderRadius:4}}>↻</span>}
                   </div>
-                  {ev.notes&&<div style={{fontSize:11,color:"var(--g6)",marginTop:2}}>{ev.notes}</div>}
+                  {ev.notes&&<div style={{fontSize:12,color:"var(--g6)",marginTop:2}}>{ev.notes}</div>}
                   <div style={{display:"flex",gap:4,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
-                    <span style={{fontSize:9,padding:"1px 6px",borderRadius:20,background:cat(ev.category).color+"22",color:cat(ev.category).color}}>{cat(ev.category).label}</span>
+                    <span style={{fontSize:12,padding:"1px 6px",borderRadius:20,background:cat(ev.category).color+"22",color:cat(ev.category).color}}>{cat(ev.category).label}</span>
                     {ev.attendees?.map(uid=><div key={uid} title={member(uid).display_name} style={{width:13,height:13,borderRadius:"50%",background:member(uid).color,fontSize:6,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff"}}>{member(uid).avatar}</div>)}
                   </div>
                 </div>

@@ -30,7 +30,7 @@ export default function RecurringTab({ ctx }) {
   );
   return (
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
-      <div style={{fontSize:11,color:"var(--g5)",lineHeight:1.5}}>Se cargan solos el día indicado de cada mes. Si cambiás el monto, aplica desde el próximo mes.</div>
+      <div style={{fontSize:12,color:"var(--g5)",lineHeight:1.5}}>Se cargan solos el día indicado de cada mes. Si cambiás el monto, aplica desde el próximo mes.</div>
       {recurring.map(r=>{
         const c = getCat(r.category); const payer = getMember(r.paid_by);
         if(editId===r.id && f) return (
@@ -43,17 +43,17 @@ export default function RecurringTab({ ctx }) {
             <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
               {allCats.map(ct=>{ const on=f.category===ct.id; return (
                 <div key={ct.id} onClick={()=>setF(x=>({...x,category:ct.id}))}
-                  style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:on?600:400,background:on?ct.color+"33":"var(--card2)",color:on?ct.color:"var(--g6)",border:`1px solid ${on?ct.color+"66":"var(--border)"}`}}>{ct.icon} {ct.label}</div>
+                  style={{padding:"4px 10px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:on?600:400,background:on?ct.color+"33":"var(--card2)",color:on?ct.color:"var(--g6)",border:`1px solid ${on?ct.color+"66":"var(--border)"}`}}>{ct.icon} {ct.label}</div>
               );})}
             </div>
-            <div style={{fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase"}}>Pagó</div>
+            <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase"}}>Pagó</div>
             <div style={{display:"flex",gap:6}}>
               {members.map(m=>(
                 <div key={m.id} onClick={()=>setF(x=>({...x,paid_by:m.id}))}
                   style={{padding:"5px 12px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:f.paid_by===m.id?700:400,background:f.paid_by===m.id?m.color+"33":"var(--card2)",color:f.paid_by===m.id?m.color:"var(--g6)",border:`1px solid ${f.paid_by===m.id?m.color+"66":"var(--border)"}`}}>{m.display_name}</div>
               ))}
             </div>
-            <div style={{fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase"}}>Dividir entre</div>
+            <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase"}}>Dividir entre</div>
             <div style={{display:"flex",gap:6}}>
               {members.map(m=>{ const on=f.split_between.includes(m.id); return (
                 <div key={m.id} onClick={()=>setF(x=>({...x,split_between:on?x.split_between.filter(u=>u!==m.id):[...x.split_between,m.id]}))}
@@ -72,17 +72,17 @@ export default function RecurringTab({ ctx }) {
               <span style={{fontSize:20}}>{c.icon}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:14,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.description}</div>
-                <div style={{fontSize:11,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
                     <span>Día {r.day_of_month} de cada mes · {payer.display_name} · ÷{r.split_between?.length||1}{!r.active&&" · en pausa"}</span>
-                    {r.active && <span style={{background:expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"#96CEB422":"var(--card2)",color:expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"#96CEB4":"var(--g5)",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>{expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"✓ Cargado este mes":"Pendiente"}</span>}
+                    {r.active && <span style={{background:expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"#96CEB422":"var(--card2)",color:expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"#96CEB4":"var(--g5)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>{expenses.some(e=>e.recurring_id===r.id && e.date.slice(0,7)===currentMonthKey)?"✓ Cargado este mes":"Pendiente"}</span>}
                   </div>
               </div>
               <div style={{fontSize:15,fontWeight:700,fontFamily:"Fraunces,serif"}}>{fmtMoney(r.amount)}</div>
             </div>
             <div style={{display:"flex",gap:6,marginTop:9,justifyContent:"flex-end"}}>
-              <button onClick={()=>startEdit(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:11,cursor:"pointer"}}>✎ Editar</button>
-              <button onClick={()=>toggleActive(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:11,cursor:"pointer"}}>{r.active?"⏸ Pausar":"▶ Reanudar"}</button>
-              <button onClick={()=>removeRule(r)} style={{background:"#FF6B6B11",color:"#FF6B6B",border:"1px solid #FF6B6B33",borderRadius:8,padding:"4px 10px",fontSize:11,cursor:"pointer"}}>🗑 Eliminar</button>
+              <button onClick={()=>startEdit(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}>✎ Editar</button>
+              <button onClick={()=>toggleActive(r)} style={{background:"var(--card2)",color:"var(--g8)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}>{r.active?"⏸ Pausar":"▶ Reanudar"}</button>
+              <button onClick={()=>removeRule(r)} style={{background:"#FF6B6B11",color:"#FF6B6B",border:"1px solid #FF6B6B33",borderRadius:8,padding:"4px 10px",fontSize:12,cursor:"pointer"}}>🗑 Eliminar</button>
             </div>
           </div>
         );

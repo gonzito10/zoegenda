@@ -20,7 +20,7 @@ export default function GroupsScreen({ ctx }) {
                     <div style={{width:40,height:40,borderRadius:10,background:"#FF6B6B22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>📅</div>
                     <div style={{flex:1}}>
                       <div style={{fontSize:15,fontWeight:600,color:"var(--text)"}}>{g.name}</div>
-                      <div style={{fontSize:11,color:"var(--g5)",marginTop:2}}>Código: {g.code}</div>
+                      <div style={{fontSize:12,color:"var(--g5)",marginTop:2}}>Código: {g.code}</div>
                     </div>
                     <span style={{color:"var(--g3)",fontSize:20}}>›</span>
                   </div>

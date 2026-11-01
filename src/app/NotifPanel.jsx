@@ -24,7 +24,7 @@ export default function NotifPanel({ ctx }) {
                   <span style={{fontSize:14}}>{cat(ev.category).icon}</span>
                   <div style={{flex:1}}>
                     <div style={{fontSize:12,fontWeight:600,color:"#f5e0b0"}}>{ev.title}</div>
-                    <div style={{fontSize:10,color:"var(--g8)"}}>{ev.time}{ev.timeEnd?` – ${ev.timeEnd}`:""} · {daysLabel}</div>
+                    <div style={{fontSize:12,color:"var(--g8)"}}>{ev.time}{ev.timeEnd?` – ${ev.timeEnd}`:""} · {daysLabel}</div>
                   </div>
                 </div>
               );

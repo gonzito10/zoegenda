@@ -29,20 +29,20 @@ export default function HistoryTab({ ctx }) {
               <div style={{width:34,height:34,borderRadius:9,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textDecoration:e.settled?"line-through":"none"}}>{e.description}</div>
-                <div style={{fontSize:11,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
                   <span style={{color:"#8a8a9a",fontWeight:600}}>📅 {fmtDay(e.date)}</span> · {payer.display_name} · {c.label}
-                  {e.installments>1&&<span style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>}
-                  {e.recurring_id&&<span style={{background:"#4ECDC422",color:"#4ECDC4",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>🔁 Mensual</span>}
-                  {e.settled&&<span style={{background:"#96CEB422",color:"#96CEB4",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:700}}>✓ Liquidado</span>}
+                  {e.installments>1&&<span style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>}
+                  {e.recurring_id&&<span style={{background:"#4ECDC422",color:"#4ECDC4",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>🔁 Mensual</span>}
+                  {e.settled&&<span style={{background:"#96CEB422",color:"#96CEB4",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>✓ Liquidado</span>}
                   {tagRelations.filter(r=>r.expense_id===e.id).map(r=>{
                     const tag = tags.find(t=>t.id===r.tag_id);
-                    return tag ? <span key={r.tag_id} style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:9}}>🏷 {tag.name}</span> : null;
+                    return tag ? <span key={r.tag_id} style={{background:"#DDA0DD22",color:"#DDA0DD",padding:"1px 6px",borderRadius:10,fontSize:12}}>🏷 {tag.name}</span> : null;
                   })}
                 </div>
               </div>
               <div style={{textAlign:"right",flexShrink:0}}>
                 <div style={{fontSize:14,fontWeight:700,color:e.installments>1?"#DDA0DD":"var(--text)",textDecoration:e.settled?"line-through":"none"}}>{fmtMoney(e.amount)}</div>
-                <div style={{fontSize:10,color:"var(--g5)"}}>÷{e.split_between?.length||1} = {fmtMoney(perPerson)} c/u</div>
+                <div style={{fontSize:12,color:"var(--g5)"}}>÷{e.split_between?.length||1} = {fmtMoney(perPerson)} c/u</div>
               </div>
             </div>
           );
@@ -50,7 +50,7 @@ export default function HistoryTab({ ctx }) {
       </>
     }
     {monthSettlements.length > 0 && <>
-      <div style={{fontSize:10,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"18px 0 8px"}}>Pagos</div>
+      <div style={{fontSize:12,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"18px 0 8px"}}>Pagos</div>
       {[...monthSettlements].sort((a,b)=> b.date.localeCompare(a.date) || String(b.created_at||"").localeCompare(String(a.created_at||""))).map(st=>{
         const from = getMember(st.from_user), to = getMember(st.to_user);
         return (
@@ -58,7 +58,7 @@ export default function HistoryTab({ ctx }) {
             <div style={{width:24,height:24,borderRadius:"50%",background:from.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",flexShrink:0}}>{from.avatar}</div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12}}>{from.display_name} → <strong style={{color:to.color}}>{to.display_name}</strong></div>
-              <div style={{fontSize:10,color:"var(--g5)",marginTop:1}}>📅 {fmtDay(st.date)}</div>
+              <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>📅 {fmtDay(st.date)}</div>
             </div>
             <div style={{fontSize:13,fontWeight:700,color:"#96CEB4"}}>{fmtMoney(st.amount)}</div>
             <button onClick={()=>handleDeleteSettlement(st)} title="Eliminar pago"

@@ -34,11 +34,11 @@ export default function StatsTab({ ctx }) {
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
             <div style={{fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
               <span style={{fontSize:17}}>{c.icon}</span>{c.label}
-              <span style={{fontSize:10,color:"var(--g5)",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
+              <span style={{fontSize:12,color:"var(--g5)",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
             </div>
             <div style={{textAlign:"right"}}>
               <div style={{fontSize:13,fontWeight:700,fontFamily:"Fraunces,serif",color:c.color}}>{fmtMoney(c.amount)}</div>
-              <div style={{fontSize:10,color:"var(--g5)"}}>{pct}% del total</div>
+              <div style={{fontSize:12,color:"var(--g5)"}}>{pct}% del total</div>
             </div>
           </div>
           <div style={{height:7,background:"var(--card2)",borderRadius:4,overflow:"hidden"}}>
@@ -48,7 +48,7 @@ export default function StatsTab({ ctx }) {
         {isOpen && (
           <div style={{background:"var(--bg)",border:`1px solid ${c.color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:"8px 10px",display:"flex",flexDirection:"column",gap:4}}>
             {expsList.length === 0
-              ? <div style={{fontSize:11,color:"var(--g4)",padding:"8px 0",textAlign:"center"}}>Sin gastos</div>
+              ? <div style={{fontSize:12,color:"var(--g4)",padding:"8px 0",textAlign:"center"}}>Sin gastos</div>
               : expsList.map(e => {
                 const payer = getMember(e.paid_by);
                 return (
@@ -56,7 +56,7 @@ export default function StatsTab({ ctx }) {
                     style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",borderRadius:8,background:"var(--card)",border:"1px solid var(--card2)",cursor:"pointer"}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:12,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.description}</div>
-                      <div style={{fontSize:10,color:"var(--g5)",marginTop:1}}>{e.date} · {payer.display_name}{e.installments>1?` · Cuota ${e.installment_number}/${e.installments}`:""}</div>
+                      <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>{e.date} · {payer.display_name}{e.installments>1?` · Cuota ${e.installment_number}/${e.installments}`:""}</div>
                     </div>
                     <div style={{fontSize:12,fontWeight:700,color:c.color,flexShrink:0}}>{fmtMoney(e.amount)}</div>
                   </div>
@@ -76,7 +76,7 @@ export default function StatsTab({ ctx }) {
         {[["month","Este mes"],["annual","Anual"],...(tags.length>0?[["tags","Por etiqueta"]]:[])]
           .map(([v,l])=>(
             <button key={v} onClick={()=>{setStatsView(v);setOpenCat(null);setOpenTagCat({});}}
-              style={{padding:"5px 14px",borderRadius:8,fontSize:11,fontWeight:600,border:"1px solid",borderColor:statsView===v?"var(--border2)":"transparent",background:statsView===v?"var(--border)":"transparent",color:statsView===v?"var(--title)":"var(--g5)",cursor:"pointer"}}>
+              style={{padding:"5px 14px",borderRadius:8,fontSize:12,fontWeight:600,border:"1px solid",borderColor:statsView===v?"var(--border2)":"transparent",background:statsView===v?"var(--border)":"transparent",color:statsView===v?"var(--title)":"var(--g5)",cursor:"pointer"}}>
               {l}
             </button>
           ))
@@ -104,8 +104,8 @@ export default function StatsTab({ ctx }) {
                     {tCats.map(c=>(
                       <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:7}}>
                         <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>
-                        <div style={{flex:1,fontSize:11,color:"var(--ga)"}}>{c.icon} {c.label}</div>
-                        <div style={{fontSize:11,fontWeight:700,color:c.color}}>{((c.amount/tTotal)*100).toFixed(1)}%</div>
+                        <div style={{flex:1,fontSize:12,color:"var(--ga)"}}>{c.icon} {c.label}</div>
+                        <div style={{fontSize:12,fontWeight:700,color:c.color}}>{((c.amount/tTotal)*100).toFixed(1)}%</div>
                       </div>
                     ))}
                   </div>
@@ -133,11 +133,11 @@ export default function StatsTab({ ctx }) {
         : <>
           <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:14,marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
-              <div style={{fontSize:11,color:"var(--g5)",marginBottom:4}}>{statsView==="annual"?"Total anual":"Total del mes"}</div>
+              <div style={{fontSize:12,color:"var(--g5)",marginBottom:4}}>{statsView==="annual"?"Total anual":"Total del mes"}</div>
               <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:700}}>{fmtMoney(total)}</div>
             </div>
             <div style={{textAlign:"right"}}>
-              <div style={{fontSize:11,color:"var(--g5)",marginBottom:4}}>Categorías</div>
+              <div style={{fontSize:12,color:"var(--g5)",marginBottom:4}}>Categorías</div>
               <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:700}}>{cats.length}</div>
             </div>
           </div>
@@ -147,8 +147,8 @@ export default function StatsTab({ ctx }) {
               {cats.map(c=>(
                 <div key={c.id||c.label} style={{display:"flex",alignItems:"center",gap:7}}>
                   <div style={{width:10,height:10,borderRadius:3,background:c.color,flexShrink:0}}/>
-                  <div style={{flex:1,fontSize:11,color:"var(--ga)"}}>{c.icon} {c.label}</div>
-                  <div style={{fontSize:11,fontWeight:700,color:c.color}}>{((c.amount/total)*100).toFixed(1)}%</div>
+                  <div style={{flex:1,fontSize:12,color:"var(--ga)"}}>{c.icon} {c.label}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:c.color}}>{((c.amount/total)*100).toFixed(1)}%</div>
                 </div>
               ))}
             </div>

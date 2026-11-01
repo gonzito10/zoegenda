@@ -28,7 +28,7 @@ export default function LoginScreen({ ctx }) {
               <input type="password" value={authPassword} onChange={e=>setAuthPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(isReg?signUp():signIn())} placeholder="••••••••" style={inp}/>
             </div>
             {authError&&<div style={{fontSize:12,color:"#FF6B6B",background:"#FF6B6B11",padding:"8px 12px",borderRadius:8}}>{authError}</div>}
-            {isReg&&<p style={{fontSize:11,color:"var(--g5)",lineHeight:1.5}}>Al registrarte vas a poder crear y unirte a múltiples grupos de agenda.</p>}
+            {isReg&&<p style={{fontSize:12,color:"var(--g5)",lineHeight:1.5}}>Al registrarte vas a poder crear y unirte a múltiples grupos de agenda.</p>}
             <button onClick={isReg?signUp:signIn} disabled={authLoading} style={{background:"#FF6B6B",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,opacity:authLoading?.6:1}}>
               {authLoading?"Cargando...":(isReg?"Crear cuenta":"Entrar")}
             </button>

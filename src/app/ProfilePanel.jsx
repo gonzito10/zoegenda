@@ -14,7 +14,7 @@ export default function ProfilePanel({ ctx }) {
               <div style={{width:34,height:34,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff"}}>{profile?.avatar}</div>
               <div>
                 <div style={{fontSize:13,fontWeight:600,color:T.text}}>{profile?.display_name}</div>
-                <div style={{fontSize:11,color:"var(--g5)",marginTop:1}}>{authUser?.email}</div>
+                <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>{authUser?.email}</div>
               </div>
             </div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -24,9 +24,9 @@ export default function ProfilePanel({ ctx }) {
           </div>
           {/* Avisos en el celular */}
           <div style={{marginBottom:14}}>
-            <div style={{fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🔔 Avisos en este dispositivo</div>
+            <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🔔 Avisos en este dispositivo</div>
             {pushState==="unsupported" || (isIOS() && !isStandalone()) ? (
-              <div style={{fontSize:11,color:"var(--g8)",lineHeight:1.5}}>
+              <div style={{fontSize:12,color:"var(--g8)",lineHeight:1.5}}>
                 {isIOS() && !isStandalone()
                   ? "En iPhone, primero instalá la app: en Safari tocá Compartir → “Agregar a pantalla de inicio”, abrila desde ahí y activá los avisos."
                   : "Este navegador no admite avisos push."}
@@ -37,14 +37,14 @@ export default function ProfilePanel({ ctx }) {
                   style={{background:pushState==="on"?"#96CEB422":"#FF6B6B",color:pushState==="on"?"#96CEB4":"#fff",border:pushState==="on"?"1px solid #96CEB444":"none",borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",opacity:pushBusy?.6:1}}>
                   {pushState==="on" ? "✓ Avisos activados · desactivar" : "Activar avisos"}
                 </button>
-                <span style={{fontSize:11,color:"var(--g8)"}}>{pushState==="denied" ? "Bloqueados en el navegador" : "Te avisamos de los eventos con alarma, a las 9:00."}</span>
+                <span style={{fontSize:12,color:"var(--g8)"}}>{pushState==="denied" ? "Bloqueados en el navegador" : "Te avisamos de los eventos con alarma, a las 9:00."}</span>
               </div>
             )}
-            {pushMsg && <div style={{fontSize:11,color:"#FF6B6B",marginTop:6}}>{pushMsg}</div>}
+            {pushMsg && <div style={{fontSize:12,color:"#FF6B6B",marginTop:6}}>{pushMsg}</div>}
           </div>
           {/* Theme selector */}
           <div>
-            <div style={{fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🎨 Tema personal</div>
+            <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>🎨 Tema personal</div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {THEMES.map(t=>{
                 const active=themeId===t.id;
@@ -56,7 +56,7 @@ export default function ProfilePanel({ ctx }) {
                 );
               })}
             </div>
-            <div style={{fontSize:11,color:"var(--g8)",marginTop:8}}>Tema actual: <span style={{color:"#FF6B6B",fontWeight:600}}>{getTheme(themeId).label}</span></div>
+            <div style={{fontSize:12,color:"var(--g8)",marginTop:8}}>Tema actual: <span style={{color:"#FF6B6B",fontWeight:600}}>{getTheme(themeId).label}</span></div>
           </div>
         </div>
       )}

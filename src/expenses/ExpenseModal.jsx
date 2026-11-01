@@ -152,7 +152,7 @@ export default function ExpenseModal({ ctx }) {
             style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
             <div>
               <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>💳 Compra en cuotas</div>
-              <div style={{fontSize:11,color:"var(--g5)",marginTop:1}}>Se genera un gasto automático por mes</div>
+              <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>Se genera un gasto automático por mes</div>
             </div>
             <div style={{width:36,height:20,borderRadius:10,background:installments?"#DDA0DD":"var(--border2)",position:"relative",transition:"background .2s",flexShrink:0}}>
               <div style={{width:14,height:14,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:installments?18:3,transition:"left .2s"}}/>
@@ -164,7 +164,7 @@ export default function ExpenseModal({ ctx }) {
               style={{background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
               <div>
                 <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>🔁 Se repite todos los meses</div>
-                <div style={{fontSize:11,color:"var(--g5)",marginTop:1}}>
+                <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>
                   {recurringOn && form.date ? `Se carga solo el día ${parseInt(form.date.slice(8,10))} de cada mes` : "Alquiler, expensas, suscripciones…"}
                 </div>
               </div>
@@ -182,7 +182,7 @@ export default function ExpenseModal({ ctx }) {
               </div>
               {perCuota && (
                 <div style={{background:"var(--bg)",border:"1px solid #DDA0DD33",borderRadius:10,padding:"10px 13px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <span style={{fontSize:11,color:"var(--g8)"}}>Monto por cuota</span>
+                  <span style={{fontSize:12,color:"var(--g8)"}}>Monto por cuota</span>
                   <span style={{fontSize:18,fontWeight:700,fontFamily:"Fraunces,serif",color:"#DDA0DD"}}>{fmtMoney(perCuota)}</span>
                 </div>
               )}
@@ -197,20 +197,20 @@ export default function ExpenseModal({ ctx }) {
                 const on = form.category===c.id;
                 return (
                   <div key={c.id} onClick={()=>setForm(f=>({...f,category:c.id}))}
-                    style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:on?600:400,background:on?c.color+"33":"var(--card2)",color:on?c.color:"var(--g6)",border:`1px solid ${on?c.color+"44":"var(--border2)"}`}}>
+                    style={{padding:"4px 10px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:on?600:400,background:on?c.color+"33":"var(--card2)",color:on?c.color:"var(--g6)",border:`1px solid ${on?c.color+"44":"var(--border2)"}`}}>
                     {c.icon} {c.label}
                   </div>
                 );
               })}
               <div onClick={()=>setShowAddCat(v=>!v)}
-                style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",borderStyle:"dashed",border:"1px dashed var(--border2)",color:"var(--g4)"}}>
+                style={{padding:"4px 10px",borderRadius:20,fontSize:12,cursor:"pointer",borderStyle:"dashed",border:"1px dashed var(--border2)",color:"var(--g4)"}}>
                 + Nueva
               </div>
             </div>
 
             {(()=>{ const br = budgetRows.find(b=>b.category===form.category); if(!br) return null;
               const extra = parseFloat(form.amount)||0; const after = (br.spent + (isNew?extra:0)) / br.amount * 100; const col = budgetColor(after);
-              return <div style={{marginTop:8,fontSize:11,color:col,background:col+"15",border:`1px solid ${col}44`,borderRadius:8,padding:"6px 10px"}}>
+              return <div style={{marginTop:8,fontSize:13,color:col,background:`color-mix(in srgb, ${col} 12%, transparent)`,border:`1px solid color-mix(in srgb, ${col} 40%, transparent)`,borderRadius:8,padding:"6px 10px"}}>
                 🎯 Presupuesto del mes: {fmtMoney(br.spent)}{isNew&&extra>0?` + ${fmtMoney(extra)}`:""} de {fmtMoney(br.amount)} ({Math.round(after)}%)
               </div>; })()}
 
@@ -223,7 +223,7 @@ export default function ExpenseModal({ ctx }) {
                   <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:180,overflowY:"auto"}}>
                     {ICON_OPTIONS.map(g=>(
                       <div key={g.group}>
-                        <div style={{fontSize:9,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{g.group}</div>
+                        <div style={{fontSize:12,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>{g.group}</div>
                         <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                           {g.icons.map(ico=>(
                             <div key={ico} onClick={()=>setNewCatIcon(ico)}
@@ -263,7 +263,7 @@ export default function ExpenseModal({ ctx }) {
               return (
                 <div key={m.id} onClick={()=>toggleMember(m.id)}
                   style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:on?"#FF6B6B11":"var(--bg)",border:`1px solid ${on?"#FF6B6B33":"var(--border)"}`,cursor:"pointer",marginBottom:5}}>
-                  <div style={{width:16,height:16,borderRadius:4,border:`1.5px solid ${on?"#FF6B6B":"var(--border2)"}`,background:on?"#FF6B6B":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",flexShrink:0}}>{on?"✓":""}</div>
+                  <div style={{width:16,height:16,borderRadius:4,border:`1.5px solid ${on?"#FF6B6B":"var(--border2)"}`,background:on?"#FF6B6B":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",flexShrink:0}}>{on?"✓":""}</div>
                   <div style={{width:22,height:22,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff"}}>{m.avatar}</div>
                   <span style={{fontSize:13}}>{m.display_name}</span>
                 </div>
@@ -279,13 +279,13 @@ export default function ExpenseModal({ ctx }) {
                 const on = selectedTags.includes(t.id);
                 return (
                   <div key={t.id} onClick={()=>toggleTag(t.id)}
-                    style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",fontWeight:on?700:400,background:on?"#DDA0DD33":"var(--card2)",color:on?"#DDA0DD":"var(--g5)",border:`1px solid ${on?"#DDA0DD44":"var(--border2)"}`}}>
+                    style={{padding:"4px 10px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:on?700:400,background:on?"#DDA0DD33":"var(--card2)",color:on?"#DDA0DD":"var(--g5)",border:`1px solid ${on?"#DDA0DD44":"var(--border2)"}`}}>
                     {t.name}
                   </div>
                 );
               })}
               <div onClick={()=>setShowNewTag(v=>!v)}
-                style={{padding:"4px 10px",borderRadius:20,fontSize:11,cursor:"pointer",border:"1px dashed var(--border2)",color:"var(--g4)"}}>
+                style={{padding:"4px 10px",borderRadius:20,fontSize:12,cursor:"pointer",border:"1px dashed var(--border2)",color:"var(--g4)"}}>
                 + Nueva
               </div>
             </div>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
 
 const inp = {background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",color:"var(--text)",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
-const lbl = {fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
+const lbl = {fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
 
 const NOTE_COLORS = ["#FF6B6B","#FFB347","#FFEAA7","#96CEB4","#4ECDC4","#45B7D1","#DDA0DD"];
 
@@ -188,10 +188,10 @@ export default function Notes({ groupId, currentUserId }) {
           return (
             <div key={n.id} onClick={()=>selectNote(n)}
               style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:on?col+"22":"var(--card2)",color:on?col:"var(--g5)",border:`1px solid ${on?col+"66":(n.color?col+"33":"var(--border2)")}`,display:"flex",alignItems:"center",gap:5}}>
-              {n.pinned && <span style={{fontSize:10}}>📌</span>}
+              {n.pinned && <span style={{fontSize:12}}>📌</span>}
               {n.color && !on && <span style={{width:7,height:7,borderRadius:"50%",background:col}}/>}
               {n.title}
-              {left !== null && <span style={{fontSize:10,opacity:.7}}>☑ {left}</span>}
+              {left !== null && <span style={{fontSize:12,opacity:.7}}>☑ {left}</span>}
             </div>
           );
         })}
@@ -214,7 +214,7 @@ export default function Notes({ groupId, currentUserId }) {
                 {currentNote.title} <span style={{fontSize:12,color:"var(--g3)"}}>✎</span>
               </div>
             )}
-            <div style={{fontSize:10,color:"var(--g4)",marginTop:2}}>
+            <div style={{fontSize:12,color:"var(--g4)",marginTop:2}}>
               Modificado {fmtDate(currentNote.updated_at)}
               {saving && <span style={{color:"var(--g5)",marginLeft:6}}>· Guardando...</span>}
             </div>
@@ -259,7 +259,7 @@ export default function Notes({ groupId, currentUserId }) {
           </div>
           {checklistItems.some(i=>i.done) && (
             <button onClick={()=>setChecklist(checklistItems.filter(i=>!i.done))}
-              style={{marginTop:10,background:"#96CEB422",color:"#96CEB4",border:"1px solid #96CEB444",borderRadius:8,padding:"5px 12px",fontSize:11,fontWeight:600,cursor:"pointer"}}>Quitar completados</button>
+              style={{marginTop:10,background:"#96CEB422",color:"#96CEB4",border:"1px solid #96CEB444",borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Quitar completados</button>
           )}
         </div>
       ) : activeNote && (

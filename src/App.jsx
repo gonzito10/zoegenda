@@ -10,7 +10,7 @@ import ProfilePanel from "./app/ProfilePanel";
 import MainTabsBar from "./app/MainTabsBar";
 import NotifPanel from "./app/NotifPanel";
 import AppBody from "./app/AppBody";
-import Fab from "./app/Fab";
+import ActionBar from "./app/ActionBar";
 import EventModal from "./app/EventModal";
 import DeleteDialog from "./app/DeleteDialog";
 import LoginScreen from "./app/LoginScreen";
@@ -402,8 +402,8 @@ export default function App() {
       {/* ── BODY ── */}
       <AppBody ctx={ctx}/>
 
-      {/* ── FAB ── */}
-      <Fab ctx={ctx}/>
+      {/* ── BARRA DE ACCIÓN INFERIOR ── */}
+      <ActionBar ctx={ctx}/>
 
       {/* ── EVENT MODAL ── */}
       <EventModal ctx={ctx}/>

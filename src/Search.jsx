@@ -51,7 +51,7 @@ export default function Search({ groupId, events, onGo, onClose }) {
   const total = res ? res.events.length + res.expenses.length + res.notes.length + res.items.length + res.lists.length : 0;
   const Section = ({ title, children }) => (
     <div style={{marginBottom:14}}>
-      <div style={{fontSize:10,color:"var(--g5)",fontWeight:700,textTransform:"uppercase",letterSpacing:1,margin:"4px 0 6px"}}>{title}</div>
+      <div style={{fontSize:12,color:"var(--g5)",fontWeight:700,textTransform:"uppercase",letterSpacing:1,margin:"4px 0 6px"}}>{title}</div>
       {children}
     </div>
   );
@@ -60,7 +60,7 @@ export default function Search({ groupId, events, onGo, onClose }) {
       <span style={{fontSize:16,flexShrink:0}}>{icon}</span>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{title}</div>
-        {sub && <div style={{fontSize:11,color:"var(--g5)",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sub}</div>}
+        {sub && <div style={{fontSize:12,color:"var(--g5)",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sub}</div>}
       </div>
       {right && <div style={{fontSize:12,fontWeight:700,color:"var(--g8)",flexShrink:0}}>{right}</div>}
     </div>

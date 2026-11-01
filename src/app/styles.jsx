@@ -20,7 +20,7 @@ export const BASE_CSS = `
 `;
 
 export const inp = {background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",color:"var(--text)",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
-export const lbl = {fontSize:10,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
+export const lbl = {fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
 export const Logo = ({size=20}) => <span style={{fontFamily:"Fraunces,serif",fontSize:size,fontWeight:600,color:"var(--title)",letterSpacing:"-0.5px"}}>Zoe<span style={{color:"#FF6B6B"}}>Gens</span></span>;
 
 // ── App ────────────────────────────────────────────────────────────────────

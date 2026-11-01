@@ -96,7 +96,8 @@ export default function Expenses({ groupId, members, currentUserId }) {
     const spent = monthSpend[b.category] || 0;
     return { ...b, spent, pct: spent / b.amount * 100 };
   }).sort((a,b) => b.pct - a.pct), [budgets, monthSpend]);
-  const budgetColor = pct => pct >= 100 ? "#FF6B6B" : pct >= 80 ? "#FFB347" : "#96CEB4";
+  // Tres estados: bien (verde), cerca del límite (ámbar) y superado (rojo). Los colores cambian solos con el tema.
+  const budgetColor = pct => pct >= 100 ? "var(--danger)" : pct >= 80 ? "var(--warn)" : "var(--ok)";
 
   function getCat(id){ return allCats.find(c=>c.id===id) || { label:id, icon:"📌", color:"var(--g8)" }; }
   function getMember(id){ return members.find(m=>m.id===id) || { display_name:"?", color:"var(--g8)", avatar:"?" }; }
@@ -193,12 +194,12 @@ export default function Expenses({ groupId, members, currentUserId }) {
   if(loading) return <div style={{textAlign:"center",color:"var(--g5)",padding:"50px 0"}}>Cargando gastos...</div>;
 
   return (
-    <div style={{paddingBottom:80}}>
-      {/* Sub tabs */}
-      <div style={{display:"flex",gap:4,marginBottom:14}}>
-        {[["balance","⚖️ Balance"],["history","📋 Historial"],["stats","📊 Estadísticas"],["budget","🎯 Presupuesto"]].map(([v,l])=>(
+    <div style={{paddingBottom:16}}>
+      {/* Sub tabs: texto más grande, pestaña activa con subrayado */}
+      <div style={{display:"flex",overflowX:"auto",marginBottom:14,borderBottom:"1px solid var(--border)"}}>
+        {[["balance","Balance"],["history","Historial"],["stats","Estadísticas"],["budget","Presupuesto"]].map(([v,l])=>(
           <button key={v} onClick={()=>setSubTab(v)}
-            style={{padding:"5px 12px",borderRadius:8,fontSize:11,fontWeight:600,border:`1px solid ${subTab===v?"var(--border2)":"transparent"}`,background:subTab===v?"var(--border)":"transparent",color:subTab===v?"var(--title)":"var(--g5)",cursor:"pointer"}}>
+            style={{flex:"1 0 auto",minHeight:44,padding:"0 10px",whiteSpace:"nowrap",fontSize:14,fontWeight:subTab===v?700:500,border:"none",borderBottom:`3px solid ${subTab===v?"#96CEB4":"transparent"}`,marginBottom:-1,background:"transparent",color:subTab===v?"var(--title)":"var(--g8)",cursor:"pointer"}}>
             {l}
           </button>
         ))}
