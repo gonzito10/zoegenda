@@ -71,6 +71,7 @@ export default function HomeContent({ ctx }) {
 
         <div>
           <div style={{fontFamily:"Fraunces,serif",fontSize:26,fontWeight:600,color:"var(--title)"}}>Hola{profile?.display_name ? `, ${profile.display_name}` : ""}</div>
+          {activeGroup?.name&&<div style={{fontSize:14,color:"var(--g8)",marginTop:2}}>{activeGroup.name}</div>}
           <div style={{fontSize:13,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--g6)",marginTop:4}}>{dateLabel}</div>
         </div>
 

@@ -3,7 +3,7 @@ import { isStandalone, isIOS } from "../push.js";
 import { THEMES, getTheme, themeBgStyle } from "./constants";
 
 export default function ProfilePanel({ ctx }) {
-  const { T, authUser, groups, profile, pushBusy, pushMsg, pushState, saveTheme, setScreen, setShowGroupPanel, showGroupPanel, signOut, themeId, togglePush } = ctx;
+  const { T, activeGroup, authUser, groupMembers, groups, profile, pushBusy, pushMsg, pushState, saveTheme, setScreen, setShowGroupPanel, showGroupPanel, signOut, themeId, togglePush } = ctx;
   return (
     <>
       {/* Profile panel */}
@@ -19,8 +19,26 @@ export default function ProfilePanel({ ctx }) {
               </div>
             </div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              <button onClick={()=>{setScreen("groups");setShowGroupPanel(false);}} style={{background:T.gradient?"#ffffff14":"var(--border)",color:"var(--ga)",border:`1px solid ${T.border}`,borderRadius:10,padding:"6px 12px",fontSize:12}}>Mis agendas</button>
               <button onClick={signOut} style={{background:"#FF6B6B22",color:"var(--coral)",border:"1px solid #FF6B6B44",borderRadius:10,padding:"6px 12px",fontSize:12}}>Cerrar sesión</button>
+            </div>
+          </div>
+          {/* Agenda activa y miembros */}
+          <div style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid ${T.border}`}}>
+            <div style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Agenda compartida</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+              <div style={{minWidth:0}}>
+                <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)"}}>{activeGroup?.name}</div>
+                <div style={{fontSize:13,color:"var(--g6)",marginTop:2}}>Código: <span style={{color:"var(--coral)",fontWeight:700,letterSpacing:1}}>{activeGroup?.code}</span></div>
+              </div>
+              <button onClick={()=>{setScreen("groups");setShowGroupPanel(false);}} style={{background:T.gradient?"#ffffff14":"var(--border)",color:"var(--ga)",border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 14px",fontSize:13,minHeight:40}}>Cambiar agenda</button>
+            </div>
+            <div style={{display:"flex",gap:12,flexWrap:"wrap",marginTop:10}}>
+              {(groupMembers||[]).map(m=>(
+                <div key={m.id} style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:24,height:24,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff"}}>{m.avatar}</div>
+                  <span style={{fontSize:13,color:"var(--ga)"}}>{m.display_name}</span>
+                </div>
+              ))}
             </div>
           </div>
           {/* Avisos en el celular */}

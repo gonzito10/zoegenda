@@ -14,8 +14,6 @@ export default function AppBody({ ctx }) {
         <HomeContent ctx={ctx}/>
       ) : mainTab==="expenses" ? (
         <div style={{flex:1,overflowY:"auto",padding:"16px 16px 24px"}}>
-          <div style={{marginBottom:4,fontFamily:"Fraunces,serif",fontSize:18,fontWeight:600,color:"var(--title)"}}>Gastos compartidos</div>
-          <div style={{fontSize:12,color:"var(--g5)",marginBottom:14}}>{activeGroup?.name}</div>
           <Expenses groupId={activeGroup?.id} members={groupMembers} currentUserId={authUser?.id}/>
         </div>
       ) : mainTab==="lists" ? (

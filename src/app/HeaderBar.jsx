@@ -1,36 +1,35 @@
 import Icon from "./Icon";
+import { Logo } from "./styles";
+
+const TITLES = { agenda: "Agenda", expenses: "Gastos", lists: "Listados", notes: "Notas" };
 
 export default function HeaderBar({ ctx }) {
-  const { T, activeGroup, authUser, groupMembers, groups, notifications, profile, setMainTab, setScreen, setShowGroupPanel, setShowNotifPanel, setShowSearch, setView, showGroupPanel, showNotifPanel } = ctx;
+  const { T, mainTab, notifications, profile, setMainTab, setShowGroupPanel, setShowNotifPanel, setShowSearch, setView, showGroupPanel, showNotifPanel } = ctx;
+  const isHome = mainTab === "home";
+  const iconBtn = { background: "transparent", border: "1px solid var(--border2)", borderRadius: 10, width: 44, height: 44, cursor: "pointer", color: "var(--ga)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, position: "relative" };
   return (
     <>
-      {/* ── TOP HEADER ── */}
-      <header style={{padding:"10px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:12,background:T.gradient?"var(--bg)":T.bg,flexShrink:0,zIndex:10}}>
-        <div onClick={()=>setScreen("groups")} className="clickable" style={{flex:1,display:"flex",alignItems:"center",gap:8,minWidth:0}}>
-          <div style={{width:30,height:30,borderRadius:10,background:"#FF6B6B22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:"var(--coral)"}}><Icon name="calendar" size={16}/></div>
-          <div style={{minWidth:0}}>
-            <div style={{fontFamily:"Fraunces,serif",fontSize:15,fontWeight:600,color:"var(--title)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{activeGroup?.name||"Zoegenda"}</div>
-            <div style={{fontSize:12,color:"var(--g5)"}}>código: <span style={{color:"var(--coral)",fontWeight:700,letterSpacing:1}}>{activeGroup?.code}</span> · {groupMembers.length} miembro{groupMembers.length!==1?"s":""}</div>
-          </div>
-          <span style={{color:"var(--g3)",fontSize:12,flexShrink:0}}>▼</span>
+      <header style={{padding:"8px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,background:T.gradient?"var(--bg)":T.bg,flexShrink:0,zIndex:10}}>
+        <div style={{flex:1,minWidth:0,display:"flex",alignItems:"center",gap:4}}>
+          {isHome ? (
+            <Logo size={22}/>
+          ) : (
+            <>
+              <button onClick={()=>{setMainTab("home");setShowGroupPanel(false);setShowNotifPanel(false);}} aria-label="Volver al inicio" style={{...iconBtn,border:"none",marginLeft:-10}}><Icon name="chevronLeft" size={22}/></button>
+              <div style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:600,color:"var(--title)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{TITLES[mainTab]||""}</div>
+            </>
+          )}
         </div>
-        <div style={{display:"flex",alignItems:"center",flexShrink:0}}>
-          {groupMembers.slice(0,4).map((m,i)=>(
-            <div key={m.id} title={m.display_name} style={{width:24,height:24,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff",border:m.id===authUser?.id?"2px solid #fff":"2px solid var(--bg)",marginLeft:i===0?0:-5,opacity:m.id===authUser?.id?1:.65,zIndex:m.id===authUser?.id?2:1}}>{m.avatar}</div>
-          ))}
-          {groupMembers.length>4&&<div style={{fontSize:12,color:"var(--g5)",marginLeft:4}}>+{groupMembers.length-4}</div>}
-        </div>
-        <div onClick={()=>setShowGroupPanel(p=>!p)} className="clickable" style={{display:"flex",alignItems:"center",gap:8,background:showGroupPanel?"var(--border)":"var(--card)",border:`1px solid ${showGroupPanel?"var(--border3)":"var(--border2)"}`,borderRadius:20,padding:"4px 10px 4px 4px",flexShrink:0}}>
-          <div style={{width:22,height:22,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:"#fff"}}>{profile?.avatar}</div>
-          <span style={{fontSize:12,color:"var(--ga)",fontWeight:500,maxWidth:55,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{profile?.display_name}</span>
-        </div>
-          <button onClick={()=>setShowSearch(true)} title="Buscar" style={{background:"transparent",border:"1px solid var(--border2)",borderRadius:10,width:38,height:38,cursor:"pointer",color:"var(--ga)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:0}} aria-label="Buscar"><Icon name="search" size={18}/></button>
+        <button onClick={()=>setShowSearch(true)} title="Buscar" style={iconBtn} aria-label="Buscar"><Icon name="search" size={18}/></button>
         {notifications.length>0&&(
-          <button onClick={()=>{setMainTab("agenda");setView("agenda");setShowNotifPanel(p=>!p);setShowGroupPanel(false);}} style={{position:"relative",background:showNotifPanel?"#FFB34722":"transparent",border:`1px solid ${showNotifPanel?"#FFB34744":"var(--border2)"}`,borderRadius:10,padding:"7px 10px",fontSize:15,flexShrink:0,cursor:"pointer"}}>
+          <button onClick={()=>{setMainTab("agenda");setView("agenda");setShowNotifPanel(p=>!p);setShowGroupPanel(false);}} aria-label="Avisos" style={{...iconBtn,background:showNotifPanel?"color-mix(in srgb, var(--warn) 14%, transparent)":"transparent",border:`1px solid ${showNotifPanel?"var(--warn)":"var(--border2)"}`}}>
             <Icon name="bell" size={18}/>
-            <span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:"#FF6B6B",fontSize:9,fontWeight:700,color:"#1A0B0B",display:"flex",alignItems:"center",justifyContent:"center"}}>{notifications.length}</span>
+            <span style={{position:"absolute",top:-4,right:-4,minWidth:18,height:18,borderRadius:9,background:"#FF6B6B",fontSize:11,fontWeight:700,color:"#1A0B0B",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{notifications.length}</span>
           </button>
         )}
+        <button onClick={()=>setShowGroupPanel(p=>!p)} aria-label="Mi perfil y agenda" style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"none",cursor:"pointer",padding:0,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <span style={{width:36,height:36,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",boxShadow:showGroupPanel?"0 0 0 2px var(--coral)":"none"}}>{profile?.avatar}</span>
+        </button>
       </header>
       <div className="meander" aria-hidden="true"/>
     </>

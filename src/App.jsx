@@ -7,7 +7,6 @@ import { getProfile, upsertProfile, getMyGroups, getGroupMembers, getGroupEvents
 import { BASE_CSS, Logo } from "./app/styles";
 import HeaderBar from "./app/HeaderBar";
 import ProfilePanel from "./app/ProfilePanel";
-import MainTabsBar from "./app/MainTabsBar";
 import NotifPanel from "./app/NotifPanel";
 import AppBody from "./app/AppBody";
 import ActionBar from "./app/ActionBar";
@@ -392,8 +391,6 @@ export default function App() {
       <HeaderBar ctx={ctx}/>
 
       <ProfilePanel ctx={ctx}/>
-
-      <MainTabsBar ctx={ctx}/>
 
       {/* ── NOTIFICATION PANEL — solo en sección agenda ── */}
       {showSearch && <Search groupId={activeGroup?.id} events={events} onGo={goTo} onClose={()=>setShowSearch(false)}/>}
