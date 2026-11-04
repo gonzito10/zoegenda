@@ -48,9 +48,18 @@ const LIST_TYPES = {
 const UNITS = ["unid","kg","g","L","ml","paq","caja","docena"];
 
 // ── DB helpers ─────────────────────────────────────────────────────────────
+// Orden de los listados: fijados primero, después el orden que eligió el usuario (position), después por antigüedad
+function sortLists(ls) {
+  return [...ls].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)
+    || (a.position ?? 1e9) - (b.position ?? 1e9)
+    || String(a.created_at).localeCompare(String(b.created_at)));
+}
 async function loadLists(groupId) {
   const { data } = await supabase.from("lists").select("*").eq("group_id", groupId).order("created_at");
-  return data || [];
+  return sortLists(data || []);
+}
+async function savePositions(ls) {
+  await Promise.all(ls.map((l, i) => supabase.from("lists").update({ position: i }).eq("id", l.id)));
 }
 async function loadItems(listId) {
   const { data } = await supabase.from("list_items").select("*").eq("list_id", listId).order("created_at");
@@ -111,21 +120,74 @@ export default function Lists({ groupId, currentUserId }) {
   const activeRef = useRef(null);
   activeRef.current = activeList;
 
+  // Reordenar listados: apretar y sostener un listado, y arrastrarlo
+  const [dragId, setDragId] = useState(null);
+  const dragRef = useRef({ id: null, timer: null, startX: 0, startY: 0, moved: false });
+  const listsRef = useRef([]);
+  listsRef.current = lists;
+
+  useEffect(() => {
+    // Mientras se arrastra, se frena el desplazamiento de la pantalla
+    const block = e => { if (dragRef.current.id) e.preventDefault(); };
+    document.addEventListener("touchmove", block, { passive: false });
+    return () => document.removeEventListener("touchmove", block);
+  }, []);
+
+  function chipDown(e, l) {
+    const d = dragRef.current;
+    d.startX = e.clientX; d.startY = e.clientY; d.moved = false;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    clearTimeout(d.timer);
+    d.timer = setTimeout(() => {
+      d.id = l.id; d.moved = true; setDragId(l.id);
+      try { navigator.vibrate && navigator.vibrate(15); } catch (err) {}
+    }, 400);
+  }
+  function chipMove(e) {
+    const d = dragRef.current;
+    if (!d.id) {
+      // Si el dedo se mueve antes de los 400 ms, es un desplazamiento normal: se cancela
+      if (d.timer && (Math.abs(e.clientX - d.startX) > 8 || Math.abs(e.clientY - d.startY) > 8)) { clearTimeout(d.timer); d.timer = null; }
+      return;
+    }
+    const el = document.elementsFromPoint(e.clientX, e.clientY).find(x => x.dataset && x.dataset.listid);
+    const overId = el?.dataset.listid;
+    if (!overId || overId === d.id) return;
+    const cur = listsRef.current;
+    const from = cur.findIndex(x => x.id === d.id), to = cur.findIndex(x => x.id === overId);
+    if (from < 0 || to < 0 || !!cur[from].pinned !== !!cur[to].pinned) return; // los fijados y los comunes no se mezclan
+    const next = [...cur]; const [m] = next.splice(from, 1); next.splice(to, 0, m);
+    setLists(next);
+  }
+  function chipUp() {
+    const d = dragRef.current;
+    clearTimeout(d.timer); d.timer = null;
+    if (d.id) {
+      d.id = null; setDragId(null);
+      const ordered = listsRef.current.map((l, i) => ({ ...l, position: i }));
+      setLists(ordered);
+      savePositions(ordered);
+      setTimeout(() => { d.moved = false; }, 0); // evita que el toque final abra el listado
+    }
+  }
+
   useEffect(() => {
     if (!groupId) return;
     setLoading(true);
     loadLists(groupId).then(async ls => {
       const withDefault = await ensureShoppingList(groupId, currentUserId, ls);
-      setLists(withDefault);
+      setLists(sortLists(withDefault));
       const nav = window.__zgNav;
       const target = nav?.type === "list" ? withDefault.find(x => x.id === nav.id) : null;
       if (target) window.__zgNav = null;
-      if (withDefault.length > 0) setActiveList((target || withDefault[0]).id);
+      // Por defecto se abre el primero del orden (los fijados van primero)
+      if (withDefault.length > 0) setActiveList((target || sortLists(withDefault)[0]).id);
       setLoading(false);
     });
     const sub = supabase.channel(`lists-${groupId}`)
       .on("postgres_changes", { event:"*", schema:"public", table:"lists", filter:`group_id=eq.${groupId}` }, () =>
         loadLists(groupId).then(ls => {
+          if (dragRef.current.id) return; // no pisar el orden mientras se está arrastrando
           setLists(ls);
           if (activeRef.current && !ls.some(l => l.id === activeRef.current)) setActiveList(ls[0]?.id || null);
         }))
@@ -176,9 +238,18 @@ export default function Lists({ groupId, currentUserId }) {
       setLists(ls => ls.map(l => l.id === editingList.id ? { ...l, ...fields } : l));
     } else {
       const created = await createList(groupId, currentUserId, fields.name, fields.icon, fields.type);
-      if (created) { setLists(ls => [...ls, created]); setActiveList(created.id); }
+      if (created) { setLists(ls => sortLists([...ls, created])); setActiveList(created.id); }
     }
     setShowModal(false); setEditingList(null);
+  }
+
+  // Fijar / desfijar un listado: los fijados van primero y el primero se abre por defecto
+  async function togglePin(list) {
+    const pinned = !list.pinned;
+    const next = sortLists(lists.map(l => l.id === list.id ? { ...l, pinned } : l));
+    setLists(next);
+    await updateList(list.id, { pinned });
+    savePositions(next);
   }
 
   async function handleDeleteList(id) {
@@ -262,13 +333,21 @@ export default function Lists({ groupId, currentUserId }) {
 
       {/* Selector de listados */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
-        {lists.map(l => (
-          <div key={l.id} onClick={()=>setActiveList(l.id)}
-            style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:activeList===l.id?"#FF6B6B22":"var(--card2)",color:activeList===l.id?"var(--coral)":"var(--g5)",border:`1px solid ${activeList===l.id?"#FF6B6B44":"var(--border2)"}`,display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:15}}>{l.icon||"📋"}</span>{l.name}
-          </div>
-        ))}
+        {lists.map(l => {
+          const dragging = dragId === l.id;
+          return (
+            <div key={l.id} data-listid={l.id}
+              onClick={()=>{ if (dragRef.current.moved) return; setActiveList(l.id); }}
+              onPointerDown={e=>chipDown(e,l)} onPointerMove={chipMove} onPointerUp={chipUp} onPointerCancel={chipUp}
+              onContextMenu={e=>e.preventDefault()}
+              style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:dragging?"grabbing":"pointer",background:activeList===l.id?"#FF6B6B22":"var(--card2)",color:activeList===l.id?"var(--coral)":"var(--g5)",border:`1px solid ${activeList===l.id?"#FF6B6B44":"var(--border2)"}`,display:"flex",alignItems:"center",gap:8,touchAction:"none",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",transform:dragging?"scale(1.08)":"none",boxShadow:dragging?"0 6px 16px #0006":"none",opacity:dragging?.9:1,transition:"transform .12s, box-shadow .12s"}}>
+              {l.pinned && <span style={{display:"flex",color:"var(--warn)"}}><Icon name="pin" size={13}/></span>}
+              <span style={{fontSize:15}}>{l.icon||"📋"}</span>{l.name}
+            </div>
+          );
+        })}
       </div>
+      {lists.length > 1 && <div style={{fontSize:12,color:"var(--g4)",margin:"-8px 0 14px"}}>Apretá y sostené un listado para moverlo de lugar.</div>}
 
       {currentList && (<>
         {/* Cabecera del listado activo */}
@@ -281,6 +360,8 @@ export default function Lists({ groupId, currentUserId }) {
             </div>
           </div>
           <div style={{display:"flex",gap:4,flexShrink:0}}>
+            <button onClick={()=>togglePin(currentList)} title={currentList.pinned?"Quitar fijado":"Fijar listado"} aria-label={currentList.pinned?"Quitar fijado":"Fijar listado"}
+              style={{background:currentList.pinned?"#FFB34722":"transparent",border:"none",color:currentList.pinned?"var(--warn)":"var(--g5)",cursor:"pointer",padding:"8px",display:"flex",borderRadius:10}}><Icon name="pin" size={18}/></button>
             <button onClick={()=>openEditModal(currentList)} style={{background:"transparent",border:"none",color:"var(--g5)",cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Editar listado"><Icon name="edit" size={18}/></button>
             <button onClick={()=>setShowDelete(currentList.id)} style={{background:"transparent",border:"none",color:"var(--g8)",cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Eliminar listado"><Icon name="trash" size={18}/></button>
           </div>
