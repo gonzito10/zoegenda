@@ -7,20 +7,26 @@ const lbl = {fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"upperca
 
 const NOTE_COLORS = ["#FF6B6B","#FFB347","#FFEAA7","#96CEB4","#4ECDC4","#45B7D1","#DDA0DD"];
 
-// Tipos de anotador: cada tipo trae su plantilla inicial
+// Anotadores fijos: Notas y Recetas (no se crean, editan ni eliminan desde la app)
 const NOTE_LIST_TYPES = {
   notes: {
     label:"Notas", icon:"📝", desc:"Notas de texto libre",
     kind:"text", template:"", placeholder:"Escribí tu nota acá...",
-    emptyText:"No hay notas en este anotador todavía",
+    emptyText:"No hay notas todavía",
   },
   recipe: {
     label:"Receta", icon:"🍳", desc:"Cada nota es una receta, con ingredientes y pasos",
     kind:"text", template:"Ingredientes\n- \n\nPasos\n1. \n", placeholder:"Ingredientes y pasos de la receta...",
-    emptyText:"No hay recetas en este anotador todavía",
+    emptyText:"No hay recetas todavía",
   },
 };
-const LIST_ICON_CHOICES = ["📝","🍳","⏰","📚","🏠","✈️","💡","🎁","🛒","💼","❤️","⭐","🍰","🥗","💊","🎓"];
+const TABS = ["notes","recipe"];
+
+// A qué solapa pertenece una nota: si su anotador es de tipo receta va a Recetas, el resto a Notas
+function tabOf(note, lists) {
+  const l = lists.find(x => x.id === note.list_id);
+  return l?.type === "recipe" ? "recipe" : "notes";
+}
 
 async function loadNoteLists(groupId) {
   const { data } = await supabase.from("note_lists").select("*").eq("group_id", groupId).order("created_at");
@@ -29,12 +35,6 @@ async function loadNoteLists(groupId) {
 async function createNoteList(groupId, userId, name, icon, type) {
   const { data } = await supabase.from("note_lists").insert({ group_id: groupId, created_by: userId, name, icon, type }).select().single();
   return data;
-}
-async function updateNoteList(id, fields) {
-  await supabase.from("note_lists").update(fields).eq("id", id);
-}
-async function deleteNoteList(id) {
-  await supabase.from("note_lists").delete().eq("id", id);
 }
 
 async function loadNotes(groupId) {
@@ -68,22 +68,18 @@ export default function Notes({ groupId, currentUserId }) {
   const [titleDraft,  setTitleDraft]  = useState("");
   const [newColor,    setNewColor]    = useState(null);
 
-  // Anotadores (listas de notas)
+  // Solapas fijas: Notas y Recetas
   const [noteLists,   setNoteLists]   = useState([]);
-  const [activeListId,setActiveListId]= useState("none"); // "none" (notas sin anotador) | id del anotador
-  const [newListId,   setNewListId]   = useState("");    // listado elegido al crear una nota ("" = sin listado)
-  const [showListModal,setShowListModal]= useState(false);
-  const [editingList, setEditingList] = useState(null);
-  const [listName,    setListName]    = useState("");
-  const [listType,    setListType]    = useState("notes");
-  const [listIcon,    setListIcon]    = useState("📝");
-  const [showDeleteList,setShowDeleteList]= useState(null);
+  const [activeTab,   setActiveTab]   = useState("notes"); // "notes" | "recipe"
+  const [newTab,      setNewTab]      = useState("notes"); // solapa elegida al crear una nota
 
   const saveTimer = useRef(null);
   const contentRef = useRef(content);
   contentRef.current = content;
-  const activeListRef = useRef(activeListId);
-  activeListRef.current = activeListId;
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+  const noteListsRef = useRef(noteLists);
+  noteListsRef.current = noteLists;
 
   useEffect(() => {
     if (!groupId) return;
@@ -94,10 +90,10 @@ export default function Notes({ groupId, currentUserId }) {
       const nav = window.__zgNav;
       const target = nav?.type === "note" ? ns.find(n => n.id === nav.id) : null;
       if (nav?.type === "note") window.__zgNav = null;
-      const listId = target ? (target.list_id || "none") : (ls[0]?.id || "none");
-      setActiveListId(listId);
-      const inList = ns.filter(n => listId === "none" ? !n.list_id : n.list_id === listId);
-      const first = target || inList[0];
+      const tab = target ? tabOf(target, ls) : "notes";
+      setActiveTab(tab);
+      const inTab = ns.filter(n => tabOf(n, ls) === tab);
+      const first = target || inTab[0];
       if (first) { setActiveNote(first.id); setContent(first.content || ""); }
       setLoading(false);
     });
@@ -106,11 +102,7 @@ export default function Notes({ groupId, currentUserId }) {
       .on("postgres_changes", { event:"*", schema:"public", table:"notes", filter:`group_id=eq.${groupId}` }, () =>
         loadNotes(groupId).then(ns => setNotes(ns)))
       .on("postgres_changes", { event:"*", schema:"public", table:"note_lists", filter:`group_id=eq.${groupId}` }, () =>
-        loadNoteLists(groupId).then(ls => {
-          setNoteLists(ls);
-          const cur = activeListRef.current;
-          if (cur !== "none" && !ls.some(l => l.id === cur)) setActiveListId(ls[0]?.id || "none");
-        }))
+        loadNoteLists(groupId).then(ls => setNoteLists(ls)))
       .subscribe();
     return () => supabase.removeChannel(sub);
   }, [groupId]);
@@ -118,15 +110,14 @@ export default function Notes({ groupId, currentUserId }) {
   // Listener de la barra de acción ("Nueva nota") y del buscador
   useEffect(() => {
     const handler = () => {
-      const cur = activeListRef.current;
       setNewTitle(""); setNewColor(null);
-      setNewListId(cur !== "none" ? cur : "");
+      setNewTab(activeTabRef.current);
       setShowModal(true);
     };
     document.addEventListener("openNoteModal", handler);
     const nav = e => {
       if (e.detail?.type !== "note") return;
-      setNotes(ns => { const n = ns.find(x => x.id === e.detail.id); if (n) { window.__zgNav = null; setActiveListId(n.list_id || "none"); setActiveNote(n.id); setContent(n.content || ""); } return ns; });
+      setNotes(ns => { const n = ns.find(x => x.id === e.detail.id); if (n) { window.__zgNav = null; setActiveTab(tabOf(n, noteListsRef.current)); setActiveNote(n.id); setContent(n.content || ""); } return ns; });
     };
     document.addEventListener("zgNavigate", nav);
     return () => { document.removeEventListener("openNoteModal", handler); document.removeEventListener("zgNavigate", nav); };
@@ -170,74 +161,37 @@ export default function Notes({ groupId, currentUserId }) {
     setContent(note.content || "");
   }
 
-  // Tipo del listado elegido al crear una nota (si no hay listado, se comporta como "Notas")
-  const newListObj = noteLists.find(l => l.id === newListId);
-  const newType = NOTE_LIST_TYPES[newListObj?.type] || NOTE_LIST_TYPES.notes;
+  // Tipo elegido al crear una nota (define la plantilla inicial)
+  const newType = NOTE_LIST_TYPES[newTab];
 
   async function handleCreate() {
     if (!newTitle.trim()) return;
-    const created = await createNote(groupId, currentUserId, newTitle.trim(), "text", newColor, newListObj?.id || null, newType.template);
+    // Anotador que corresponde a la solapa elegida; si todavía no existe el de Recetas, se crea una sola vez
+    let list = noteLists.find(l => l.type === newTab);
+    if (!list && newTab === "recipe") {
+      list = await createNoteList(groupId, currentUserId, "Recetas", NOTE_LIST_TYPES.recipe.icon, "recipe");
+      if (list) setNoteLists(ls => [...ls, list]);
+    }
+    const created = await createNote(groupId, currentUserId, newTitle.trim(), "text", newColor, list?.id || null, newType.template);
     if (created) {
       setNotes(ns => sortNotes([created, ...ns]));
-      // Si estás mirando otro listado, pasá al de la nota nueva para que la veas
-      const cur = activeListRef.current;
-      if (cur !== (created.list_id || "none")) setActiveListId(created.list_id || "none");
+      // Si estás mirando la otra solapa, pasá a la de la nota nueva para que la veas
+      setActiveTab(newTab);
       setActiveNote(created.id);
       setContent(created.content || "");
     }
     setNewTitle(""); setShowModal(false);
   }
 
-  // ── Listados de notas ──
-  function pickList(id) {
+  function pickTab(t) {
     if (activeNote && saveTimer.current) {
       clearTimeout(saveTimer.current);
       saveContent(activeNote, contentRef.current);
     }
-    setActiveListId(id);
-    const vis = notes.filter(n => id === "none" ? !n.list_id : n.list_id === id);
-    const first = vis[0];
+    setActiveTab(t);
+    const first = notes.find(n => tabOf(n, noteLists) === t);
     setActiveNote(first ? first.id : null);
     setContent(first ? (first.content || "") : "");
-  }
-  function openNewListModal() {
-    setEditingList(null); setListName(""); setListType("notes");
-    setListIcon(NOTE_LIST_TYPES.notes.icon); setShowListModal(true);
-  }
-  function openEditListModal(l) {
-    setEditingList(l); setListName(l.name); setListType(l.type || "notes");
-    setListIcon(l.icon || NOTE_LIST_TYPES[l.type]?.icon || "📝"); setShowListModal(true);
-  }
-  function pickListType(t) {
-    // Si el ícono todavía es el del tipo anterior, pasa al ícono del tipo nuevo
-    if (listIcon === NOTE_LIST_TYPES[listType]?.icon) setListIcon(NOTE_LIST_TYPES[t].icon);
-    setListType(t);
-  }
-  async function handleSaveList() {
-    if (!listName.trim()) return;
-    const fields = { name: listName.trim(), icon: listIcon, type: listType };
-    if (editingList) {
-      await updateNoteList(editingList.id, fields);
-      setNoteLists(ls => ls.map(l => l.id === editingList.id ? { ...l, ...fields } : l));
-    } else {
-      const created = await createNoteList(groupId, currentUserId, fields.name, fields.icon, fields.type);
-      if (created) { setNoteLists(ls => [...ls, created]); pickList(created.id); }
-    }
-    setShowListModal(false); setEditingList(null);
-  }
-  async function handleDeleteList(id) {
-    await deleteNoteList(id);
-    // Las notas del listado se borran junto con él
-    const left = notes.filter(n => n.list_id !== id);
-    setNotes(left);
-    const remaining = noteLists.filter(l => l.id !== id);
-    setNoteLists(remaining);
-    const nextId = remaining[0]?.id || "none";
-    setActiveListId(nextId);
-    const first = left.find(n => nextId === "none" ? !n.list_id : n.list_id === nextId);
-    setActiveNote(first ? first.id : null);
-    setContent(first ? (first.content || "") : "");
-    setShowDeleteList(null);
   }
 
   async function handleDeleteNote(id) {
@@ -245,8 +199,7 @@ export default function Notes({ groupId, currentUserId }) {
     const updated = notes.filter(n => n.id !== id);
     setNotes(updated);
     if (activeNote === id) {
-      const cur = activeListRef.current;
-      const inView = updated.filter(n => cur === "none" ? !n.list_id : n.list_id === cur);
+      const inView = updated.filter(n => tabOf(n, noteLists) === activeTabRef.current);
       setActiveNote(inView[0]?.id || null);
       setContent(inView[0]?.content || "");
     }
@@ -266,47 +219,34 @@ export default function Notes({ groupId, currentUserId }) {
     setEditingTitle(false);
   }
 
-  const curList = noteLists.find(l => l.id === activeListId) || null;
-  const looseCount = notes.filter(n => !n.list_id).length;
-  const baseNotes = activeListId === "none" ? notes.filter(n => !n.list_id) : notes.filter(n => n.list_id === activeListId);
-  const visibleNotes = baseNotes;
+  const visibleNotes = notes.filter(n => tabOf(n, noteLists) === activeTab);
   const currentNote = notes.find(n => n.id === activeNote);
-  const currentNoteList = noteLists.find(l => l.id === currentNote?.list_id);
-  const noteType = NOTE_LIST_TYPES[currentNoteList?.type] || NOTE_LIST_TYPES.notes;
+  const noteType = NOTE_LIST_TYPES[currentNote ? tabOf(currentNote, noteLists) : activeTab];
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("es-AR", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }) : "";
 
   if (loading) return <div style={{textAlign:"center",color:"var(--g5)",padding:"50px 0"}}>Cargando notas...</div>;
 
   return (
     <div>
-      {/* Selector de anotadores */}
+      {/* Solapas fijas: Notas y Recetas */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-        {[...(looseCount>0 ? [["none","Sin anotador",null]] : []), ...noteLists.map(l => [l.id, l.name, l.icon || NOTE_LIST_TYPES[l.type]?.icon || "📝"])].map(([id, name, ico]) => {
-          const on = activeListId === id;
+        {TABS.map(t => {
+          const on = activeTab === t;
+          const ty = NOTE_LIST_TYPES[t];
           return (
-            <div key={id} onClick={()=>pickList(id)}
+            <div key={t} onClick={()=>pickTab(t)}
               style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:on?"#DDA0DD22":"var(--card2)",color:on?"var(--violet)":"var(--g5)",border:`1px solid ${on?"#DDA0DD66":"var(--border2)"}`,display:"flex",alignItems:"center",gap:8}}>
-              {ico && <span style={{fontSize:15}}>{ico}</span>}{name}
+              <span style={{fontSize:15}}>{ty.icon}</span>{t==="recipe"?"Recetas":"Notas"}
             </div>
           );
         })}
-        <div onClick={openNewListModal}
-          style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:"transparent",color:"var(--g5)",border:"1px dashed var(--border2)",display:"flex",alignItems:"center",gap:4}}>
-          <Icon name="plus" size={13}/> Nuevo anotador
-        </div>
-        {curList && (
-          <>
-            <button onClick={()=>openEditListModal(curList)} style={{background:"transparent",border:"none",color:"var(--g5)",cursor:"pointer",padding:"6px",display:"flex"}} aria-label="Editar anotador"><Icon name="edit" size={16}/></button>
-            <button onClick={()=>setShowDeleteList(curList.id)} style={{background:"transparent",border:"none",color:"var(--g8)",cursor:"pointer",padding:"6px",display:"flex"}} aria-label="Eliminar anotador"><Icon name="trash" size={16}/></button>
-          </>
-        )}
       </div>
 
       {visibleNotes.length === 0 && (
         <div style={{textAlign:"center",color:"var(--g4)",padding:"40px 20px"}}>
           <div style={{marginBottom:12,color:"var(--g5)",display:"flex",justifyContent:"center"}}><Icon name="note" size={36}/></div>
-          <div style={{marginBottom:8,fontSize:14}}>{curList ? NOTE_LIST_TYPES[curList.type]?.emptyText : "No hay notas todavía"}</div>
-          <div style={{fontSize:12,color:"var(--g3)",marginBottom:20}}>Tocá "Nueva nota" para crear la primera</div>
+          <div style={{marginBottom:8,fontSize:14}}>{NOTE_LIST_TYPES[activeTab].emptyText}</div>
+          <div style={{fontSize:12,color:"var(--g3)",marginBottom:20}}>Tocá "Nueva nota" para crear {activeTab==="recipe"?"la primera receta":"la primera"}</div>
         </div>
       )}
 
@@ -390,22 +330,26 @@ export default function Notes({ groupId, currentUserId }) {
               <label style={lbl}>Nombre</label>
               <input value={newTitle} onChange={e=>setNewTitle(e.target.value)}
                 onKeyDown={e=>e.key==="Enter"&&handleCreate()}
-                placeholder="Ej: Ideas, Recetas, Plan de vacaciones..."
+                placeholder={newTab==="recipe"?"Ej: Milanesas al horno...":"Ej: Ideas, Plan de vacaciones..."}
                 style={inp} autoFocus/>
             </div>
-            {noteLists.length > 0 && (
-              <div style={{marginBottom:14}}>
-                <label style={lbl}>Anotador</label>
-                <select value={newListId} onChange={e=>setNewListId(e.target.value)}
-                  style={{...inp,fontSize:16,cursor:"pointer"}}>
-                  <option value="">Sin anotador</option>
-                  {noteLists.map(l => <option key={l.id} value={l.id}>{(l.icon || NOTE_LIST_TYPES[l.type]?.icon)} {l.name} · {NOTE_LIST_TYPES[l.type]?.label}</option>)}
-                </select>
+            <div style={{marginBottom:14}}>
+              <label style={lbl}>Guardar en</label>
+              <div style={{display:"flex",gap:8}}>
+                {TABS.map(t => {
+                  const on = newTab === t;
+                  return (
+                    <div key={t} onClick={()=>setNewTab(t)}
+                      style={{flex:1,padding:"10px 12px",borderRadius:10,cursor:"pointer",textAlign:"center",fontSize:13,fontWeight:600,background:on?"#DDA0DD11":"var(--bg)",color:on?"var(--violet)":"var(--text)",border:`1px solid ${on?"#DDA0DD66":"var(--border)"}`}}>
+                      {NOTE_LIST_TYPES[t].icon} {t==="recipe"?"Recetas":"Notas"}
+                    </div>
+                  );
+                })}
               </div>
-            )}
-            {newListObj?.type==="recipe" && (
+            </div>
+            {newTab==="recipe" && (
               <div style={{marginBottom:14,fontSize:12,color:"var(--g5)"}}>
-                {newType.icon} {newType.label}: arranca con Ingredientes y Pasos.
+                Arranca con Ingredientes y Pasos.
               </div>
             )}
             <div style={{marginBottom:16}}>
@@ -421,72 +365,6 @@ export default function Notes({ groupId, currentUserId }) {
               style={{width:"100%",background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer"}}>
               Crear nota
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal nuevo/editar anotador */}
-      {showListModal && (
-        <div onClick={e=>{if(e.target===e.currentTarget){setShowListModal(false);setEditingList(null);}}}
-          style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-          <div style={{background:"var(--card)",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,padding:20,border:"1px solid var(--border2)",maxHeight:"88vh",overflow:"auto"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-              <h2 style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)"}}>{editingList?"Editar anotador":"Nuevo anotador"}</h2>
-              <button onClick={()=>{setShowListModal(false);setEditingList(null);}} style={{background:"var(--border)",border:"none",color:"var(--ga)",width:26,height:26,borderRadius:"50%",fontSize:14,cursor:"pointer"}}>×</button>
-            </div>
-            <div style={{marginBottom:14}}>
-              <label style={lbl}>Tipo de anotador</label>
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {Object.entries(NOTE_LIST_TYPES).map(([k,t])=>{
-                  const on = listType===k;
-                  return (
-                    <div key={k} onClick={()=>pickListType(k)}
-                      style={{display:"flex",alignItems:"center",gap:12,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:on?"#DDA0DD11":"var(--bg)",border:`1px solid ${on?"#DDA0DD66":"var(--border)"}`}}>
-                      <span style={{fontSize:20}}>{t.icon}</span>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:600,color:on?"var(--violet)":"var(--text)"}}>{t.label}</div>
-                        <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>{t.desc}</div>
-                      </div>
-                      {on && <span style={{color:"var(--violet)",fontSize:14}}>✓</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div style={{marginBottom:14}}>
-              <label style={lbl}>Nombre</label>
-              <input value={listName} onChange={e=>setListName(e.target.value)}
-                onKeyDown={e=>e.key==="Enter"&&handleSaveList()}
-                placeholder="Ej: Recetas de la abuela, Para el viaje, Trámites..." style={inp} autoFocus/>
-            </div>
-            <div style={{marginBottom:16}}>
-              <label style={lbl}>Ícono</label>
-              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                {LIST_ICON_CHOICES.map(ico=>(
-                  <div key={ico} onClick={()=>setListIcon(ico)}
-                    style={{width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:10,fontSize:20,cursor:"pointer",background:listIcon===ico?"#DDA0DD22":"var(--card2)",border:`1.5px solid ${listIcon===ico?"#DDA0DD":"transparent"}`}}>{ico}</div>
-                ))}
-              </div>
-            </div>
-            <button onClick={handleSaveList}
-              style={{width:"100%",background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer"}}>
-              {editingList?"Guardar cambios":"Crear anotador"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Confirmar eliminar anotador */}
-      {showDeleteList && (
-        <div onClick={e=>{if(e.target===e.currentTarget)setShowDeleteList(null)}}
-          style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"var(--card)",borderRadius:16,padding:24,width:"100%",maxWidth:340,border:"1px solid var(--border2)"}}>
-            <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)",marginBottom:8}}>Eliminar anotador</div>
-            <div style={{fontSize:13,color:"var(--g6)",marginBottom:20}}>Se eliminarán también todas las notas que están adentro. Esta acción no se puede deshacer.</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>setShowDeleteList(null)} style={{flex:1,background:"var(--border)",color:"var(--ga)",border:"none",borderRadius:10,padding:"10px",fontSize:13,cursor:"pointer"}}>Cancelar</button>
-              <button onClick={()=>handleDeleteList(showDeleteList)} style={{flex:1,background:"#FF6B6B22",color:"var(--coral)",border:"1px solid #FF6B6B44",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Eliminar</button>
-            </div>
           </div>
         </div>
       )}
