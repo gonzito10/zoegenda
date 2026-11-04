@@ -27,7 +27,7 @@ export default function HeaderBar({ ctx }) {
             <span style={{position:"absolute",top:-4,right:-4,minWidth:18,height:18,borderRadius:9,background:"#FF6B6B",fontSize:11,fontWeight:700,color:"#1A0B0B",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{notifications.length}</span>
           </button>
         )}
-        <button onClick={()=>setShowGroupPanel(p=>!p)} aria-label="Mi perfil y agenda" style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"none",cursor:"pointer",padding:0,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <button onClick={()=>setShowGroupPanel(p=>!p)} aria-label="Menú de perfil" aria-haspopup="menu" aria-expanded={!!showGroupPanel} style={{width:44,height:44,borderRadius:"50%",background:"transparent",border:"none",cursor:"pointer",padding:0,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
           <span style={{width:36,height:36,borderRadius:"50%",background:profile?.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#fff",boxShadow:showGroupPanel?"0 0 0 2px var(--coral)":"none"}}>{profile?.avatar}</span>
         </button>
       </header>

@@ -29,6 +29,10 @@ const PATHS = {
   chevronDown: <path d="M5.5 9.5L12 16l6.5-6.5"/>,
   chevronUp: <path d="M5.5 14.5L12 8l6.5 6.5"/>,
   play: <path d="M8 5.5v13l10-6.5z"/>,
+  settings: <><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4L18 18M18 6l-1.6 1.6M7.6 16.4L6 18"/></>,
+  logout: <><path d="M10 4.5H6.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2H10"/><path d="M15 8l4 4-4 4M19 12H9.5"/></>,
+  swap: <><path d="M5 8.5h13M15 5l3.5 3.5L15 12"/><path d="M19 15.5H6M9 12l-3.5 3.5L9 19"/></>,
+  close: <path d="M6 6l12 12M18 6L6 18"/>,
 };
 
 export default function Icon({ name, size = 18, style }) {
