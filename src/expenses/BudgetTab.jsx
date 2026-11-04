@@ -23,6 +23,15 @@ export default function BudgetTab({ ctx }) {
     .sort((a, b) => b.h.avg - a.h.avg)
     .slice(0, 6);
 
+  // Total general: suma de límites vs. lo gastado en las categorías con límite (mes actual)
+  const totalLimit = budgetRows.reduce((s, b) => s + b.amount, 0);
+  const totalSpent = budgetRows.reduce((s, b) => s + b.spent, 0);
+  const totalPct = totalLimit > 0 ? totalSpent / totalLimit * 100 : 0;
+  const totalCol = budgetColor(totalPct);
+  const unbudgetedSpent = expenses
+    .filter(e => e.date.slice(0, 7) === currentMonthKey && !budgets.some(b => b.category === e.category))
+    .reduce((s, e) => s + e.amount, 0);
+
   function fillForm(catId, amount, editing) {
     setCat(catId); setAmt(amount ? String(amount) : ""); setEditId(editing || null);
     setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
@@ -51,6 +60,29 @@ export default function BudgetTab({ ctx }) {
       </div>
       {budgetRows.length === 0 && (
         <div style={{textAlign:"center",color:"var(--g4)",padding:"24px 10px",fontSize:13}}>Todavía no definiste presupuestos.</div>
+      )}
+      {budgetRows.length > 0 && (
+        <div style={{background:"var(--card)",border:`1px solid color-mix(in srgb, ${totalCol} 45%, transparent)`,borderRadius:16,padding:"14px 16px",marginBottom:12}}>
+          <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:8,marginBottom:4}}>
+            <span style={{fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>Presupuesto total del mes</span>
+            <span style={{fontSize:13,fontWeight:700,color:totalCol}}>{totalPct>=100?"Superado":totalPct>=80?"Cerca del límite":"Va bien"} · {Math.round(totalPct)}%</span>
+          </div>
+          <div style={{fontSize:24,fontWeight:700,fontFamily:"Fraunces,serif",color:"var(--title)"}}>
+            {totalSpent<=totalLimit ? `Quedan ${fmtMoney(totalLimit-totalSpent)}` : `Excedido ${fmtMoney(totalSpent-totalLimit)}`}
+          </div>
+          <div style={{height:10,borderRadius:6,background:"var(--border)",overflow:"hidden",margin:"10px 0 6px"}}>
+            <div style={{width:`${Math.min(100,totalPct)}%`,height:"100%",background:totalCol,borderRadius:6,transition:"width .3s"}}/>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--g5)"}}>
+            <span>Gastado {fmtMoney(totalSpent)}</span>
+            <span>Límite total {fmtMoney(totalLimit)}</span>
+          </div>
+          {unbudgetedSpent > 0 && (
+            <div style={{fontSize:12,color:"var(--g5)",marginTop:8,paddingTop:8,borderTop:"1px solid var(--border)"}}>
+              Además, gastaron {fmtMoney(unbudgetedSpent)} en categorías sin límite (no cuentan en este total).
+            </div>
+          )}
+        </div>
       )}
       {budgetRows.map(b=>{
         const c = getCat(b.category); const col = budgetColor(b.pct);
