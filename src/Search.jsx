@@ -88,7 +88,7 @@ export default function Search({ groupId, events, onGo, onClose }) {
           {res.items.map(i => <Row key={i.id} icon="•" title={i.text} sub={`${i.list?.icon || ""} ${i.list?.name || ""}${i.selected ? " · seleccionado" : ""}`} onClick={() => onGo("list", { id: i.list_id })}/>)}
         </Section>}
         {res && res.notes.length > 0 && <Section title={<><Icon name="note" size={14}/> Notas</>}>
-          {res.notes.map(n => <Row key={n.id} icon={<Icon name={n.kind === "checklist" ? "check" : "note"} size={18}/>} title={n.title} sub={snippet(n.content, q.trim())} onClick={() => onGo("note", { id: n.id })}/>)}
+          {res.notes.map(n => <Row key={n.id} icon={<Icon name="note" size={18}/>} title={n.title} sub={snippet(n.content, q.trim())} onClick={() => onGo("note", { id: n.id })}/>)}
         </Section>}
       </div>
     </div>

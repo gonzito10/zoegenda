@@ -1,7 +1,6 @@
 import Icon from "./app/Icon";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
-import { fmt, parse } from "./app/utils";
 
 const inp = {background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",color:"var(--text)",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
 const lbl = {fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
@@ -11,19 +10,14 @@ const NOTE_COLORS = ["#FF6B6B","#FFB347","#FFEAA7","#96CEB4","#4ECDC4","#45B7D1"
 // Tipos de anotador: cada tipo trae su plantilla inicial
 const NOTE_LIST_TYPES = {
   notes: {
-    label:"Notas", icon:"📝", desc:"Notas de texto libre o checklists",
-    kindChoice:true, kind:"text", template:"", placeholder:"Escribí tu nota acá...",
+    label:"Notas", icon:"📝", desc:"Notas de texto libre",
+    kind:"text", template:"", placeholder:"Escribí tu nota acá...",
     emptyText:"No hay notas en este anotador todavía",
   },
   recipe: {
     label:"Receta", icon:"🍳", desc:"Cada nota es una receta, con ingredientes y pasos",
-    kindChoice:false, kind:"text", template:"Ingredientes\n- \n\nPasos\n1. \n", placeholder:"Ingredientes y pasos de la receta...",
+    kind:"text", template:"Ingredientes\n- \n\nPasos\n1. \n", placeholder:"Ingredientes y pasos de la receta...",
     emptyText:"No hay recetas en este anotador todavía",
-  },
-  reminders: {
-    label:"Recordatorios", icon:"⏰", desc:"Cosas para recordar, con fecha opcional",
-    kindChoice:false, kind:"checklist", template:"", placeholder:"",
-    emptyText:"No hay recordatorios en este anotador todavía", hasDate:true,
   },
 };
 const LIST_ICON_CHOICES = ["📝","🍳","⏰","📚","🏠","✈️","💡","🎁","🛒","💼","❤️","⭐","🍰","🥗","💊","🎓"];
@@ -50,37 +44,9 @@ async function loadNotes(groupId) {
 function sortNotes(ns) {
   return [...ns].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.updated_at).localeCompare(String(a.updated_at)));
 }
-// En los listados de recordatorios se ordena por fecha (los que no tienen fecha, al final)
-function sortReminders(ns) {
-  return [...ns].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)
-    || (a.remind_on ? 0 : 1) - (b.remind_on ? 0 : 1)
-    || String(a.remind_on || "").localeCompare(String(b.remind_on || ""))
-    || String(b.updated_at).localeCompare(String(a.updated_at)));
-}
 async function createNote(groupId, userId, title, kind, color, listId, content) {
   const { data } = await supabase.from("notes").insert({ group_id: groupId, created_by: userId, title, content: content || "", kind: kind || "text", color: color || null, list_id: listId || null }).select().single();
   return data;
-}
-// Estado de la fecha de un recordatorio: texto y color
-function remindStatus(d) {
-  if (!d) return null;
-  const today = fmt(new Date());
-  const diff = Math.round((parse(d) - parse(today)) / 86400000);
-  if (diff < 0) return { text: diff === -1 ? "Venció ayer" : `Venció hace ${-diff} días`, color: "var(--danger)" };
-  if (diff === 0) return { text: "Hoy", color: "var(--warn)" };
-  if (diff === 1) return { text: "Mañana", color: "var(--warn)" };
-  return { text: parse(d).toLocaleDateString("es-AR", { day:"numeric", month:"short" }), color: "var(--g5)" };
-}
-
-// Checklist: se guarda como texto, una línea por ítem: "- [ ] algo" / "- [x] algo"
-function parseChecklist(text) {
-  return (text || "").split("\n").filter(l => l.trim()).map(l => {
-    const m = l.match(/^- \[( |x)\] ?(.*)$/);
-    return m ? { done: m[1] === "x", text: m[2] } : { done: false, text: l };
-  });
-}
-function serializeChecklist(items) {
-  return items.map(i => `- [${i.done ? "x" : " "}] ${i.text}`).join("\n");
 }
 async function updateNote(id, fields) {
   await supabase.from("notes").update({ ...fields, updated_at: new Date().toISOString() }).eq("id", id);
@@ -100,9 +66,7 @@ export default function Notes({ groupId, currentUserId }) {
   const [showDelete,  setShowDelete]  = useState(null);
   const [editingTitle,setEditingTitle]= useState(false);
   const [titleDraft,  setTitleDraft]  = useState("");
-  const [newKind,     setNewKind]     = useState("text");
   const [newColor,    setNewColor]    = useState(null);
-  const [newItem,     setNewItem]     = useState("");
 
   // Anotadores (listas de notas)
   const [noteLists,   setNoteLists]   = useState([]);
@@ -155,7 +119,7 @@ export default function Notes({ groupId, currentUserId }) {
   useEffect(() => {
     const handler = () => {
       const cur = activeListRef.current;
-      setNewTitle(""); setNewKind("text"); setNewColor(null);
+      setNewTitle(""); setNewColor(null);
       setNewListId(cur !== "none" ? cur : "");
       setShowModal(true);
     };
@@ -212,8 +176,7 @@ export default function Notes({ groupId, currentUserId }) {
 
   async function handleCreate() {
     if (!newTitle.trim()) return;
-    const kind = newType.kindChoice ? newKind : newType.kind;
-    const created = await createNote(groupId, currentUserId, newTitle.trim(), kind, newColor, newListObj?.id || null, newType.template);
+    const created = await createNote(groupId, currentUserId, newTitle.trim(), "text", newColor, newListObj?.id || null, newType.template);
     if (created) {
       setNotes(ns => sortNotes([created, ...ns]));
       // Si estás mirando otro listado, pasá al de la nota nueva para que la veas
@@ -233,9 +196,7 @@ export default function Notes({ groupId, currentUserId }) {
     }
     setActiveListId(id);
     const vis = notes.filter(n => id === "none" ? !n.list_id : n.list_id === id);
-    const lt = noteLists.find(l => l.id === id)?.type;
-    const ordered = lt === "reminders" ? sortReminders(vis) : vis;
-    const first = ordered[0];
+    const first = vis[0];
     setActiveNote(first ? first.id : null);
     setContent(first ? (first.content || "") : "");
   }
@@ -298,13 +259,6 @@ export default function Notes({ groupId, currentUserId }) {
     setNotes(ns => sortNotes(ns.map(n => n.id === activeNote ? { ...n, ...fields } : n)));
   }
 
-  const checklistItems = parseChecklist(content);
-  function setChecklist(items) { setContent(serializeChecklist(items)); }
-  function addChecklistItem() {
-    const t = newItem.trim(); if (!t) return;
-    setChecklist([...checklistItems, { done: false, text: t }]); setNewItem("");
-  }
-
   async function handleSaveTitle() {
     if (!titleDraft.trim() || !activeNote) return;
     await updateNote(activeNote, { title: titleDraft.trim() });
@@ -315,11 +269,10 @@ export default function Notes({ groupId, currentUserId }) {
   const curList = noteLists.find(l => l.id === activeListId) || null;
   const looseCount = notes.filter(n => !n.list_id).length;
   const baseNotes = activeListId === "none" ? notes.filter(n => !n.list_id) : notes.filter(n => n.list_id === activeListId);
-  const visibleNotes = curList?.type === "reminders" ? sortReminders(baseNotes) : baseNotes;
+  const visibleNotes = baseNotes;
   const currentNote = notes.find(n => n.id === activeNote);
   const currentNoteList = noteLists.find(l => l.id === currentNote?.list_id);
   const noteType = NOTE_LIST_TYPES[currentNoteList?.type] || NOTE_LIST_TYPES.notes;
-  const status = noteType.hasDate ? remindStatus(currentNote?.remind_on) : null;
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("es-AR", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }) : "";
 
   if (loading) return <div style={{textAlign:"center",color:"var(--g5)",padding:"50px 0"}}>Cargando notas...</div>;
@@ -362,17 +315,12 @@ export default function Notes({ groupId, currentUserId }) {
         {visibleNotes.map(n => {
           const on = activeNote === n.id;
           const col = n.color || "#FF6B6B";
-          const left = n.kind === "checklist" ? parseChecklist(n.content).filter(i => !i.done).length : null;
-          const nList = noteLists.find(l => l.id === n.list_id);
-          const st = nList?.type === "reminders" ? remindStatus(n.remind_on) : null;
           return (
             <div key={n.id} onClick={()=>selectNote(n)}
               style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:on?col+"22":"var(--card2)",color:on?col:"var(--g5)",border:`1px solid ${on?col+"66":(n.color?col+"33":"var(--border2)")}`,display:"flex",alignItems:"center",gap:8}}>
               {n.pinned && <span style={{display:"flex",color:"var(--warn)"}}><Icon name="pin" size={13}/></span>}
               {n.color && !on && <span style={{width:7,height:7,borderRadius:"50%",background:col}}/>}
               {n.title}
-              {left !== null && <span style={{fontSize:12,opacity:.7}}>☑ {left}</span>}
-              {st && <span style={{fontSize:12,color:st.color,fontWeight:700}}>· {st.text}</span>}
             </div>
           );
         })}
@@ -407,19 +355,6 @@ export default function Notes({ groupId, currentUserId }) {
         </div>
       )}
 
-      {/* Fecha del recordatorio (solo en listados de recordatorios) */}
-      {currentNote && noteType.hasDate && (
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
-          <label style={{...lbl,marginBottom:0}}>Fecha</label>
-          <input type="date" value={currentNote.remind_on || ""} onChange={e=>patchNote({remind_on:e.target.value || null})}
-            style={{...inp,width:"auto",fontSize:16,padding:"7px 10px"}}/>
-          {currentNote.remind_on && (
-            <button onClick={()=>patchNote({remind_on:null})} style={{background:"transparent",border:"none",color:"var(--g5)",fontSize:12,cursor:"pointer",padding:"6px"}}>Quitar fecha</button>
-          )}
-          {status && <span style={{fontSize:12,fontWeight:700,color:status.color}}>{status.text}</span>}
-        </div>
-      )}
-
       {/* Color de la nota */}
       {currentNote && (
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
@@ -433,30 +368,7 @@ export default function Notes({ groupId, currentUserId }) {
       )}
 
       {/* Contenido */}
-      {activeNote && currentNote?.kind === "checklist" ? (
-        <div style={{background:"var(--card)",border:`1px solid ${currentNote.color?currentNote.color+"55":"var(--border)"}`,borderRadius:10,padding:12}}>
-          {checklistItems.length === 0 && <div style={{textAlign:"center",color:"var(--g4)",fontSize:12,padding:"10px 0"}}>Agregá el primer ítem abajo</div>}
-          {checklistItems.map((it, idx) => (
-            <div key={idx} style={{display:"flex",alignItems:"center",gap:12,padding:"7px 2px",borderBottom:"1px solid var(--border)"}}>
-              <div onClick={()=>setChecklist(checklistItems.map((x,i)=>i===idx?{...x,done:!x.done}:x))}
-                style={{width:20,height:20,borderRadius:6,flexShrink:0,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",fontWeight:700,background:it.done?(currentNote.color||"#96CEB4"):"transparent",border:`2px solid ${it.done?(currentNote.color||"#96CEB4"):"var(--border3)"}`}}>{it.done?"✓":""}</div>
-              <input value={it.text} onChange={e=>setChecklist(checklistItems.map((x,i)=>i===idx?{...x,text:e.target.value}:x))}
-                style={{flex:1,background:"transparent",border:"none",outline:"none",color:it.done?"var(--g5)":"var(--text)",textDecoration:it.done?"line-through":"none",fontSize:14,fontFamily:"DM Sans,sans-serif",minWidth:0}}/>
-              <button onClick={()=>setChecklist(checklistItems.filter((_,i)=>i!==idx))}
-                style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:18,cursor:"pointer",lineHeight:1,padding:"0 4px"}}>×</button>
-            </div>
-          ))}
-          <div style={{display:"flex",gap:8,marginTop:10}}>
-            <input value={newItem} onChange={e=>setNewItem(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addChecklistItem()}
-              placeholder="Nuevo ítem..." style={{...inp,flex:1,padding:"9px 12px"}}/>
-            <button onClick={addChecklistItem} style={{background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"0 16px",fontSize:18,fontWeight:700,cursor:"pointer"}}>+</button>
-          </div>
-          {checklistItems.some(i=>i.done) && (
-            <button onClick={()=>setChecklist(checklistItems.filter(i=>!i.done))}
-              style={{marginTop:10,background:"#96CEB422",color:"var(--ok)",border:"1px solid #96CEB444",borderRadius:10,padding:"5px 12px",fontSize:12,fontWeight:600,cursor:"pointer"}}>Quitar completados</button>
-          )}
-        </div>
-      ) : activeNote && (
+      {activeNote && (
         <textarea
           value={content}
           onChange={e=>setContent(e.target.value)}
@@ -491,19 +403,9 @@ export default function Notes({ groupId, currentUserId }) {
                 </select>
               </div>
             )}
-            {newType.kindChoice ? (
-              <div style={{marginBottom:14}}>
-                <label style={lbl}>Tipo</label>
-                <div style={{display:"flex",gap:8}}>
-                  {[["text","📝 Texto libre"],["checklist","☑ Checklist"]].map(([v,l])=>(
-                    <div key={v} onClick={()=>setNewKind(v)}
-                      style={{flex:1,textAlign:"center",padding:"9px",borderRadius:10,fontSize:12,fontWeight:newKind===v?700:500,cursor:"pointer",background:newKind===v?"#FF6B6B22":"var(--card2)",color:newKind===v?"var(--coral)":"var(--g6)",border:`1px solid ${newKind===v?"#FF6B6B55":"var(--border2)"}`}}>{l}</div>
-                  ))}
-                </div>
-              </div>
-            ) : (
+            {newListObj?.type==="recipe" && (
               <div style={{marginBottom:14,fontSize:12,color:"var(--g5)"}}>
-                {newType.icon} {newType.label}: {newListObj?.type==="recipe" ? "arranca con Ingredientes y Pasos." : "se arma como checklist, y le podés poner fecha."}
+                {newType.icon} {newType.label}: arranca con Ingredientes y Pasos.
               </div>
             )}
             <div style={{marginBottom:16}}>
