@@ -52,4 +52,16 @@ export async function joinGroup(code, userId) {
   await supabase.from("group_members").insert({ group_id: group.id, user_id: userId });
   return group;
 }
+export async function leaveGroup(groupId, userId) {
+  const { data: members } = await supabase.from("group_members").select("user_id").eq("group_id", groupId);
+  const others = (members || []).filter(m => m.user_id !== userId);
+  if (others.length === 0) throw new Error("Sos el único miembro. Para cerrarla, eliminá la agenda.");
+  const { error } = await supabase.from("group_members").delete().eq("group_id", groupId).eq("user_id", userId);
+  if (error) throw error;
+}
+// Borra la agenda y, en cascada, todos sus datos (eventos, gastos, listados, notas).
+export async function deleteGroup(groupId) {
+  const { error } = await supabase.from("groups").delete().eq("id", groupId);
+  if (error) throw error;
+}
 

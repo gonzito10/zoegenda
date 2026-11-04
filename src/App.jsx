@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 import Search from "./Search";
 import { COLORS, resolveTheme, themeVars, storedTheme, themeBgStyle, CATEGORIES } from "./app/constants";
 import { getDaysInMonth, getFirstDay, fmt, parse, initials, expandRecurring } from "./app/utils";
-import { getProfile, upsertProfile, getMyGroups, getGroupMembers, getGroupEvents, saveGroupEvents, createGroup, joinGroup } from "./app/api";
+import { getProfile, upsertProfile, getMyGroups, getGroupMembers, getGroupEvents, saveGroupEvents, createGroup, joinGroup, leaveGroup, deleteGroup } from "./app/api";
 import { BASE_CSS, Logo } from "./app/styles";
 import HeaderBar from "./app/HeaderBar";
 import ProfilePanel from "./app/ProfilePanel";
@@ -189,6 +189,23 @@ export default function App() {
     setGroupLoading(false);
   }
 
+  async function afterGroupRemoved(removedId) {
+    const updated = await getMyGroups(authUser.id);
+    setGroups(updated);
+    if (activeGroup?.id === removedId) {
+      setActiveGroup(updated[0] || null);
+      if (!updated.length) setEvents([]);
+    }
+  }
+  async function handleLeaveGroup(g) {
+    await leaveGroup(g.id, authUser.id);
+    await afterGroupRemoved(g.id);
+  }
+  async function handleDeleteGroup(g) {
+    await deleteGroup(g.id);
+    await afterGroupRemoved(g.id);
+  }
+
   // ── Load events + members when group changes ─────────────────────────────
   useEffect(() => {
     if (!activeGroup) return;
@@ -356,7 +373,7 @@ export default function App() {
   function prevMonth(){ if(currentMonth===0){setCurrentMonth(11);setCurrentYear(y=>y-1);}else setCurrentMonth(m=>m-1); }
   function nextMonth(){ if(currentMonth===11){setCurrentMonth(0);setCurrentYear(y=>y+1);}else setCurrentMonth(m=>m+1); }
 
-  const ctxS = { T, activeGroup, agendaDates, authEmail, authError, authLoading, authPassword, authUser, cat, closeModal, confirmDelete, currentMonth, currentYear, deleteDialog, editingEvent, events, eventsForDate, filterCat, filterEvs, filterUser, goTo, groupAction, groupCode, groupError, groupLoading, groupMembers, groupName, groups, handleAuthUser, handleCreateGroup, handleJoinGroup, mainTab, member, monthEvents, nextMonth, notifications, openEdit, openNew, prevMonth, profile, pushBusy, pushMsg, pushState, rangeEnd, rangeStart, saveEvent, saveProfile, saveTheme, screen, selectedDate, selectedDayEvents, setActiveGroup, setAuthEmail, setAuthError, setAuthLoading, setAuthPassword, setAuthUser, setCurrentMonth, setCurrentYear, setDeleteDialog, setEditingEvent, setEvents, setFilterCat, setFilterUser, setGroupAction, setGroupCode, setGroupError, setGroupLoading, setGroupMembers, setGroupName, setGroups, setMainTab, setNotifications, setProfile, setPushBusy, setPushMsg, setPushState, setScreen, setSelectedDate, setSetupColor, setSetupError, setSetupName, setShowEventModal, setShowGroupPanel, setShowNotifPanel, setShowSearch, setShowThemePanel, setSystemLight, setView, setupColor, setupError, setupName, showEventModal, showGroupPanel, showNotifPanel, showSearch, showThemePanel, signIn, signOut, signUp, systemLight, theme, themeId, today, toggleAttendee, togglePush, toggleRecurringDay, view, weeklyRoutines };
+  const ctxS = { T, activeGroup, agendaDates, authEmail, authError, authLoading, authPassword, authUser, cat, closeModal, confirmDelete, currentMonth, currentYear, deleteDialog, editingEvent, events, eventsForDate, filterCat, filterEvs, filterUser, goTo, groupAction, groupCode, groupError, groupLoading, groupMembers, groupName, groups, handleAuthUser, handleCreateGroup, handleJoinGroup, handleLeaveGroup, handleDeleteGroup, mainTab, member, monthEvents, nextMonth, notifications, openEdit, openNew, prevMonth, profile, pushBusy, pushMsg, pushState, rangeEnd, rangeStart, saveEvent, saveProfile, saveTheme, screen, selectedDate, selectedDayEvents, setActiveGroup, setAuthEmail, setAuthError, setAuthLoading, setAuthPassword, setAuthUser, setCurrentMonth, setCurrentYear, setDeleteDialog, setEditingEvent, setEvents, setFilterCat, setFilterUser, setGroupAction, setGroupCode, setGroupError, setGroupLoading, setGroupMembers, setGroupName, setGroups, setMainTab, setNotifications, setProfile, setPushBusy, setPushMsg, setPushState, setScreen, setSelectedDate, setSetupColor, setSetupError, setSetupName, setShowEventModal, setShowGroupPanel, setShowNotifPanel, setShowSearch, setShowThemePanel, setSystemLight, setView, setupColor, setupError, setupName, showEventModal, showGroupPanel, showNotifPanel, showSearch, showThemePanel, signIn, signOut, signUp, systemLight, theme, themeId, today, toggleAttendee, togglePush, toggleRecurringDay, view, weeklyRoutines };
   // ── SCREEN: loading ───────────────────────────────────────────────────────
   if (screen==="loading") return (
     <div style={{minHeight:"100vh",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center"}}>

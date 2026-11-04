@@ -1,7 +1,23 @@
+import { useState } from "react";
 import { BASE_CSS, inp, lbl, Logo } from "./styles";
 
 export default function GroupsScreen({ ctx }) {
-  const { groupAction, groupCode, groupError, groupLoading, groupName, groups, handleCreateGroup, handleJoinGroup, setActiveGroup, setGroupAction, setGroupCode, setGroupError, setGroupName, setMainTab, setScreen } = ctx;
+  const { authUser, handleLeaveGroup, handleDeleteGroup, groupAction, groupCode, groupError, groupLoading, groupName, groups, handleCreateGroup, handleJoinGroup, setActiveGroup, setGroupAction, setGroupCode, setGroupError, setGroupName, setMainTab, setScreen } = ctx;
+  const [confirm, setConfirm] = useState(null); // { type: "leave" | "delete", g }
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const closeConfirm = () => { setConfirm(null); setTyped(""); setErr(""); };
+  async function runConfirm() {
+    setBusy(true); setErr("");
+    try {
+      if (confirm.type === "leave") await handleLeaveGroup(confirm.g);
+      else await handleDeleteGroup(confirm.g);
+      closeConfirm();
+    } catch (e) { setErr(e.message || "No se pudo completar. Probá de nuevo."); }
+    setBusy(false);
+  }
+  const deleteBlocked = confirm?.type === "delete" && typed.trim().toLowerCase() !== confirm.g.name.trim().toLowerCase();
   return (
     <div style={{minHeight:"100vh",background:"var(--bg)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,fontFamily:"DM Sans,sans-serif"}}>
       <style>{BASE_CSS}</style>
@@ -23,6 +39,10 @@ export default function GroupsScreen({ ctx }) {
                       <div style={{fontSize:12,color:"var(--g5)",marginTop:2}}>Código: {g.code}</div>
                     </div>
                     <span style={{color:"var(--g3)",fontSize:20}}>›</span>
+                    <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
+                      <button onClick={e=>{e.stopPropagation();setConfirm({type:"leave",g});setTyped("");setErr("");}} style={{background:"transparent",border:"none",color:"var(--g6)",fontSize:12,padding:"2px 4px"}}>Salir</button>
+                      {g.created_by===authUser?.id&&<button onClick={e=>{e.stopPropagation();setConfirm({type:"delete",g});setTyped("");setErr("");}} style={{background:"transparent",border:"none",color:"var(--danger)",fontSize:12,padding:"2px 4px"}}>Eliminar</button>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -68,6 +88,29 @@ export default function GroupsScreen({ ctx }) {
           </>
         )}
       </div>
+      {confirm&&(
+        <div className="modal-overlay" onClick={closeConfirm} style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+          <div className="modal-box" onClick={e=>e.stopPropagation()} style={{background:"var(--card)",borderRadius:16,padding:22,maxWidth:340,width:"100%",border:"1px solid var(--border2)"}}>
+            <h3 style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)",marginBottom:8}}>{confirm.type==="leave"?`Salir de "${confirm.g.name}"`:`Eliminar "${confirm.g.name}"`}</h3>
+            {confirm.type==="leave"?(
+              <p style={{fontSize:13,color:"var(--g8)",marginBottom:16,lineHeight:1.6}}>Dejás de ver esta agenda. Los demás miembros siguen con todos los datos y podés volver a entrar con el código <b>{confirm.g.code}</b>.</p>
+            ):(
+              <>
+                <p style={{fontSize:13,color:"var(--g8)",marginBottom:12,lineHeight:1.6}}>Se borra la agenda para <b>todos los miembros</b>, con sus eventos, gastos, listados y notas. <b>No se puede deshacer.</b></p>
+                <label style={lbl}>Para confirmar, escribí el nombre de la agenda</label>
+                <input value={typed} onChange={e=>setTyped(e.target.value)} placeholder={confirm.g.name} style={{...inp,marginBottom:12}} autoFocus/>
+              </>
+            )}
+            {err&&<div style={{fontSize:12,color:"var(--danger)",marginBottom:12}}>{err}</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <button onClick={runConfirm} disabled={busy||deleteBlocked} style={{background:confirm.type==="delete"?"var(--danger)":"#FF6B6B",color:confirm.type==="delete"?"#fff":"#1A0B0B",border:"none",borderRadius:10,padding:"11px",fontSize:14,fontWeight:700,opacity:(busy||deleteBlocked)?.5:1}}>
+                {busy?"Un momento...":confirm.type==="leave"?"Salir de la agenda":"Eliminar para siempre"}
+              </button>
+              <button onClick={closeConfirm} style={{background:"transparent",color:"var(--g6)",border:"none",padding:"8px",fontSize:13}}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
