@@ -1,11 +1,47 @@
 import Icon from "./app/Icon";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
+import { fmt, parse } from "./app/utils";
 
 const inp = {background:"var(--bg)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",color:"var(--text)",fontSize:13,width:"100%",fontFamily:"DM Sans,sans-serif",outline:"none"};
 const lbl = {fontSize:12,color:"var(--g5)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5};
 
 const NOTE_COLORS = ["#FF6B6B","#FFB347","#FFEAA7","#96CEB4","#4ECDC4","#45B7D1","#DDA0DD"];
+
+// Tipos de listado de notas: cada tipo trae su plantilla inicial
+const NOTE_LIST_TYPES = {
+  notes: {
+    label:"Notas", icon:"📝", desc:"Notas de texto libre o checklists",
+    kindChoice:true, kind:"text", template:"", placeholder:"Escribí tu nota acá...",
+    emptyText:"No hay notas en este listado todavía",
+  },
+  recipe: {
+    label:"Receta", icon:"🍳", desc:"Cada nota es una receta, con ingredientes y pasos",
+    kindChoice:false, kind:"text", template:"Ingredientes\n- \n\nPasos\n1. \n", placeholder:"Ingredientes y pasos de la receta...",
+    emptyText:"No hay recetas en este listado todavía",
+  },
+  reminders: {
+    label:"Recordatorios", icon:"⏰", desc:"Cosas para recordar, con fecha opcional",
+    kindChoice:false, kind:"checklist", template:"", placeholder:"",
+    emptyText:"No hay recordatorios en este listado todavía", hasDate:true,
+  },
+};
+const LIST_ICON_CHOICES = ["📝","🍳","⏰","📚","🏠","✈️","💡","🎁","🛒","💼","❤️","⭐","🍰","🥗","💊","🎓"];
+
+async function loadNoteLists(groupId) {
+  const { data } = await supabase.from("note_lists").select("*").eq("group_id", groupId).order("created_at");
+  return data || [];
+}
+async function createNoteList(groupId, userId, name, icon, type) {
+  const { data } = await supabase.from("note_lists").insert({ group_id: groupId, created_by: userId, name, icon, type }).select().single();
+  return data;
+}
+async function updateNoteList(id, fields) {
+  await supabase.from("note_lists").update(fields).eq("id", id);
+}
+async function deleteNoteList(id) {
+  await supabase.from("note_lists").delete().eq("id", id);
+}
 
 async function loadNotes(groupId) {
   const { data } = await supabase.from("notes").select("*").eq("group_id", groupId).order("updated_at", { ascending: false });
@@ -14,9 +50,26 @@ async function loadNotes(groupId) {
 function sortNotes(ns) {
   return [...ns].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.updated_at).localeCompare(String(a.updated_at)));
 }
-async function createNote(groupId, userId, title, kind, color) {
-  const { data } = await supabase.from("notes").insert({ group_id: groupId, created_by: userId, title, content: "", kind: kind || "text", color: color || null }).select().single();
+// En los listados de recordatorios se ordena por fecha (los que no tienen fecha, al final)
+function sortReminders(ns) {
+  return [...ns].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)
+    || (a.remind_on ? 0 : 1) - (b.remind_on ? 0 : 1)
+    || String(a.remind_on || "").localeCompare(String(b.remind_on || ""))
+    || String(b.updated_at).localeCompare(String(a.updated_at)));
+}
+async function createNote(groupId, userId, title, kind, color, listId, content) {
+  const { data } = await supabase.from("notes").insert({ group_id: groupId, created_by: userId, title, content: content || "", kind: kind || "text", color: color || null, list_id: listId || null }).select().single();
   return data;
+}
+// Estado de la fecha de un recordatorio: texto y color
+function remindStatus(d) {
+  if (!d) return null;
+  const today = fmt(new Date());
+  const diff = Math.round((parse(d) - parse(today)) / 86400000);
+  if (diff < 0) return { text: diff === -1 ? "Venció ayer" : `Venció hace ${-diff} días`, color: "var(--danger)" };
+  if (diff === 0) return { text: "Hoy", color: "var(--warn)" };
+  if (diff === 1) return { text: "Mañana", color: "var(--warn)" };
+  return { text: parse(d).toLocaleDateString("es-AR", { day:"numeric", month:"short" }), color: "var(--g5)" };
 }
 
 // Checklist: se guarda como texto, una línea por ítem: "- [ ] algo" / "- [x] algo"
@@ -50,15 +103,30 @@ export default function Notes({ groupId, currentUserId }) {
   const [newKind,     setNewKind]     = useState("text");
   const [newColor,    setNewColor]    = useState(null);
   const [newItem,     setNewItem]     = useState("");
+
+  // Listados de notas
+  const [noteLists,   setNoteLists]   = useState([]);
+  const [activeListId,setActiveListId]= useState("all"); // "all" | "none" | id del listado
+  const [newListId,   setNewListId]   = useState("");    // listado elegido al crear una nota ("" = sin listado)
+  const [showListModal,setShowListModal]= useState(false);
+  const [editingList, setEditingList] = useState(null);
+  const [listName,    setListName]    = useState("");
+  const [listType,    setListType]    = useState("notes");
+  const [listIcon,    setListIcon]    = useState("📝");
+  const [showDeleteList,setShowDeleteList]= useState(null);
+
   const saveTimer = useRef(null);
   const contentRef = useRef(content);
   contentRef.current = content;
+  const activeListRef = useRef(activeListId);
+  activeListRef.current = activeListId;
 
   useEffect(() => {
     if (!groupId) return;
     setLoading(true);
-    loadNotes(groupId).then(ns => {
+    Promise.all([loadNotes(groupId), loadNoteLists(groupId)]).then(([ns, ls]) => {
       setNotes(ns);
+      setNoteLists(ls);
       const nav = window.__zgNav;
       const target = nav?.type === "note" ? ns.find(n => n.id === nav.id) : null;
       if (nav?.type === "note") window.__zgNav = null;
@@ -70,17 +138,28 @@ export default function Notes({ groupId, currentUserId }) {
     const sub = supabase.channel(`notes-${groupId}`)
       .on("postgres_changes", { event:"*", schema:"public", table:"notes", filter:`group_id=eq.${groupId}` }, () =>
         loadNotes(groupId).then(ns => setNotes(ns)))
+      .on("postgres_changes", { event:"*", schema:"public", table:"note_lists", filter:`group_id=eq.${groupId}` }, () =>
+        loadNoteLists(groupId).then(ls => {
+          setNoteLists(ls);
+          const cur = activeListRef.current;
+          if (cur !== "all" && cur !== "none" && !ls.some(l => l.id === cur)) setActiveListId("all");
+        }))
       .subscribe();
     return () => supabase.removeChannel(sub);
   }, [groupId]);
 
-  // FAB listener
+  // Listener de la barra de acción ("Nueva nota") y del buscador
   useEffect(() => {
-    const handler = () => { setNewTitle(""); setNewKind("text"); setNewColor(null); setShowModal(true); };
+    const handler = () => {
+      const cur = activeListRef.current;
+      setNewTitle(""); setNewKind("text"); setNewColor(null);
+      setNewListId(cur !== "all" && cur !== "none" ? cur : "");
+      setShowModal(true);
+    };
     document.addEventListener("openNoteModal", handler);
     const nav = e => {
       if (e.detail?.type !== "note") return;
-      setNotes(ns => { const n = ns.find(x => x.id === e.detail.id); if (n) { window.__zgNav = null; setActiveNote(n.id); setContent(n.content || ""); } return ns; });
+      setNotes(ns => { const n = ns.find(x => x.id === e.detail.id); if (n) { window.__zgNav = null; setActiveListId("all"); setActiveNote(n.id); setContent(n.content || ""); } return ns; });
     };
     document.addEventListener("zgNavigate", nav);
     return () => { document.removeEventListener("openNoteModal", handler); document.removeEventListener("zgNavigate", nav); };
@@ -124,15 +203,75 @@ export default function Notes({ groupId, currentUserId }) {
     setContent(note.content || "");
   }
 
+  // Tipo del listado elegido al crear una nota (si no hay listado, se comporta como "Notas")
+  const newListObj = noteLists.find(l => l.id === newListId);
+  const newType = NOTE_LIST_TYPES[newListObj?.type] || NOTE_LIST_TYPES.notes;
+
   async function handleCreate() {
     if (!newTitle.trim()) return;
-    const created = await createNote(groupId, currentUserId, newTitle.trim(), newKind, newColor);
+    const kind = newType.kindChoice ? newKind : newType.kind;
+    const created = await createNote(groupId, currentUserId, newTitle.trim(), kind, newColor, newListObj?.id || null, newType.template);
     if (created) {
       setNotes(ns => sortNotes([created, ...ns]));
+      // Si estás mirando otro listado, pasá al de la nota nueva para que la veas
+      const cur = activeListRef.current;
+      if (cur !== "all" && cur !== (created.list_id || "none")) setActiveListId(created.list_id || "none");
       setActiveNote(created.id);
-      setContent("");
+      setContent(created.content || "");
     }
     setNewTitle(""); setShowModal(false);
+  }
+
+  // ── Listados de notas ──
+  function pickList(id) {
+    if (activeNote && saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveContent(activeNote, contentRef.current);
+    }
+    setActiveListId(id);
+    const vis = id === "all" ? notes : notes.filter(n => id === "none" ? !n.list_id : n.list_id === id);
+    const lt = noteLists.find(l => l.id === id)?.type;
+    const ordered = lt === "reminders" ? sortReminders(vis) : vis;
+    const first = ordered[0];
+    setActiveNote(first ? first.id : null);
+    setContent(first ? (first.content || "") : "");
+  }
+  function openNewListModal() {
+    setEditingList(null); setListName(""); setListType("notes");
+    setListIcon(NOTE_LIST_TYPES.notes.icon); setShowListModal(true);
+  }
+  function openEditListModal(l) {
+    setEditingList(l); setListName(l.name); setListType(l.type || "notes");
+    setListIcon(l.icon || NOTE_LIST_TYPES[l.type]?.icon || "📝"); setShowListModal(true);
+  }
+  function pickListType(t) {
+    // Si el ícono todavía es el del tipo anterior, pasa al ícono del tipo nuevo
+    if (listIcon === NOTE_LIST_TYPES[listType]?.icon) setListIcon(NOTE_LIST_TYPES[t].icon);
+    setListType(t);
+  }
+  async function handleSaveList() {
+    if (!listName.trim()) return;
+    const fields = { name: listName.trim(), icon: listIcon, type: listType };
+    if (editingList) {
+      await updateNoteList(editingList.id, fields);
+      setNoteLists(ls => ls.map(l => l.id === editingList.id ? { ...l, ...fields } : l));
+    } else {
+      const created = await createNoteList(groupId, currentUserId, fields.name, fields.icon, fields.type);
+      if (created) { setNoteLists(ls => [...ls, created]); pickList(created.id); }
+    }
+    setShowListModal(false); setEditingList(null);
+  }
+  async function handleDeleteList(id) {
+    await deleteNoteList(id);
+    // Las notas del listado se borran junto con él
+    const left = notes.filter(n => n.list_id !== id);
+    setNotes(left);
+    setNoteLists(ls => ls.filter(l => l.id !== id));
+    setActiveListId("all");
+    const first = left[0];
+    setActiveNote(first ? first.id : null);
+    setContent(first ? (first.content || "") : "");
+    setShowDeleteList(null);
   }
 
   async function handleDeleteNote(id) {
@@ -140,8 +279,10 @@ export default function Notes({ groupId, currentUserId }) {
     const updated = notes.filter(n => n.id !== id);
     setNotes(updated);
     if (activeNote === id) {
-      setActiveNote(updated[0]?.id || null);
-      setContent(updated[0]?.content || "");
+      const cur = activeListRef.current;
+      const inView = updated.filter(n => cur === "all" || (cur === "none" ? !n.list_id : n.list_id === cur));
+      setActiveNote(inView[0]?.id || null);
+      setContent(inView[0]?.content || "");
     }
     setShowDelete(null);
   }
@@ -166,26 +307,70 @@ export default function Notes({ groupId, currentUserId }) {
     setEditingTitle(false);
   }
 
+  const curList = noteLists.find(l => l.id === activeListId) || null;
+  const looseCount = notes.filter(n => !n.list_id).length;
+  const baseNotes = activeListId === "all" ? notes : activeListId === "none" ? notes.filter(n => !n.list_id) : notes.filter(n => n.list_id === activeListId);
+  const visibleNotes = curList?.type === "reminders" ? sortReminders(baseNotes) : baseNotes;
   const currentNote = notes.find(n => n.id === activeNote);
+  const currentNoteList = noteLists.find(l => l.id === currentNote?.list_id);
+  const noteType = NOTE_LIST_TYPES[currentNoteList?.type] || NOTE_LIST_TYPES.notes;
+  const status = noteType.hasDate ? remindStatus(currentNote?.remind_on) : null;
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("es-AR", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }) : "";
 
   if (loading) return <div style={{textAlign:"center",color:"var(--g5)",padding:"50px 0"}}>Cargando notas...</div>;
 
   return (
     <div>
-      {notes.length === 0 && (
-        <div style={{textAlign:"center",color:"var(--g4)",padding:"60px 20px"}}>
-          <div style={{marginBottom:12,color:"var(--g5)",display:"flex",justifyContent:"center"}}><Icon name="note" size={36}/></div>
-          <div style={{marginBottom:8,fontSize:14}}>No hay notas todavía</div>
-          <div style={{fontSize:12,color:"var(--g3)",marginBottom:20}}>Tocá + para crear la primera</div>
+      {/* Selector de listados de notas */}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+        {[["all","Todas",null], ...(looseCount>0 && noteLists.length>0 ? [["none","Sin listado",null]] : []), ...noteLists.map(l => [l.id, l.name, l.icon || NOTE_LIST_TYPES[l.type]?.icon || "📝"])].map(([id, name, ico]) => {
+          const on = activeListId === id;
+          return (
+            <div key={id} onClick={()=>pickList(id)}
+              style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:on?"#DDA0DD22":"var(--card2)",color:on?"var(--violet)":"var(--g5)",border:`1px solid ${on?"#DDA0DD66":"var(--border2)"}`,display:"flex",alignItems:"center",gap:8}}>
+              {ico && <span style={{fontSize:15}}>{ico}</span>}{name}
+            </div>
+          );
+        })}
+        <div onClick={openNewListModal}
+          style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:"transparent",color:"var(--g5)",border:"1px dashed var(--border2)",display:"flex",alignItems:"center",gap:4}}>
+          <Icon name="plus" size={13}/> Nuevo listado
+        </div>
+      </div>
+
+      {/* Cabecera del listado activo */}
+      {curList && (
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,padding:"10px 12px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
+            <span style={{fontSize:24}}>{curList.icon || NOTE_LIST_TYPES[curList.type]?.icon}</span>
+            <div style={{minWidth:0}}>
+              <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)"}}>{curList.name}</div>
+              <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>Listado de {NOTE_LIST_TYPES[curList.type]?.label.toLowerCase()} · {visibleNotes.length} {visibleNotes.length===1?"nota":"notas"}</div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:4,flexShrink:0}}>
+            <button onClick={()=>openEditListModal(curList)} style={{background:"transparent",border:"none",color:"var(--g5)",cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Editar listado"><Icon name="edit" size={18}/></button>
+            <button onClick={()=>setShowDeleteList(curList.id)} style={{background:"transparent",border:"none",color:"var(--g8)",cursor:"pointer",padding:"8px",display:"flex"}} aria-label="Eliminar listado"><Icon name="trash" size={18}/></button>
+          </div>
         </div>
       )}
+
+      {visibleNotes.length === 0 && (
+        <div style={{textAlign:"center",color:"var(--g4)",padding:"40px 20px"}}>
+          <div style={{marginBottom:12,color:"var(--g5)",display:"flex",justifyContent:"center"}}><Icon name="note" size={36}/></div>
+          <div style={{marginBottom:8,fontSize:14}}>{curList ? NOTE_LIST_TYPES[curList.type]?.emptyText : "No hay notas todavía"}</div>
+          <div style={{fontSize:12,color:"var(--g3)",marginBottom:20}}>Tocá "Nueva nota" para crear la primera</div>
+        </div>
+      )}
+
       {/* Selector de notas */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
-        {notes.map(n => {
+        {visibleNotes.map(n => {
           const on = activeNote === n.id;
           const col = n.color || "#FF6B6B";
           const left = n.kind === "checklist" ? parseChecklist(n.content).filter(i => !i.done).length : null;
+          const nList = noteLists.find(l => l.id === n.list_id);
+          const st = nList?.type === "reminders" ? remindStatus(n.remind_on) : null;
           return (
             <div key={n.id} onClick={()=>selectNote(n)}
               style={{padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:on?col+"22":"var(--card2)",color:on?col:"var(--g5)",border:`1px solid ${on?col+"66":(n.color?col+"33":"var(--border2)")}`,display:"flex",alignItems:"center",gap:8}}>
@@ -193,6 +378,7 @@ export default function Notes({ groupId, currentUserId }) {
               {n.color && !on && <span style={{width:7,height:7,borderRadius:"50%",background:col}}/>}
               {n.title}
               {left !== null && <span style={{fontSize:12,opacity:.7}}>☑ {left}</span>}
+              {st && <span style={{fontSize:12,color:st.color,fontWeight:700}}>· {st.text}</span>}
             </div>
           );
         })}
@@ -224,6 +410,19 @@ export default function Notes({ groupId, currentUserId }) {
             style={{background:currentNote.pinned?"#FFB34722":"transparent",border:`1px solid ${currentNote.pinned?"#FFB34755":"var(--border2)"}`,color:currentNote.pinned?"var(--warn)":"var(--g8)",borderRadius:10,cursor:"pointer",padding:"8px 10px",flexShrink:0,marginLeft:8,display:"flex"}}><Icon name="pin" size={17}/></button>
           <button onClick={()=>setShowDelete(currentNote.id)}
             title="Eliminar nota" style={{background:"#FF6B6B11",border:"1px solid #FF6B6B33",color:"var(--coral)",borderRadius:10,fontSize:13,cursor:"pointer",padding:"8px 10px",flexShrink:0,marginLeft:8,display:"flex",alignItems:"center",gap:8}}><Icon name="trash" size={16}/> Eliminar</button>
+        </div>
+      )}
+
+      {/* Fecha del recordatorio (solo en listados de recordatorios) */}
+      {currentNote && noteType.hasDate && (
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+          <label style={{...lbl,marginBottom:0}}>Fecha</label>
+          <input type="date" value={currentNote.remind_on || ""} onChange={e=>patchNote({remind_on:e.target.value || null})}
+            style={{...inp,width:"auto",fontSize:16,padding:"7px 10px"}}/>
+          {currentNote.remind_on && (
+            <button onClick={()=>patchNote({remind_on:null})} style={{background:"transparent",border:"none",color:"var(--g5)",fontSize:12,cursor:"pointer",padding:"6px"}}>Quitar fecha</button>
+          )}
+          {status && <span style={{fontSize:12,fontWeight:700,color:status.color}}>{status.text}</span>}
         </div>
       )}
 
@@ -267,7 +466,7 @@ export default function Notes({ groupId, currentUserId }) {
         <textarea
           value={content}
           onChange={e=>setContent(e.target.value)}
-          placeholder="Escribí tu nota acá..."
+          placeholder={noteType.placeholder}
           style={{...inp, minHeight:320, resize:"none", lineHeight:1.6, fontSize:14, borderColor:currentNote?.color?currentNote.color+"55":undefined}}
         />
       )}
@@ -288,15 +487,31 @@ export default function Notes({ groupId, currentUserId }) {
                 placeholder="Ej: Ideas, Recetas, Plan de vacaciones..."
                 style={inp} autoFocus/>
             </div>
-            <div style={{marginBottom:14}}>
-              <label style={lbl}>Tipo</label>
-              <div style={{display:"flex",gap:8}}>
-                {[["text","📝 Texto libre"],["checklist","☑ Checklist"]].map(([v,l])=>(
-                  <div key={v} onClick={()=>setNewKind(v)}
-                    style={{flex:1,textAlign:"center",padding:"9px",borderRadius:10,fontSize:12,fontWeight:newKind===v?700:500,cursor:"pointer",background:newKind===v?"#FF6B6B22":"var(--card2)",color:newKind===v?"var(--coral)":"var(--g6)",border:`1px solid ${newKind===v?"#FF6B6B55":"var(--border2)"}`}}>{l}</div>
-                ))}
+            {noteLists.length > 0 && (
+              <div style={{marginBottom:14}}>
+                <label style={lbl}>Listado</label>
+                <select value={newListId} onChange={e=>setNewListId(e.target.value)}
+                  style={{...inp,fontSize:16,cursor:"pointer"}}>
+                  <option value="">Sin listado</option>
+                  {noteLists.map(l => <option key={l.id} value={l.id}>{(l.icon || NOTE_LIST_TYPES[l.type]?.icon)} {l.name} · {NOTE_LIST_TYPES[l.type]?.label}</option>)}
+                </select>
               </div>
-            </div>
+            )}
+            {newType.kindChoice ? (
+              <div style={{marginBottom:14}}>
+                <label style={lbl}>Tipo</label>
+                <div style={{display:"flex",gap:8}}>
+                  {[["text","📝 Texto libre"],["checklist","☑ Checklist"]].map(([v,l])=>(
+                    <div key={v} onClick={()=>setNewKind(v)}
+                      style={{flex:1,textAlign:"center",padding:"9px",borderRadius:10,fontSize:12,fontWeight:newKind===v?700:500,cursor:"pointer",background:newKind===v?"#FF6B6B22":"var(--card2)",color:newKind===v?"var(--coral)":"var(--g6)",border:`1px solid ${newKind===v?"#FF6B6B55":"var(--border2)"}`}}>{l}</div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div style={{marginBottom:14,fontSize:12,color:"var(--g5)"}}>
+                {newType.icon} {newType.label}: {newListObj?.type==="recipe" ? "arranca con Ingredientes y Pasos." : "se arma como checklist, y le podés poner fecha."}
+              </div>
+            )}
             <div style={{marginBottom:16}}>
               <label style={lbl}>Color</label>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -310,6 +525,72 @@ export default function Notes({ groupId, currentUserId }) {
               style={{width:"100%",background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer"}}>
               Crear nota
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal nuevo/editar listado de notas */}
+      {showListModal && (
+        <div onClick={e=>{if(e.target===e.currentTarget){setShowListModal(false);setEditingList(null);}}}
+          style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          <div style={{background:"var(--card)",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:560,padding:20,border:"1px solid var(--border2)",maxHeight:"88vh",overflow:"auto"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+              <h2 style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)"}}>{editingList?"Editar listado":"Nuevo listado de notas"}</h2>
+              <button onClick={()=>{setShowListModal(false);setEditingList(null);}} style={{background:"var(--border)",border:"none",color:"var(--ga)",width:26,height:26,borderRadius:"50%",fontSize:14,cursor:"pointer"}}>×</button>
+            </div>
+            <div style={{marginBottom:14}}>
+              <label style={lbl}>Tipo de listado</label>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {Object.entries(NOTE_LIST_TYPES).map(([k,t])=>{
+                  const on = listType===k;
+                  return (
+                    <div key={k} onClick={()=>pickListType(k)}
+                      style={{display:"flex",alignItems:"center",gap:12,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:on?"#DDA0DD11":"var(--bg)",border:`1px solid ${on?"#DDA0DD66":"var(--border)"}`}}>
+                      <span style={{fontSize:20}}>{t.icon}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:600,color:on?"var(--violet)":"var(--text)"}}>{t.label}</div>
+                        <div style={{fontSize:12,color:"var(--g5)",marginTop:1}}>{t.desc}</div>
+                      </div>
+                      {on && <span style={{color:"var(--violet)",fontSize:14}}>✓</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{marginBottom:14}}>
+              <label style={lbl}>Nombre</label>
+              <input value={listName} onChange={e=>setListName(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&handleSaveList()}
+                placeholder="Ej: Recetas de la abuela, Para el viaje, Trámites..." style={inp} autoFocus/>
+            </div>
+            <div style={{marginBottom:16}}>
+              <label style={lbl}>Ícono</label>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                {LIST_ICON_CHOICES.map(ico=>(
+                  <div key={ico} onClick={()=>setListIcon(ico)}
+                    style={{width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:10,fontSize:20,cursor:"pointer",background:listIcon===ico?"#DDA0DD22":"var(--card2)",border:`1.5px solid ${listIcon===ico?"#DDA0DD":"transparent"}`}}>{ico}</div>
+                ))}
+              </div>
+            </div>
+            <button onClick={handleSaveList}
+              style={{width:"100%",background:"#FF6B6B",color:"#1A0B0B",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+              {editingList?"Guardar cambios":"Crear listado"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmar eliminar listado */}
+      {showDeleteList && (
+        <div onClick={e=>{if(e.target===e.currentTarget)setShowDeleteList(null)}}
+          style={{position:"fixed",inset:0,background:"#000000d0",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"var(--card)",borderRadius:16,padding:24,width:"100%",maxWidth:340,border:"1px solid var(--border2)"}}>
+            <div style={{fontFamily:"Fraunces,serif",fontSize:17,fontWeight:600,color:"var(--title)",marginBottom:8}}>Eliminar listado</div>
+            <div style={{fontSize:13,color:"var(--g6)",marginBottom:20}}>Se eliminarán también todas las notas que están adentro. Esta acción no se puede deshacer.</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setShowDeleteList(null)} style={{flex:1,background:"var(--border)",color:"var(--ga)",border:"none",borderRadius:10,padding:"10px",fontSize:13,cursor:"pointer"}}>Cancelar</button>
+              <button onClick={()=>handleDeleteList(showDeleteList)} style={{flex:1,background:"#FF6B6B22",color:"var(--coral)",border:"1px solid #FF6B6B44",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer"}}>Eliminar</button>
+            </div>
           </div>
         </div>
       )}
