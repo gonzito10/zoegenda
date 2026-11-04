@@ -67,6 +67,46 @@ export const THEMES = [
     bg:"#f5f5f0", surface:"#ffffff", border:"#e0e0d8", text:"#1a1a1a",
     pattern:null
   },
+  {
+    id:"lavender", label:"Lavanda", emoji:"💜", light:true,
+    bg:"#f3eefa", surface:"#ffffff", border:"#e0d4f0", text:"#2e2340",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><circle cx='15' cy='20' r='10' fill='%23b79ae018'/><circle cx='60' cy='15' r='6' fill='%23b79ae014'/><circle cx='75' cy='60' r='12' fill='%23b79ae016'/><circle cx='30' cy='70' r='7' fill='%23b79ae012'/></svg>`
+  },
+  {
+    id:"sky", label:"Cielo", emoji:"🌤️", light:true,
+    bg:"#eef5fb", surface:"#ffffff", border:"#d3e2f0", text:"#14283a",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='160' height='80'><path d='M10 50 Q20 38 32 46 Q40 34 54 44 Q66 44 64 54 L12 54 Z' fill='%2378aedc14'/><path d='M96 24 Q104 14 114 20 Q122 12 132 20 Q142 20 140 28 L98 28 Z' fill='%2378aedc10'/></svg>`
+  },
+  {
+    id:"mint", label:"Menta", emoji:"🌿", light:true,
+    bg:"#eef6f0", surface:"#ffffff", border:"#d3e5d8", text:"#1b3024",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><path d='M20 70 Q30 40 40 70' stroke='%2358a87522' stroke-width='2' fill='none'/><path d='M60 40 Q68 18 76 40' stroke='%2358a87520' stroke-width='2' fill='none'/><circle cx='80' cy='80' r='8' fill='%2358a87512'/><circle cx='15' cy='20' r='6' fill='%2358a87512'/></svg>`
+  },
+  {
+    id:"peach", label:"Durazno", emoji:"🍑", light:true,
+    bg:"#fdf1ea", surface:"#ffffff", border:"#f1d9ca", text:"#3b261b",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><circle cx='20' cy='25' r='12' fill='%23f4a67a14'/><circle cx='65' cy='20' r='7' fill='%23f4a67a12'/><circle cx='70' cy='65' r='14' fill='%23f4a67a12'/><circle cx='25' cy='72' r='6' fill='%23f4a67a14'/></svg>`
+  },
+  {
+    id:"sand", label:"Arena", emoji:"🏖️", light:true,
+    bg:"#f6f0e4", surface:"#ffffff", border:"#e5dac3", text:"#33291a",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40'><path d='M0 20 Q15 8 30 20 Q45 32 60 20 Q75 8 90 20 Q105 32 120 20' stroke='%23c8a96e22' stroke-width='1.5' fill='none'/></svg>`
+  },
+  {
+    id:"marble", label:"Mármol", emoji:"🏛️", light:true,
+    bg:"#f2f2ef", surface:"#ffffff", border:"#dcdcd6", text:"#23232a",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='48' height='24'><path d='M4 20 V6 H20 V16 H12 V10 H16' stroke='%238a8a8220' stroke-width='1' fill='none'/><path d='M28 20 V6 H44 V16 H36 V10 H40' stroke='%238a8a8220' stroke-width='1' fill='none'/></svg>`
+  },
+  {
+    id:"lemon", label:"Limón", emoji:"🍋", light:true,
+    bg:"#fbf8e3", surface:"#ffffff", border:"#ece6b8", text:"#342f12",
+    pattern:`<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><circle cx='20' cy='20' r='9' fill='%23e6d24a18'/><circle cx='60' cy='30' r='5' fill='%23e6d24a16'/><circle cx='35' cy='62' r='7' fill='%23e6d24a14'/><circle cx='70' cy='70' r='4' fill='%23e6d24a16'/></svg>`
+  },
+  {
+    id:"mist", label:"Niebla", emoji:"🌫️", light:true,
+    bg:"#eef0f4", surface:"#ffffff", border:"#d9dde5", text:"#1c2230",
+    pattern:null
+  },
 ];
 // Grises de texto con contraste suficiente (≥4,5:1) y colores de estado: --ok (bien), --warn (deuda / cerca del límite), --danger (superado)
 export const DARK_VARS = {"--bg":"#0f0f13","--card":"#131318","--card2":"#1a1a22","--border":"#1e1e2a","--border2":"#2a2a3a","--border3":"#3a3a4a","--text":"#e8e8f0","--title":"#ffffff","--bar":"#0a0a0e","--g3":"#333","--g4":"#80808c","--g5":"#8e8e9a","--g6":"#9c9ca8","--g8":"#b0b0bb","--ga":"#c6c6d0","--ok":"#5CCB8B","--warn":"#F2B84B","--danger":"#F0605A","--coral":"#FF6B6B","--violet":"#DDA0DD","--teal":"#4ECDC4"};
