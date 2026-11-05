@@ -42,7 +42,12 @@ async function loadNotes(groupId) {
   return sortNotes(data || []);
 }
 function sortNotes(ns) {
-  return [...ns].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.updated_at).localeCompare(String(a.updated_at)));
+  // Fijadas primero; después orden alfabético por título (sin distinguir mayúsculas ni tildes).
+  // No depende de la fecha de modificación, así una nota no cambia de lugar al tocarla o guardarla.
+  return [...ns].sort((a, b) =>
+    (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
+    String(a.title || "").localeCompare(String(b.title || ""), "es", { sensitivity: "base", numeric: true }) ||
+    String(a.id).localeCompare(String(b.id)));
 }
 async function createNote(groupId, userId, title, kind, color, listId, content) {
   const { data } = await supabase.from("notes").insert({ group_id: groupId, created_by: userId, title, content: content || "", kind: kind || "text", color: color || null, list_id: listId || null }).select().single();
@@ -215,7 +220,7 @@ export default function Notes({ groupId, currentUserId }) {
   async function handleSaveTitle() {
     if (!titleDraft.trim() || !activeNote) return;
     await updateNote(activeNote, { title: titleDraft.trim() });
-    setNotes(ns => ns.map(n => n.id === activeNote ? {...n, title: titleDraft.trim()} : n));
+    setNotes(ns => sortNotes(ns.map(n => n.id === activeNote ? {...n, title: titleDraft.trim()} : n)));
     setEditingTitle(false);
   }
 
