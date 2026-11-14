@@ -66,29 +66,6 @@ export default function BalanceTab({ ctx }) {
     )}
 
 
-    {/* Active installments this month */}
-    {monthExpenses.filter(e=>e.installments>1).length > 0 && <>
-      <div style={{fontSize:12,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>Cuotas activas</div>
-      {monthExpenses.filter(e=>e.installments>1).map(e=>{
-        const c = getCat(e.category);
-        return (
-          <div key={e.id} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
-            <div style={{width:34,height:34,borderRadius:10,background:c.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{c.icon}</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.description}</div>
-              <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:8,alignItems:"center"}}>
-                {getMember(e.paid_by).display_name}
-                <span style={{background:"#DDA0DD22",color:"var(--violet)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>
-              </div>
-            </div>
-            <div style={{textAlign:"right",flexShrink:0}}>
-              <div style={{fontSize:14,fontWeight:700,color:"var(--violet)"}}>{fmtMoney(e.amount)}</div>
-              <div style={{fontSize:12,color:"var(--g5)"}}>÷{e.split_between?.length||1} = {fmtMoney(e.amount/(e.split_between?.length||1))} c/u</div>
-            </div>
-          </div>
-        );
-      })}
-    </>}
     {/* Gastos recurrentes (con edición, pausa y eliminación) */}
     {recurring.length > 0 && <>
       <div style={{fontSize:12,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"14px 0 8px"}}>Gastos recurrentes</div>

@@ -11,48 +11,15 @@ export default function HistoryTab({ ctx }) {
     if(e.installment_group_id && (!originByGroup[e.installment_group_id] || e.date < originByGroup[e.installment_group_id])) originByGroup[e.installment_group_id] = e.date;
   });
   const originOf = e => (e.installment_group_id && originByGroup[e.installment_group_id]) || e.date;
-  // Las cuotas se muestran como movimiento del día 1 de su mes; las de meses futuros se ocultan
-  const shownDate = e => e.installments>1 ? e.date.slice(0,7)+"-01" : e.date;
-  // Más reciente primero
-  const historyExpenses = monthExpenses
-    .filter(isVisibleInHistory)
-    .sort((a,b) => shownDate(b).localeCompare(shownDate(a)) || b.date.localeCompare(a.date) || (b.created_at||"").localeCompare(a.created_at||""));
-  const monthSettlements = settlements.filter(s=>s.date.slice(0,7)===activeMonth);
-  const historyTotal = historyExpenses.reduce((sum,e)=>sum+e.amount,0);
-  // Agrupado por día: "Hoy", "Ayer" y después el día de la semana con la fecha
-  const todayStr = localToday();
-  const yest = new Date(); yest.setDate(yest.getDate()-1);
-  const yestStr = `${yest.getFullYear()}-${String(yest.getMonth()+1).padStart(2,"0")}-${String(yest.getDate()).padStart(2,"0")}`;
-  function dayLabel(ds){
-    if(ds===todayStr) return "Hoy";
-    if(ds===yestStr) return "Ayer";
-    const [y,m,d] = ds.split("-").map(Number);
-    return `${DAYS_FULL[new Date(y,m-1,d).getDay()]} ${d} de ${MONTHS_ES[m-1].toLowerCase()}`;
-  }
-  const groups = [];
-  historyExpenses.forEach(e => {
-    const last = groups[groups.length-1];
-    const sd = shownDate(e);
-    if(last && last.date===sd){ last.items.push(e); last.total += e.amount; }
-    else groups.push({ date:sd, items:[e], total:e.amount });
-  });
-  return (
-  <div>
-    <MonthSelect ctx={ctx} value={activeMonth} onChange={v=>setSelMonth(v==="all"?null:v)}/>
-    {historyExpenses.length === 0
-      ? <div style={{textAlign:"center",color:"var(--g4)",padding:monthSettlements.length?"24px 0":"50px 0",fontSize:14}}>No hay gastos este mes</div>
-      : <>
-        <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",fontSize:12}}>
-          <span style={{color:"var(--g5)"}}>Total del mes</span>
-          <strong style={{color:"var(--text)"}}>{fmtMoney(historyTotal)}</strong>
-        </div>
-        {groups.map(g=>(
-          <div key={g.date}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"14px 0 6px"}}>
-              <span style={{fontFamily:"Fraunces,serif",fontSize:16,fontWeight:600,color:"var(--title)"}}>{dayLabel(g.date)}</span>
-              <span style={{fontSize:13,color:"var(--g6)"}}>{fmtMoney(g.total)}</span>
-            </div>
-        {g.items.map(e=>{
+  // Más reciente primero; las cuotas van aparte, abajo, como "Cuotas activas"
+  const allVisible = monthExpenses.filter(isVisibleInHistory);
+  const historyExpenses = allVisible
+    .filter(e => !(e.installments>1))
+    .sort((a,b) => b.date.localeCompare(a.date) || (b.created_at||"").localeCompare(a.created_at||""));
+  const activeCuotas = allVisible
+    .filter(e => e.installments>1)
+    .sort((a,b) => (a.description||"").localeCompare(b.description||""));
+  const renderExpense = e => {
           const c = getCat(e.category);
           const payer = getMember(e.paid_by);
           const perPerson = e.amount / (e.split_between?.length || 1);
@@ -80,7 +47,42 @@ export default function HistoryTab({ ctx }) {
               </div>
             </div>
           );
-        })}
+  };
+  const monthSettlements = settlements.filter(s=>s.date.slice(0,7)===activeMonth);
+  const historyTotal = allVisible.reduce((sum,e)=>sum+e.amount,0);
+  // Agrupado por día: "Hoy", "Ayer" y después el día de la semana con la fecha
+  const todayStr = localToday();
+  const yest = new Date(); yest.setDate(yest.getDate()-1);
+  const yestStr = `${yest.getFullYear()}-${String(yest.getMonth()+1).padStart(2,"0")}-${String(yest.getDate()).padStart(2,"0")}`;
+  function dayLabel(ds){
+    if(ds===todayStr) return "Hoy";
+    if(ds===yestStr) return "Ayer";
+    const [y,m,d] = ds.split("-").map(Number);
+    return `${DAYS_FULL[new Date(y,m-1,d).getDay()]} ${d} de ${MONTHS_ES[m-1].toLowerCase()}`;
+  }
+  const groups = [];
+  historyExpenses.forEach(e => {
+    const last = groups[groups.length-1];
+    if(last && last.date===e.date){ last.items.push(e); last.total += e.amount; }
+    else groups.push({ date:e.date, items:[e], total:e.amount });
+  });
+  return (
+  <div>
+    <MonthSelect ctx={ctx} value={activeMonth} onChange={v=>setSelMonth(v==="all"?null:v)}/>
+    {allVisible.length === 0
+      ? <div style={{textAlign:"center",color:"var(--g4)",padding:monthSettlements.length?"24px 0":"50px 0",fontSize:14}}>No hay gastos este mes</div>
+      : <>
+        <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,padding:"8px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",fontSize:12}}>
+          <span style={{color:"var(--g5)"}}>Total del mes</span>
+          <strong style={{color:"var(--text)"}}>{fmtMoney(historyTotal)}</strong>
+        </div>
+        {groups.map(g=>(
+          <div key={g.date}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",margin:"14px 0 6px"}}>
+              <span style={{fontFamily:"Fraunces,serif",fontSize:16,fontWeight:600,color:"var(--title)"}}>{dayLabel(g.date)}</span>
+              <span style={{fontSize:13,color:"var(--g6)"}}>{fmtMoney(g.total)}</span>
+            </div>
+        {g.items.map(renderExpense)}
           </div>
         ))}
       </>
@@ -102,6 +104,10 @@ export default function HistoryTab({ ctx }) {
           </div>
         );
       })}
+    </>}
+    {activeCuotas.length > 0 && <>
+      <div style={{fontSize:12,color:"var(--g4)",fontWeight:600,textTransform:"uppercase",letterSpacing:1,margin:"18px 0 8px"}}>Cuotas activas</div>
+      {activeCuotas.map(renderExpense)}
     </>}
 
   </div>
