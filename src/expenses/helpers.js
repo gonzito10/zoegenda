@@ -35,8 +35,8 @@ export function localToday(){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 export function fmtDay(dateStr){ const [y,m,d] = dateStr.split("-"); return `${d}/${m}/${y}`; }
-// Cuotas con fecha futura todavía no se muestran en el historial
-export function isVisibleInHistory(e){ return !(e.installments>1 && e.date > localToday()); }
+// Las cuotas aparecen en el historial desde el día 1 de su mes; las de meses siguientes quedan ocultas
+export function isVisibleInHistory(e){ return !(e.installments>1 && e.date.slice(0,7) > localToday().slice(0,7)); }
 export function monthLabel(key){
   const [y,m] = key.split("-").map(Number);
   return `${MONTHS_ES[m-1]} ${y}`;

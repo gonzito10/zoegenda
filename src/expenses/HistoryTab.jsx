@@ -5,7 +5,7 @@ import MonthSelect from "./MonthSelect";
 
 export default function HistoryTab({ ctx }) {
   const { activeMonth, getCat, getMember, handleDeleteSettlement, settlements, monthExpenses, setEditExp, setSelMonth, setShowModal, tagRelations, tags } = ctx;
-  // Más reciente primero; las cuotas futuras se ocultan hasta que llegue su fecha
+  // Más reciente primero; las cuotas de meses futuros se ocultan hasta que empiece su mes
   const historyExpenses = monthExpenses
     .filter(isVisibleInHistory)
     .sort((a,b) => b.date.localeCompare(a.date) || (b.created_at||"").localeCompare(a.created_at||""));
