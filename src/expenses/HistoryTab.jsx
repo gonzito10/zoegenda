@@ -4,11 +4,19 @@ import { DAYS_FULL } from "../app/constants";
 import MonthSelect from "./MonthSelect";
 
 export default function HistoryTab({ ctx }) {
-  const { activeMonth, getCat, getMember, handleDeleteSettlement, settlements, monthExpenses, setEditExp, setSelMonth, setShowModal, tagRelations, tags } = ctx;
-  // Más reciente primero; las cuotas de meses futuros se ocultan hasta que empiece su mes
+  const { activeMonth, expenses, getCat, getMember, handleDeleteSettlement, settlements, monthExpenses, setEditExp, setSelMonth, setShowModal, tagRelations, tags } = ctx;
+  // Fecha de origen de cada compra en cuotas: la fecha de su primera cuota
+  const originByGroup = {};
+  expenses.forEach(e => {
+    if(e.installment_group_id && (!originByGroup[e.installment_group_id] || e.date < originByGroup[e.installment_group_id])) originByGroup[e.installment_group_id] = e.date;
+  });
+  const originOf = e => (e.installment_group_id && originByGroup[e.installment_group_id]) || e.date;
+  // Las cuotas se muestran como movimiento del día 1 de su mes; las de meses futuros se ocultan
+  const shownDate = e => e.installments>1 ? e.date.slice(0,7)+"-01" : e.date;
+  // Más reciente primero
   const historyExpenses = monthExpenses
     .filter(isVisibleInHistory)
-    .sort((a,b) => b.date.localeCompare(a.date) || (b.created_at||"").localeCompare(a.created_at||""));
+    .sort((a,b) => shownDate(b).localeCompare(shownDate(a)) || b.date.localeCompare(a.date) || (b.created_at||"").localeCompare(a.created_at||""));
   const monthSettlements = settlements.filter(s=>s.date.slice(0,7)===activeMonth);
   const historyTotal = historyExpenses.reduce((sum,e)=>sum+e.amount,0);
   // Agrupado por día: "Hoy", "Ayer" y después el día de la semana con la fecha
@@ -24,8 +32,9 @@ export default function HistoryTab({ ctx }) {
   const groups = [];
   historyExpenses.forEach(e => {
     const last = groups[groups.length-1];
-    if(last && last.date===e.date){ last.items.push(e); last.total += e.amount; }
-    else groups.push({ date:e.date, items:[e], total:e.amount });
+    const sd = shownDate(e);
+    if(last && last.date===sd){ last.items.push(e); last.total += e.amount; }
+    else groups.push({ date:sd, items:[e], total:e.amount });
   });
   return (
   <div>
@@ -56,6 +65,7 @@ export default function HistoryTab({ ctx }) {
                 <div style={{fontSize:12,color:"var(--g5)",marginTop:2,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                   <span>{payer.display_name} · {c.label}</span>
                   {e.installments>1&&<span style={{background:"#DDA0DD22",color:"var(--violet)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>Cuota {e.installment_number}/{e.installments}</span>}
+                  {e.installments>1&&<span style={{color:"var(--g5)"}}>Compra del {fmtDay(originOf(e))}</span>}
                   {e.recurring_id&&<span style={{background:"#4ECDC422",color:"var(--teal)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}><Icon name="repeat" size={12}/> Mensual</span>}
                   {e.settled&&<span style={{background:"#96CEB422",color:"var(--ok)",padding:"1px 6px",borderRadius:10,fontSize:12,fontWeight:700}}>✓ Liquidado</span>}
                   {tagRelations.filter(r=>r.expense_id===e.id).map(r=>{
